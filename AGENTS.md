@@ -21,6 +21,7 @@ PrepAhead.dev is an interview-prep web MVP: candidates paste a job description (
 - `public/` — static assets.
 - `context/foundation/` — PRD, shape notes, tech stack.
 - `context/changes/<id>/` — per-change verification and plans.
+- `context/deployment/` — deploy workflow (`deploy-plan.md`).
 - `.cursor/` — local agent skills (gitignored).
 
 ## Build, test, and development
@@ -33,6 +34,10 @@ No test runner or `.github/workflows` gate exists yet — do not claim CI or cov
 
 Follow `@tsconfig.json` and `@package.json`. Astro for marketing/static pages; React islands for signed-in flows (practice UI, theme toggle FR-022/023, billing). Tailwind utilities in components; shared tokens in `src/styles/global.css`. New files match siblings: PascalCase components (`Welcome.astro`, `Layout.astro`), `index.astro` for route indexes.
 
+## Deployment
+
+Canonical workflow: `@context/deployment/deploy-plan.md`. **Production branch:** `prod`. **Production URL:** `https://prepahead.dev`. Open PRs with **base `prod`**; use Vercel Preview on the PR before merge. Do not push directly to `prod` except documented hotfixes. Vercel auto-deploys on merge to `prod`.
+
 ## Commit and pull requests
 
-Recent commits use short imperative subjects (`add themes in requirements`, `init project`) — one concern per commit. Remote: `https://github.com/BartlomiejCzerwinski/PrepAhead.git`. PRs should cite relevant FR/US from `@context/foundation/prd.md` and report `npm run build` outcome.
+Recent commits use short imperative subjects (`add themes in requirements`, `init project`) — one concern per commit. Remote: `https://github.com/BartlomiejCzerwinski/PrepAhead.git`. PRs target **`prod`** and should cite relevant FR/US from `@context/foundation/prd.md` and report `npm run build` outcome.

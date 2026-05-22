@@ -103,7 +103,7 @@ Specific to **Astro 6.3** + **`@astrojs/vercel` ^10** + **npm** (already in repo
 2. **Link project** — `npx vercel link` at repo root; select/create Vercel project `prep-ahead-dev`.
 3. **Pull env template** — Add `.env.example` with variable names only; `npx vercel env pull .env.local` for local secrets (never commit).
 4. **Configure adapter timeouts** — In `astro.config.mjs`, set `adapter: vercel({ maxDuration: 60 })` (adjust when AI routes are added).
-5. **Connect GitHub** — Vercel dashboard → Import Git repository → Production branch `main`; enable automatic deployments; add the same env vars to Production and Preview scopes.
+5. **Connect GitHub** — Vercel dashboard → Import Git repository → Production branch **`prod`** (see [`context/deployment/deploy-plan.md`](../deployment/deploy-plan.md)); production domain **`https://prepahead.dev`**; enable automatic deployments; add the same env vars to Production and Preview scopes. **Workflow:** open PRs with base `prod`; use Preview before merge—do not routinely push directly to `prod`.
 6. **Optional CLI deploy** — `npx vercel deploy` (preview) / `npx vercel deploy --prod` (production, human-gated per Operational Story).
 
 Daily dev loop: `npm run dev` (not platform-specific dev server unless debugging Vercel-only behavior).
