@@ -2,7 +2,7 @@
 project: PrepAhead.dev
 context_type: greenfield
 created: 2026-05-21
-updated: 2026-05-21
+updated: 2026-05-22
 checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
@@ -39,7 +39,9 @@ checkpoint:
       decision: block new generation at limit with upgrade to PRO via Stripe
     - topic: stripe_model
       decision: PRO = monthly subscription; FREE default for new users
-  frs_drafted: 21
+    - topic: theme_mode
+      decision: light/dark in-app toggle; persist per signed-in user; must-have; all surfaces (landing, content, app)
+  frs_drafted: 23
   quality_check_status: accepted
 product_type: web-app
 target_scale:
@@ -122,6 +124,7 @@ Integrated **Stripe** — PRO monthly subscription; FREE users upgrade when bloc
 - User volunteered: Supabase Auth + Google provider for authentication. Downstream stack selection should treat this as a prior, not a PRD commitment.
 - User volunteered: **Stripe** for PRO monthly subscription and payment integration. Downstream stack selection should treat this as a prior, not a PRD commitment.
 - User volunteered: **critical AI model** for open-ended Check feedback (may differ from generation model). Downstream stack selection picks provider/model; PRD stays behavior-level only.
+- User volunteered: **shadcn/ui** with light/dark theming on React islands; persist theme preference per user in datastore tied to auth.
 
 ## Success Criteria
 
@@ -141,6 +144,7 @@ Alex signs in with Google, sees plan (FREE or PRO) and remaining **generations**
 - **Tone:** Experience feels like role-specific interview preparation, not a generic school quiz — open-ended + Check models real interview depth, not only quiz drills.
 - **Fair-use honesty:** PRO is marketed as generous usage, not infinite — limits are visible and enforced.
 - **Perceived speed:** Lightweight, practical feel—visible progress during generation; avoid long silent waits without feedback.
+- **Theme consistency:** Light and dark modes are readable and consistent across marketing pages, content, and signed-in practice UI.
 
 ## Functional Requirements
 
@@ -201,6 +205,13 @@ Alex signs in with Google, sees plan (FREE or PRO) and remaining **generations**
 - FR-021: System blocks new practice-set generation for PRO at 300 generations in the current calendar month until the next monthly reset. Priority: must-have
   > Socrates: No counter-argument; it stands as written.
 
+### Appearance & preferences
+
+- FR-022: Candidate can switch between light mode and dark mode using an in-app control. Priority: must-have
+  > Socrates: Counter-argument: theme work delays core practice flow. Resolution: kept in MVP — user requires it across all surfaces; aligns with component library theming.
+- FR-023: System persists the signed-in candidate's theme preference and restores it on subsequent visits and devices when they sign in again. Priority: must-have
+  > Socrates: No counter-argument; it stands as written.
+
 ## User Stories
 
 ### US-01: Generate and complete a role-specific practice set
@@ -243,6 +254,18 @@ Alex signs in with Google, sees plan (FREE or PRO) and remaining **generations**
 - Feedback does not invent candidate history beyond JD/CV provided
 - One Check tap consumes one Check call from monthly allowance
 
+### US-04: Choose and keep a theme
+
+- **Given** a signed-in candidate on any page of PrepAhead.dev
+- **When** they switch between light and dark mode using the theme control
+- **Then** the UI updates immediately and their choice is saved to their account for future sessions
+
+#### Acceptance Criteria
+
+- Theme applies to landing, content/blog pages, and signed-in practice screens—not practice-only
+- Preference survives sign-out and sign-in on the same account
+- Both themes keep text and interactive controls readable (no missing contrast on primary actions)
+
 ## Business Logic
 
 From a specific job description and optional CV text, PrepAhead derives role-relevant interview topics and generates a mixed practice set (ABCD + open-ended) grounded in that posting—refusing to invent candidate experience not present in the inputs—and gates generation and Check actions by plan limits (FREE vs PRO fair-use).
@@ -263,8 +286,11 @@ Supporting detail:
 - **Practice UX tone:** Copy and question framing read as interview preparation for a specific role, not as a generic academic quiz.
 - **Billing integrity:** Plan tier, generation counts, and Check counts reflect Stripe subscription state and successful usage only — limits cannot be bypassed without upgrading or monthly reset.
 - **Check feedback quality:** Open-ended Check responses are critical and specific to the user's submitted text and the question context — not generic praise.
+- **Theme readability:** In both light and dark modes, primary text and controls meet a readable contrast bar for normal use (binary: no unreadable primary actions in either mode).
 
 ## Non-Goals
+
+- **Custom themes beyond light/dark:** No user-defined color palettes, accent pickers, or branded employer themes in v1 — only light and dark.
 
 - **Custom payment stack:** No in-house billing, invoicing, or payment processing — Stripe handles PRO subscription in v1.
 
@@ -291,3 +317,4 @@ Re-checked after question-mix & fair-use amendment (2026-05-21): Access Control,
 - **Study plans / weak-area scoring:** Explicitly deferred from v1; revisit after practice flow validation.
 - **PRO soft-limit UX:** Exact copy and UI when crossing 100 generations/month (warning vs silent daily-cap enforcement).
 - **Score summary for open-ended:** How open-ended/Check results aggregate in end-of-set summary (informational only vs weighted score).
+- **Default theme on first visit:** Light by default, dark by default, or match OS preference before first explicit choice — resolve during implementation.

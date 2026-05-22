@@ -49,6 +49,7 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 - **Tone:** Experience feels like role-specific interview preparation, not a generic school quiz—open-ended + Check models real interview depth.
 - **Fair-use honesty:** PRO is positioned as generous usage, not infinite—limits are visible and enforced.
 - **Perceived speed:** Lightweight, practical feel—visible progress during generation; avoid long silent waits without feedback.
+- **Theme consistency:** Light and dark modes are readable and consistent across marketing pages, content, and signed-in practice UI.
 
 ## User Stories
 
@@ -91,6 +92,18 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 - Check is unavailable when monthly Check limit is exhausted (FREE: 1, PRO: 500)
 - Feedback does not invent candidate history beyond JD/CV provided
 - One Check tap consumes one Check call from monthly allowance
+
+### US-04: Choose and keep a theme
+
+- **Given** a signed-in candidate on any page of PrepAhead.dev
+- **When** they switch between light and dark mode using the theme control
+- **Then** the UI updates immediately and their choice is saved to their account for future sessions
+
+#### Acceptance Criteria
+
+- Theme applies to landing, content/blog pages, and signed-in practice screens—not practice-only
+- Preference survives sign-out and sign-in on the same account
+- Both themes keep text and interactive controls readable (no missing contrast on primary actions)
 
 ## Functional Requirements
 
@@ -151,6 +164,13 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 - FR-021: System blocks new practice-set generation for PRO at 300 generations in the current calendar month until the next monthly reset. Priority: must-have
   > Socrates: No counter-argument; it stands as written.
 
+### Appearance & preferences
+
+- FR-022: Candidate can switch between light mode and dark mode using an in-app control. Priority: must-have
+  > Socrates: Counter-argument: theme work delays core practice flow. Resolution: kept in MVP — user requires it across all surfaces; aligns with component library theming.
+- FR-023: System persists the signed-in candidate's theme preference and restores it on subsequent visits and devices when they sign in again. Priority: must-have
+  > Socrates: No counter-argument; it stands as written.
+
 ## Non-Functional Requirements
 
 - **Generation responsiveness:** For a typical-length pasted JD, the user sees visible progress during generation and receives a full practice set or a clear failure message within approximately sixty seconds under normal conditions.
@@ -158,6 +178,7 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 - **Practice UX tone:** Copy and question framing read as interview preparation for a specific role, not as a generic academic quiz.
 - **Billing integrity:** Plan tier, generation counts, and Check counts reflect active paid subscription state and successful usage only — limits cannot be bypassed without upgrading or monthly reset.
 - **Check feedback quality:** Open-ended Check responses are critical and specific to the user's submitted text and the question context — not generic praise.
+- **Theme readability:** In both light and dark modes, primary text and controls meet a readable contrast bar for normal use (binary: no unreadable primary actions in either mode).
 
 ## Business Logic
 
@@ -190,6 +211,7 @@ Supporting detail:
 - **Multi-industry breadth:** Not optimizing for all industries before the IT junior/mid software wedge is validated.
 - **Self-hosted inference:** No on-prem or locally hosted model inference in v1.
 - **Study plans / weak-area scoring:** Deferred from v1; revisit after practice flow validation.
+- **Custom themes beyond light/dark:** No user-defined color palettes, accent pickers, or branded employer themes in v1 — only light and dark.
 
 ## Open Questions
 
@@ -199,3 +221,4 @@ Supporting detail:
 4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations/month (warning vs silent daily-cap enforcement). Owner: product.
 5. **Score summary for open-ended** — How open-ended/Check results aggregate in end-of-set summary (informational only vs weighted score). Owner: product.
 6. **MVP timeline vs scope** — Shape input acknowledges billing, mixed question types, and fair-use may exceed ~3 weeks after-hours; confirm sustained-effort commitment or scope trade-offs. Owner: builder.
+7. **Default theme on first visit** — Light by default, dark by default, or match OS preference before the user makes an explicit choice. Owner: product. Resolve during implementation.
