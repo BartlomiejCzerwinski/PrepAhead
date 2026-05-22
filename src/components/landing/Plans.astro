@@ -1,0 +1,59 @@
+---
+const plans = [
+	{
+		name: 'FREE',
+		price: '$0',
+		period: 'per month',
+		highlight: false,
+		items: ['1 practice-set generation', '1 Check on open-ended answers', 'Upgrade when you need more'],
+	},
+	{
+		name: 'PRO',
+		price: 'Generous usage',
+		period: 'fair-use limits shown in app',
+		highlight: true,
+		items: [
+			'High monthly generation allowance with clear caps',
+			'500 Check calls per month',
+			'Limits visible—no “unlimited” surprise',
+		],
+	},
+];
+---
+
+<section id="plans" class="border-y border-[var(--border)] bg-[var(--surface-elevated)] py-20 sm:py-24">
+	<div class="mx-auto max-w-6xl px-4 sm:px-6">
+		<h2 class="text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">Simple plans</h2>
+		<p class="mt-3 max-w-2xl text-lg text-[var(--text-muted)]">
+			Start free. Upgrade when you outgrow one session per month.
+		</p>
+		<div class="mt-12 grid gap-6 sm:grid-cols-2">
+			{
+				plans.map((plan) => (
+					<article
+						class:list={[
+							'rounded-2xl border p-8',
+							plan.highlight
+								? 'border-brand-600 bg-[var(--surface)] ring-2 ring-brand-600/20 dark:border-teal-500 dark:ring-teal-500/20'
+								: 'border-[var(--border)] bg-[var(--surface)]',
+						]}
+					>
+						<h3 class="text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+							{plan.name}
+						</h3>
+						<p class="mt-2 text-3xl font-bold text-[var(--text)]">{plan.price}</p>
+						<p class="text-sm text-[var(--text-muted)]">{plan.period}</p>
+						<ul class="mt-6 space-y-3">
+							{plan.items.map((item) => (
+								<li class="flex gap-2 text-[var(--text-muted)]">
+									<span class="text-brand-600 dark:text-teal-400" aria-hidden="true">✓</span>
+									<span>{item}</span>
+								</li>
+							))}
+						</ul>
+					</article>
+				))
+			}
+		</div>
+	</div>
+</section>

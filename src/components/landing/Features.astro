@@ -1,0 +1,39 @@
+---
+const features = [
+	{
+		title: 'JD-grounded',
+		body: 'Questions reflect the role you pasted—not unrelated IT trivia from a generic bank.',
+	},
+	{
+		title: 'Honest personalization',
+		body: 'Without a CV, we do not invent your experience. With a CV, we only reference what you supplied.',
+	},
+	{
+		title: 'Mixed question types',
+		body: 'Fast multiple-choice loops plus open-ended items that mirror real interview depth.',
+	},
+	{
+		title: 'Critical Check feedback',
+		body: 'Open-ended answers get specific, critical feedback—not vague praise or a single pass/fail grade.',
+	},
+];
+---
+
+<section id="features" class="py-20 sm:py-24">
+	<div class="mx-auto max-w-6xl px-4 sm:px-6">
+		<h2 class="text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">Built for role-specific prep</h2>
+		<p class="mt-3 max-w-2xl text-lg text-[var(--text-muted)]">
+			Generic prep tools optimize for breadth. PrepAhead optimizes for the posting in front of you.
+		</p>
+		<ul class="mt-12 grid gap-6 sm:grid-cols-2">
+			{
+				features.map((item) => (
+					<li class="rounded-2xl border border-[var(--border)] p-6">
+						<h3 class="text-lg font-semibold text-[var(--text)]">{item.title}</h3>
+						<p class="mt-2 text-[var(--text-muted)] leading-relaxed">{item.body}</p>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>
