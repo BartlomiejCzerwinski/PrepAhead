@@ -1,1 +1,33 @@
-.cursor
+# Cursor
+.cursor/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/
+
+# Vercel
+.vercel/
+
+# Environment variables (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
