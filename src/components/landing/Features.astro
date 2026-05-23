@@ -21,16 +21,35 @@ const features = [
 
 <section id="features" class="py-20 sm:py-24">
 	<div class="mx-auto max-w-6xl px-4 sm:px-6">
-		<h2 class="text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">Built for role-specific prep</h2>
-		<p class="mt-3 max-w-2xl text-lg text-[var(--text-muted)]">
-			Generic prep tools optimize for breadth. PrepAhead optimizes for the posting in front of you.
-		</p>
+		<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+			<div>
+				<div class="inline-flex rounded-full border border-brand-500/15 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+					Why PrepAhead
+				</div>
+				<h2 class="mt-5 text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
+					Built for role-specific prep, not generic question banks
+				</h2>
+				<p class="mt-4 max-w-2xl text-lg leading-8 text-[var(--text-muted)]">
+					The product stays focused on the interview you actually have coming up, with cleaner
+					feedback loops and less noise.
+				</p>
+			</div>
+			<div class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4 shadow-sm dark:shadow-none">
+				<p class="text-sm font-semibold text-[var(--text)]">Focused output</p>
+				<p class="mt-1 text-sm text-[var(--text-muted)]">
+					Approximately 15 multiple-choice and 5 open-ended questions per session.
+				</p>
+			</div>
+		</div>
 		<ul class="mt-12 grid gap-6 sm:grid-cols-2">
 			{
 				features.map((item) => (
-					<li class="rounded-2xl border border-[var(--border)] p-6">
-						<h3 class="text-lg font-semibold text-[var(--text)]">{item.title}</h3>
-						<p class="mt-2 text-[var(--text-muted)] leading-relaxed">{item.body}</p>
+					<li class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-brand-500/30 dark:shadow-none">
+						<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)] text-base font-bold text-[var(--brand)]">
+							{item.title.slice(0, 2).toUpperCase()}
+						</div>
+						<h3 class="mt-5 text-lg font-semibold text-[var(--text)]">{item.title}</h3>
+						<p class="mt-2 leading-7 text-[var(--text-muted)]">{item.body}</p>
 					</li>
 				))
 			}

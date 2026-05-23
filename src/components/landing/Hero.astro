@@ -1,37 +1,102 @@
+---
+const proofPoints = ['Role-specific questions', 'Critical answer feedback', 'Progress you can revisit'];
+const scoreRows = [
+	{ label: 'Technical', value: '7.0' },
+	{ label: 'Behavioral', value: '8.0' },
+	{ label: 'Communication', value: '7.5' },
+];
+---
+
 <section class="relative overflow-hidden border-b border-[var(--border)]">
 	<div
-		class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(13,148,136,0.18),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(45,212,191,0.12),transparent)]"
+		class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_34%),radial-gradient(circle_at_80%_18%,rgba(139,92,246,0.12),transparent_28%)]"
 		aria-hidden="true"
-	>
-	</div>
-	<div class="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
-		<p class="mb-4 text-sm font-semibold uppercase tracking-wider text-brand-600 dark:text-teal-400">
-			For junior &amp; mid software engineers
-		</p>
-		<h1 class="max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight text-[var(--text)] sm:text-5xl lg:text-6xl">
-			Practice for <span class="text-brand-600 dark:text-teal-400">this interview</span>, not a generic question bank
-		</h1>
-		<p class="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--text-muted)]">
-			Paste the job description you are interviewing for. PrepAhead builds a focused set of
-			multiple-choice and open-ended questions from that posting—plus critical feedback when you
-			check your answers.
-		</p>
-		<div class="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
-			<a
-				href="#get-started"
-				class="inline-flex items-center justify-center rounded-lg bg-[var(--brand)] px-6 py-3 text-base font-semibold text-white no-underline transition-colors hover:bg-[var(--brand-hover)] dark:text-stone-900"
-			>
-				Start practicing
-			</a>
-			<a
-				href="#how-it-works"
-				class="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-3 text-base font-semibold text-[var(--text)] no-underline transition-colors hover:border-brand-600/40"
-			>
-				See how it works
-			</a>
+	></div>
+	<div class="relative mx-auto grid max-w-6xl gap-16 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:py-28">
+		<div>
+			<div class="inline-flex items-center gap-2 rounded-full border border-brand-500/15 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+				<span class="h-2 w-2 rounded-full bg-[var(--brand)]"></span>
+				AI-powered interview practice
+			</div>
+			<h1 class="mt-6 max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight text-[var(--text)] sm:text-6xl">
+				Practice <span class="text-[var(--brand)]">smarter.</span><br />
+				Get hired <span class="text-[var(--brand)]">faster.</span>
+			</h1>
+			<p class="mt-6 max-w-2xl text-base leading-8 text-[var(--text-muted)] sm:text-lg">
+				Paste the job description you are interviewing for and PrepAhead builds a focused
+				practice set with multiple-choice questions, open-ended prompts, and clear feedback
+				grounded in that role.
+			</p>
+			<div class="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
+				<a
+					href="#get-started"
+					class="inline-flex items-center justify-center rounded-xl bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white no-underline shadow-sm transition duration-200 ease-out hover:bg-[var(--brand-hover)]"
+				>
+					Start for free
+				</a>
+				<a
+					href="#how-it-works"
+					class="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3 text-sm font-semibold text-[var(--text)] no-underline transition duration-200 ease-out hover:bg-[var(--surface-muted)]"
+				>
+					See how it works
+				</a>
+			</div>
+			<p class="mt-5 text-sm text-[var(--text-muted)]">
+				Optional CV text adds context to your prep. We only use what you provide.
+			</p>
+			<div class="mt-10 flex flex-wrap gap-3">
+				{
+					proofPoints.map((point) => (
+						<span class="rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-muted)]">
+							{point}
+						</span>
+					))
+				}
+			</div>
 		</div>
-		<p class="mt-6 text-sm text-[var(--text-muted)]">
-			Optional CV text personalizes questions—we only use what you provide.
-		</p>
+
+		<div class="relative">
+			<div class="pointer-events-none absolute inset-x-10 top-10 h-56 rounded-full bg-gradient-to-br from-brand-500/12 to-violet-500/8 blur-3xl" aria-hidden="true"></div>
+			<div class="relative mx-auto flex max-w-[340px] justify-center lg:mr-8">
+				<div class="relative w-full rounded-[2rem] border border-white/70 bg-[var(--surface)] p-6 shadow-[0_24px_80px_rgba(17,24,39,0.12)] dark:border-[var(--border)] dark:shadow-none sm:p-7">
+					<div class="pointer-events-none absolute -left-8 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-2xl border border-brand-500/15 bg-[var(--surface)] text-[var(--brand)] shadow-sm lg:flex" aria-hidden="true">
+						↗
+					</div>
+					<div class="pointer-events-none absolute -right-3 -top-3 hidden h-9 w-9 items-center justify-center rounded-xl border border-brand-500/15 bg-[var(--surface)] text-[var(--brand)] shadow-sm lg:flex" aria-hidden="true">
+						✦
+					</div>
+
+					<p class="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+						Interview score
+					</p>
+					<div class="mt-8 flex justify-center">
+						<div
+							class="relative flex h-32 w-32 items-center justify-center rounded-full"
+							style="background: conic-gradient(from -110deg, var(--brand) 0deg 270deg, rgba(99, 102, 241, 0.16) 270deg 360deg);"
+						>
+							<div class="absolute inset-[10px] rounded-full bg-[var(--surface)]"></div>
+							<div class="relative z-10 text-center">
+								<p class="text-3xl font-bold tracking-tight text-[var(--brand)]">7.5</p>
+								<p class="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
+									/ 10
+								</p>
+							</div>
+						</div>
+					</div>
+					<p class="mt-5 text-center text-sm font-semibold text-[var(--text)]">Good effort</p>
+
+					<div class="mt-8 space-y-4">
+						{
+							scoreRows.map((row) => (
+								<div class="flex items-center justify-between border-b border-[var(--border)] pb-3 text-sm last:border-b-0 last:pb-0">
+									<span class="text-[var(--text-muted)]">{row.label}</span>
+									<span class="font-semibold text-[var(--text)]">{row.value}</span>
+								</div>
+							))
+						}
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </section>
