@@ -1,20 +1,30 @@
 ---
-const features = [
+import FeatureIcon, { type FeatureIconName } from './FeatureIcon.astro';
+
+const features: {
+	title: string;
+	body: string;
+	icon: FeatureIconName;
+}[] = [
 	{
 		title: 'JD-grounded',
 		body: 'Questions reflect the role you pasted—not unrelated IT trivia from a generic bank.',
+		icon: 'file-text',
 	},
 	{
 		title: 'Honest personalization',
 		body: 'Without a CV, we do not invent your experience. With a CV, we only reference what you supplied.',
+		icon: 'user-check',
 	},
 	{
 		title: 'Mixed question types',
 		body: 'Fast multiple-choice loops plus open-ended items that mirror real interview depth.',
+		icon: 'list-checks',
 	},
 	{
 		title: 'Critical Check feedback',
 		body: 'Open-ended answers get specific, critical feedback—not vague praise or a single pass/fail grade.',
+		icon: 'message-square-text',
 	},
 ];
 ---
@@ -45,8 +55,8 @@ const features = [
 			{
 				features.map((item) => (
 					<li class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-brand-500/30 dark:shadow-none">
-						<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)] text-base font-bold text-[var(--brand)]">
-							{item.title.slice(0, 2).toUpperCase()}
+						<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)]">
+							<FeatureIcon name={item.icon} />
 						</div>
 						<h3 class="mt-5 text-lg font-semibold text-[var(--text)]">{item.title}</h3>
 						<p class="mt-2 leading-7 text-[var(--text-muted)]">{item.body}</p>
