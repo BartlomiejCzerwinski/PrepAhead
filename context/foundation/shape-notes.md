@@ -1,320 +1,212 @@
 ---
 project: PrepAhead.dev
-context_type: greenfield
-created: 2026-05-21
-updated: 2026-05-22
+context_type: brownfield
+created: 2026-05-26
+updated: 2026-05-26
 checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
   gray_areas_resolved:
     - topic: context_type
-      decision: greenfield — new product from scratch
-    - topic: pain_category
-      decision: workflow friction + missing capability (no JD-to-practice loop)
+      decision: brownfield — blog module added to existing PrepAhead MVP
+    - topic: change_category
+      decision: new module — public blog alongside existing practice app
     - topic: product_insight
-      decision: role-specific prep must start from the actual job description, not generic banks
-    - topic: primary_persona_scope
-      decision: individual IT candidate, junior or mid-level, preparing for a specific role
-    - topic: access_model
-      decision: sign in with Google (Gmail) via Supabase Auth; flat user model, no roles in MVP
-    - topic: mvp_flow
-      decision: sign in → plan/usage visible → paste JD → optional CV → generate mixed set → MC feedback + open-ended Check → score summary; upgrade when at FREE limits
+      decision: own SEO surface on prepahead.dev early rather than relying on external channels only
+    - topic: blog_audience
+      decision: same primary persona as app — role-focused IT candidate (junior/mid)
+    - topic: blog_read_access
+      decision: fully public read — no login required (SEO)
+    - topic: auth_model_change
+      decision: no change — Google sign-in + flat user model preserved
+    - topic: blog_authoring
+      decision: founder-authored static content in repo for v1 — no candidate author accounts
+    - topic: mvp_slice
+      decision: blog index + initial posts + SEO basics; expanded to include interactive quiz + static quiz + open-ended + CTA in v1
     - topic: mvp_timeline
-      decision: fits ~3 weeks after-hours
-    - topic: billing_in_mvp
-      decision: Stripe + FREE/PRO plans in first shippable MVP
-    - topic: usage_meter
-      decision: practice-set generations per calendar month; regenerate counts as a generation
-    - topic: plan_limits
-      decision: FREE 1 generation/month; PRO fair-use generations (soft 100, daily 10 above soft, hard 300) + separate Check caps
-    - topic: question_mix
-      decision: ~15 ABCD + ~5 open-ended (architecture + behavioral) per practice set
-    - topic: open_ended_feedback
-      decision: Check button triggers critical AI feedback on free-text answers
-    - topic: check_usage_meter
-      decision: separate monthly Check caps — FREE 1, PRO 500
-    - topic: pro_fair_use_generations
-      decision: PRO soft 100/mo, up to 300/mo with max 10 generations/day, hard block at 300
-    - topic: limit_behavior
-      decision: block new generation at limit with upgrade to PRO via Stripe
-    - topic: stripe_model
-      decision: PRO = monthly subscription; FREE default for new users
-    - topic: theme_mode
-      decision: light/dark in-app toggle; persist per signed-in user; must-have; all surfaces (landing, content, app)
-  frs_drafted: 23
+      decision: target ~3 weeks after-hours with explicit acceptance of slip risk due to full interactive scope
+  frs_drafted: 11
   quality_check_status: accepted
 product_type: web-app
 target_scale:
   users: small
 timeline_budget:
-  mvp_weeks: 3
+  delivery_weeks: 3
   hard_deadline: null
   after_hours_only: true
 ---
 
-# Shape notes — PrepAhead.dev
+# Shape notes — PrepAhead.dev (blog module)
 
-Seed idea (verbatim): AI-powered interview preparation — user pastes a job description and optionally CV/resume; app generates a personalized practice set. **Amended:** ~20 questions per set (~15 ABCD + ~5 open-ended architecture/behavioral); open-ended uses **Check** for critical AI feedback; FREE/PRO with Stripe; PRO generations on tiered fair-use (not unlimited). First version intentionally small; not a recruitment platform. Niche IT/software, junior and mid-level.
+Seed idea (verbatim): I want to add blog as part of the mvp. The purpose of the blog is to create valuable blog posts related to interview questions. For example, quiz with 10 java x level questions or some post with open-ended questions. The main purpose to deploy blog as the part of the mvp is to start building organic seo early
+
+## Current System
+
+**Product:** PrepAhead.dev — interview-prep web MVP. Signed-in candidates paste a job description (optional CV), generate role-specific practice sets (~15 ABCD + ~5 open-ended), use Check for open-ended feedback, and operate under FREE/PRO plans with Stripe billing and usage metering.
+
+**Surfaces today:** Marketing landing and signed-in practice flows. No public blog or indexable content hub.
+
+**Tech stack:** Existing MVP stack unchanged for this change (implementation detail deferred to stack assessment / planning).
+
+**Users today:** Individual junior/mid-level IT/software candidates preparing for a specific role interview.
 
 ## Vision & Problem Statement
 
-**Pain:** Job candidates preparing for tech interviews spend time on generic question lists and scattered resources that do not reflect the specific role they are applying for.
+**Delta — what's changing:** Add a **blog module** as part of the MVP — publish valuable, interview-related posts (e.g., a 10-question Java quiz at a stated level, posts with open-ended interview questions) on prepahead.dev.
 
-**Person:** Individual software engineer candidate at junior or mid level who has a target job posting in hand.
+**Why now:** Start building **organic SEO** early on the owned domain instead of waiting or relying only on external publishing channels.
 
-**Moment:** They are days or weeks before an interview for a particular role and need realistic, role-aligned practice—not another generic "top 50 interview questions" list.
+**Pain addressed:** The product's core value sits behind sign-in; without indexable interview-prep content, the site cannot earn search traffic from candidates actively looking for practice material.
 
-**Cost today:** Prep is slow and fragmented: the job description and their background live in separate documents, practice material does not trace to the posting, and feedback loops are weak or absent. They cannot quickly turn "this JD + optionally my CV" into a focused practice session.
-
-**Insight:** Generic interview-prep products optimize for breadth; PrepAhead optimizes for *this role* by anchoring generation on the actual job description (and optional candidate context), with honest limits on what the system can infer when CV is omitted.
+**Insight:** Owning the SEO surface on prepahead.dev lets long-term organic discovery compound on the same domain as the practice product.
 
 ## User & Persona
 
-**Primary persona — "Role-focused IT candidate"**
+**Primary persona (unchanged):** "Role-focused IT candidate" (Alex) — junior or mid-level software engineer actively preparing for a specific role; blog content serves the same person when they are searching for interview questions and quizzes before or alongside using JD-based practice.
 
-- **Name (archetype):** Alex, junior or mid-level software engineer
-- **Context:** Actively applying; has copied a job description from a company careers page or job board
-- **Moment of need:** Wants a fast, practical drill before the interview—feels lightweight prep beats building a custom question list by hand
-- **Success signal:** Completes a tailored practice set (MC + open-ended), gets immediate MC feedback and critical AI feedback on open-ended answers via Check, and understands gaps from the score summary
+**Blog moment:** Finds PrepAhead via search for role- or skill-specific interview content (e.g., Java mid-level quiz), reads a post, and may later sign in for JD-tailored practice.
+
+## Constraints & Preserved Behavior
+
+**Must preserve (explicit):**
+
+- Sign-in + JD practice flow (generations, Check, plan limits) — unchanged behavior.
+- Existing marketing landing and navigation path to sign-in.
+- Stripe FREE/PRO billing and usage metering.
+- Light/dark theme consistency across surfaces (including new blog pages).
+- Privacy: JD/CV and user practice data remain private; blog content is editorial/public only — no leakage of per-user practice data.
+
+**Extended (blog release):**
+
+- **Deployment:** Blog ships with existing Astro/Vercel deployment — no deployment-target change.
+- **Backward compatibility:** No breaking changes to existing API routes, auth callbacks, or Stripe webhooks.
+- **Data:** No migration of user data; blog content is separate static assets/markdown.
+- **API consumers:** N/A for public blog; practice APIs unchanged.
 
 ## Access Control
 
-- **Model:** Authenticated user required for v1 — sign in with Google (Gmail) through Supabase Auth.
-- **Roles:** Flat user model only; no admin/member/guest separation in MVP.
-- **Plans:** Every signed-in user has a plan tier — **FREE** (default) or **PRO** (paid). Plan determines generation quota, not separate RBAC roles.
-- **Implication:** Practice sessions and generated question sets are tied to a signed-in identity; plan and usage are evaluated before each new generation.
+**Current model (unchanged):** Candidates sign in with Google (Supabase Auth). Flat user model — no admin/member/guest roles in MVP. FREE/PRO plan tier gates practice-set generation and Check usage, not separate RBAC.
 
-## Plans & usage
+**Blog read access:** All blog posts are **public** — anonymous visitors and search crawlers can read full content without signing in.
 
-| Plan | Price (v1) | Practice-set generations / month | Open-ended **Check** calls / month | At limit |
-|------|------------|----------------------------------|----------------------------------|----------|
-| **FREE** | $0 | **1** | **1** | Block generation and Check; upgrade to PRO |
-| **PRO** | Monthly subscription via Stripe (price TBD) | **Fair-use** (see below) | **500** | Block when hard cap hit; show usage |
+**Blog authoring (v1):** **Founder-authored static content** deployed with the site (e.g., markdown in repo). No new author roles, no signed-in candidate publishing, no change to candidate auth.
 
-### Practice-set composition
-
-One generation produces **~20 questions**: **~15 ABCD (multiple-choice)** + **~5 open-ended** (mix of **architecture-like** and **behavioral**, grounded in the JD).
-
-### Usage units
-
-1. **Practice-set generation** — one successful create of the mixed question set from JD (+ optional CV). **Regenerate** (FR-011) counts as another generation.
-2. **Check call** — one tap of **Check** on an open-ended answer to receive critical AI feedback on the candidate's free-text response. Capped separately from generations.
-
-### PRO fair-use (generations only)
-
-| Tier | Monthly generations | Daily generations | UX |
-|------|---------------------|-------------------|-----|
-| Normal | 1–100 | No daily cap | Standard usage display |
-| Soft exceeded | 101–300 | **Max 10 / calendar day** | User may continue; daily cap enforced |
-| Hard cap | **300 max** | — | **Block** new generations until next calendar month |
-
-- **Soft limit (100/mo):** Threshold before daily cap applies — not a hard stop (exact warning copy TBD in implementation).
-- **Hard limit (300/mo):** Absolute monthly maximum for PRO; block with message until monthly reset.
-
-### Billing period
-
-Calendar month — reset generation and Check counters per user each month.
-
-### Payments
-
-Integrated **Stripe** — PRO monthly subscription; FREE users upgrade when blocked or from plan UI.
-
-## Forward: tech-stack
-
-- User volunteered: Supabase Auth + Google provider for authentication. Downstream stack selection should treat this as a prior, not a PRD commitment.
-- User volunteered: **Stripe** for PRO monthly subscription and payment integration. Downstream stack selection should treat this as a prior, not a PRD commitment.
-- User volunteered: **critical AI model** for open-ended Check feedback (may differ from generation model). Downstream stack selection picks provider/model; PRD stays behavior-level only.
-- User volunteered: **shadcn/ui** with light/dark theming on React islands; persist theme preference per user in datastore tied to auth.
+**No changes planned — current candidate auth model preserved.**
 
 ## Success Criteria
 
 ### Primary
 
-Alex signs in with Google, sees plan (FREE or PRO) and remaining **generations** and **Check** calls for the month, pastes a job description (and optionally CV text), receives a generated set of ~20 questions (~15 ABCD + ~5 open-ended architecture/behavioral) grounded in that JD (within plan limits), completes the practice flow: for each ABCD question, immediate correct/incorrect plus short explanation; for each open-ended question, free-text answer and optional **Check** for critical AI feedback (within Check limits); at the end Alex sees a simple score summary (MC scored objectively; open-ended reflected as attempted/checked where applicable). If at monthly generation or Check limits, Alex is blocked from that action and can upgrade to PRO via Stripe when on FREE.
+1. Anonymous visitor reaches a **blog index** on prepahead.dev listing published posts.
+2. Visitor opens a post — at least one each of: **static quiz article** (e.g., 10 Java questions at a stated level), **open-ended question article**, and **interactive quiz** (in-page answer selection + score or result summary).
+3. Blog pages ship with **SEO basics** (unique titles, meta descriptions, clean URLs) so search engines can index content.
+4. Visitor can follow a **CTA** from blog content to sign in and use JD-based practice (existing app flow unchanged).
 
 ### Secondary
 
-- Alex can revisit a past generated practice set from their account (history).
+- At least **2–3 posts** live at launch beyond the index (mix of formats above).
 
 ### Guardrails
 
-- **Honest AI:** The app does not claim or use candidate facts that were not provided (JD + optional CV only).
-- **JD-grounded:** Questions reflect the pasted job description, not generic IT trivia unrelated to the posting.
-- **Privacy:** Job descriptions and CV content are treated as sensitive per-user data.
-- **Tone:** Experience feels like role-specific interview preparation, not a generic school quiz — open-ended + Check models real interview depth, not only quiz drills.
-- **Fair-use honesty:** PRO is marketed as generous usage, not infinite — limits are visible and enforced.
-- **Perceived speed:** Lightweight, practical feel—visible progress during generation; avoid long silent waits without feedback.
-- **Theme consistency:** Light and dark modes are readable and consistent across marketing pages, content, and signed-in practice UI.
+- **Existing product preserved:** Sign-in, practice generation, Check, FREE/PRO billing, and landing CTAs continue to work.
+- **Public vs private:** Blog shows only editorial content; no user JD/CV or practice history on blog pages.
+- **Theme:** Blog pages support light/dark consistently with the rest of the site.
+- **Honest scope:** Blog open-ended posts do not imply in-blog AI Check — that remains in the signed-in product unless explicitly added later.
+
+## Timeline acknowledgment
+
+Acknowledged on 2026-05-26: Blog v1 includes static quiz posts, open-ended articles, **interactive quiz**, SEO basics, and product CTA — scoped larger than static-only SEO slice while keeping **~3 weeks** on the timeline; user **accepted sustained-effort / slip risk** if delivery runs long alongside the rest of the MVP.
 
 ## Functional Requirements
 
-### Authentication
+### Blog discovery & reading
 
-- FR-001: Candidate can sign in with Google. Priority: must-have
-  > Socrates: Counter-argument: auth friction may kill validation before anyone pastes a JD. Resolution: kept — Google via Supabase is the lightest account path; identity supports history (FR-008) and per-user privacy for sensitive JD/CV.
-
-### Job & profile input
-
-- FR-002: Candidate can paste or enter a job description. Priority: must-have
-  > Socrates: No counter-argument; it stands as written.
-- FR-003: Candidate can optionally paste or upload CV/resume content for personalization. Priority: must-have
+- FR-001: Visitor can view a blog index listing published posts. Priority: must-have. Change: new
+  > Socrates: Counter-argument: empty or stale index hurts credibility before enough posts exist. Resolution: kept — launch criterion requires 2–3 posts live; do not ship an empty index.
+- FR-002: Visitor can read a full blog post without signing in. Priority: must-have. Change: new
   > Socrates: No counter-argument; it stands as written.
 
-### Question generation & practice
+### Blog content formats
 
-- FR-004: Candidate can generate a practice set of approximately twenty questions tailored to the pasted job description and optional CV — roughly fifteen ABCD (multiple-choice) plus roughly five open-ended questions (architecture-like and behavioral). Priority: must-have
+- FR-003: Visitor can read a static quiz article (interview questions with answers provided in the post content). Priority: must-have. Change: new
   > Socrates: No counter-argument; it stands as written.
-- FR-005: Candidate can answer ABCD questions by selecting one option and open-ended questions by entering free-text. Priority: must-have
-  > Socrates: Counter-argument: real tech interviews are mostly open-ended — MC alone may mis-train. Resolution: amended — mixed set (~15 MC + ~5 open-ended) balances fast loops with realistic depth.
-- FR-006: Candidate sees whether each ABCD answer was correct and receives a short explanation immediately after answering. Priority: must-have
-  > Socrates: No counter-argument; it stands as written.
-- FR-017: Candidate can tap Check on an open-ended answer to receive critical AI feedback on their free-text response. Priority: must-have
-  > Socrates: Counter-argument: subjective AI grading may feel arbitrary or slow trust. Resolution: kept — framed as critical feedback, not a pass/fail grade; separate Check usage caps apply.
-- FR-018: System blocks Check when the user has reached their monthly Check-call limit and shows remaining Check usage or upgrade path. Priority: must-have
-  > Socrates: No counter-argument; it stands as written.
-- FR-007: Candidate sees a simple score summary after completing a practice set (objective counts for ABCD; open-ended shown as attempted and/or checked, not as a single pass/fail grade). Priority: must-have
-  > Socrates: Counter-argument: MC score may imply interview readiness. Resolution: kept — label as practice drill score only; open-ended excluded from numeric "readiness" score; no readiness guarantees in copy.
-- FR-011: Candidate can regenerate a new question set for the same job description (and optional CV). Priority: nice-to-have
+- FR-004: Visitor can read an open-ended interview-question article. Priority: must-have. Change: new
+  > Socrates: Counter-argument: without Check/AI feedback, open-ended posts feel shallow vs the app. Resolution: kept — blog educates and ranks; critical feedback remains in signed-in practice; guardrail in Success Criteria.
+- FR-005: Visitor can complete an interactive quiz on a blog post (select answers and see a result summary). Priority: must-have. Change: new
   > Socrates: No counter-argument; it stands as written.
 
-### Session continuity, history & data
+### SEO & funnel
 
-- FR-008: Candidate can view and open past practice sets from their account. Priority: nice-to-have
+- FR-006: Each published blog post exposes indexable SEO metadata (title, description, canonical URL). Priority: must-have. Change: new
   > Socrates: No counter-argument; it stands as written.
-- FR-009: Candidate can continue an in-progress practice set without losing answers already submitted. Priority: must-have
-  > Socrates: Counter-argument: session state adds engineering time. Resolution: kept in minimal form — persist current question index and submitted answers only; no branching flows or timers in v1.
-- FR-010: Candidate can delete a saved practice set or associated personal data they no longer want stored. Priority: must-have
-  > Socrates: Counter-argument: formal delete may be overkill pre-traction. Resolution: kept — JD/CV are sensitive; delete-one-set is minimum trust signal even for early users.
-
-### Plans, usage & billing
-
-- FR-012: Candidate can view their current plan (FREE or PRO), remaining practice-set generations, and remaining Check calls for the current calendar month. Priority: must-have
+- FR-007: Site exposes a sitemap (or equivalent discoverable URL list) that includes blog post URLs. Priority: must-have. Change: new
   > Socrates: No counter-argument; it stands as written.
-- FR-013: Candidate can subscribe to PRO via integrated Stripe monthly subscription checkout. Priority: must-have
-  > Socrates: Counter-argument: Stripe in MVP may blow the 3-week timeline. Resolution: kept in MVP — user accepted timeline risk (see Timeline acknowledgment).
-- FR-014: System blocks new practice-set generation when the user has reached their plan limit and presents an upgrade path to PRO. Priority: must-have
-  > Socrates: No counter-argument; it stands as written.
-- FR-015: System increments the user's practice-set generation usage count when a generation completes successfully. Priority: must-have
-  > Socrates: No counter-argument; it stands as written.
-- FR-019: System increments the user's Check-call usage count when a Check completes successfully. Priority: must-have
-  > Socrates: No counter-argument; it stands as written.
-- FR-016: Candidate on PRO can generate practice sets under PRO fair-use rules (soft threshold 100/month, daily max 10 generations when above soft limit, hard stop at 300/month); the app displays generation and Check usage. Priority: must-have
-  > Socrates: Counter-argument: tiered fair-use is complex to build and explain. Resolution: kept — user-specified caps; UX must surface soft/hard/daily limits clearly.
-- FR-020: System enforces PRO daily generation cap (10 per calendar day) when monthly generation count is above the soft limit (100) and below the hard cap (300). Priority: must-have
-  > Socrates: No counter-argument; it stands as written.
-- FR-021: System blocks new practice-set generation for PRO at 300 generations in the current calendar month until the next monthly reset. Priority: must-have
+- FR-008: Visitor can follow a call-to-action from blog content to the sign-in / JD practice flow. Priority: must-have. Change: new
   > Socrates: No counter-argument; it stands as written.
 
-### Appearance & preferences
+### Authoring & appearance
 
-- FR-022: Candidate can switch between light mode and dark mode using an in-app control. Priority: must-have
-  > Socrates: Counter-argument: theme work delays core practice flow. Resolution: kept in MVP — user requires it across all surfaces; aligns with component library theming.
-- FR-023: System persists the signed-in candidate's theme preference and restores it on subsequent visits and devices when they sign in again. Priority: must-have
+- FR-009: Visitor sees blog pages in light or dark mode consistent with the site theme. Priority: must-have. Change: modified
+  > Socrates: Counter-argument: theme work on blog delays shipping SEO content. Resolution: kept — product standard requires theme on all surfaces including blog (extends existing theme FRs).
+- FR-010: Founder can add and publish blog posts by adding content to the repository (static/markdown). Priority: must-have. Change: new
+  > Socrates: No counter-argument; it stands as written.
+
+### Preserved product behavior
+
+- FR-011: Candidate can use the existing JD-based practice flow (sign-in, generation, Check, plans) without regression from the blog release. Priority: must-have. Change: preserved
   > Socrates: No counter-argument; it stands as written.
 
 ## User Stories
 
-### US-01: Generate and complete a role-specific practice set
+### US-01: Discover interview content and reach practice
 
-- **Given** a signed-in candidate on PrepAhead.dev
-- **When** they paste a job description, optionally add CV text, request question generation, and work through the full mixed set (~15 ABCD + ~5 open-ended)
-- **Then** they receive immediate correct/incorrect plus explanation for each ABCD answer, can use Check on open-ended answers for critical AI feedback (within Check limits), and see a simple score summary at the end
-
-#### Acceptance Criteria
-
-- Generated questions are grounded in the pasted job description (not a generic IT-only bank disconnected from the posting)
-- Set includes both ABCD and open-ended items; open-ended includes architecture-like and behavioral types
-- When CV is omitted, the app does not reference specific candidate experience not provided
-- When CV is provided, questions or explanations may reference only content present in JD and/or CV
-- Practice set size is approximately twenty questions unless generation fails (user sees a clear error, not a silent partial set)
-- FREE users with zero remaining generations cannot start a new generation until the next calendar month or PRO upgrade
-- Successful generation increments monthly generation usage; regenerate counts as a separate generation
-- Each successful Check increments monthly Check usage; blocked when Check limit reached
-
-### US-02: Upgrade when FREE limit reached
-
-- **Given** a signed-in FREE candidate who has used their one generation for the current calendar month
-- **When** they attempt another practice-set generation
-- **Then** generation is blocked, they see remaining usage (0) and a clear upgrade path to PRO via Stripe
+- **Given** an anonymous visitor arriving from search or the site nav
+- **When** they open the blog index, read a post (static quiz, open-ended, or interactive quiz), and choose the CTA to try role-specific practice
+- **Then** they reach the existing sign-in / JD practice entry point without needing an account to read the post
 
 #### Acceptance Criteria
 
-- After successful Stripe subscription, plan shows PRO and generation is allowed under PRO fair-use rules; Check allowance increases to PRO tier
-- Usage display updates after checkout completes (webhook or return URL — implementation detail deferred)
-
-### US-03: Check an open-ended answer
-
-- **Given** a signed-in candidate answering an open-ended question in an active practice set with remaining Check calls
-- **When** they enter free-text and tap Check
-- **Then** they receive critical AI feedback on their answer (strengths, gaps, suggestions) without a single "correct" MC key
-
-#### Acceptance Criteria
-
-- Check is unavailable when monthly Check limit is exhausted (FREE: 1, PRO: 500)
-- Feedback does not invent candidate history beyond JD/CV provided
-- One Check tap consumes one Check call from monthly allowance
-
-### US-04: Choose and keep a theme
-
-- **Given** a signed-in candidate on any page of PrepAhead.dev
-- **When** they switch between light and dark mode using the theme control
-- **Then** the UI updates immediately and their choice is saved to their account for future sessions
-
-#### Acceptance Criteria
-
-- Theme applies to landing, content/blog pages, and signed-in practice screens—not practice-only
-- Preference survives sign-out and sign-in on the same account
-- Both themes keep text and interactive controls readable (no missing contrast on primary actions)
+- Blog index lists all v1 launch posts with readable titles and links
+- Interactive quiz post allows answering all questions and shows a result summary without sign-in
+- SEO metadata is present on index and post pages
+- CTA is visible on blog posts and routes to the existing practice onboarding path
+- No user JD/CV or practice-set data appears on blog pages
 
 ## Business Logic
 
-From a specific job description and optional CV text, PrepAhead derives role-relevant interview topics and generates a mixed practice set (ABCD + open-ended) grounded in that posting—refusing to invent candidate experience not present in the inputs—and gates generation and Check actions by plan limits (FREE vs PRO fair-use).
+**Existing rule (unchanged):** From a specific job description and optional CV text, PrepAhead derives role-relevant interview topics and generates a mixed practice set, gating generation and Check actions by plan limits.
+
+**New rule (blog module):** PrepAhead publishes **curated, skill- and level-tagged interview content** structured for **search discovery**, with optional **in-post interactive scoring** on quiz posts — **personalization from the visitor's JD remains in the signed-in app**, not on the blog.
 
 Supporting detail:
 
-- **Inputs (user-facing):** Pasted job description; optional CV/resume text (paste or upload); current plan; remaining generations and Check calls.
-- **Output:** ~20 questions (~15 ABCD with one correct option each; ~5 open-ended architecture/behavioral). ABCD: immediate correctness + explanation. Open-ended: free-text + optional **Check** → critical AI feedback (not a single official "correct" answer).
-- **User encounter:** After sign-in, user sees plan/usage → supplies JD → optional CV → requests generation (blocked if at generation limit) → practices each question type → uses Check on open-ended items (blocked if at Check limit) → sees score summary.
-- **Plan rules — generations:** FREE — 1 practice-set generation / month. PRO — fair-use: soft at 100/month, then daily max 10/day until hard cap 300/month, then block until reset.
-- **Plan rules — Check calls:** FREE — 1 Check / month. PRO — 500 Checks / month.
-- **Honesty constraint:** When CV is absent, personalization is limited to the JD; feedback must not fabricate employment history, projects, or skills.
+- **Inputs (user-facing):** Editorial post content (markdown/static); visitor selections on interactive quiz posts.
+- **Output:** Readable articles (static quiz, open-ended lists, interactive quiz with result summary); indexable pages with metadata; CTA path to sign-in.
+- **User encounter:** Search or nav → blog index → post → (optional quiz interaction) → CTA → existing practice flow.
+- **Boundary:** Blog does not consume or display user JD/CV; does not run Check or plan-metered AI on blog pages in v1.
 
 ## Non-Functional Requirements
 
-- **Generation responsiveness:** For a typical-length pasted JD, the user sees visible progress during generation and receives a full practice set or a clear failure message within approximately sixty seconds under normal conditions.
-- **Data isolation:** A user's job descriptions and CV content are not exposed to other users (binary commitment).
-- **Practice UX tone:** Copy and question framing read as interview preparation for a specific role, not as a generic academic quiz.
-- **Billing integrity:** Plan tier, generation counts, and Check counts reflect Stripe subscription state and successful usage only — limits cannot be bypassed without upgrading or monthly reset.
-- **Check feedback quality:** Open-ended Check responses are critical and specific to the user's submitted text and the question context — not generic praise.
-- **Theme readability:** In both light and dark modes, primary text and controls meet a readable contrast bar for normal use (binary: no unreadable primary actions in either mode).
+- **Blog read performance:** Blog index and post pages feel snappy on mobile for typical post length (binary: no multi-second blank screen before readable content).
+- **SEO-friendly markup:** Post content and headings are available in server-rendered HTML suitable for crawlers (not JS-only article bodies).
+- **Existing practice NFRs preserved:** Generation responsiveness, data isolation, billing integrity, and theme readability for signed-in flows must not regress.
 
 ## Non-Goals
 
-- **Custom themes beyond light/dark:** No user-defined color palettes, accent pickers, or branded employer themes in v1 — only light and dark.
-
-- **Custom payment stack:** No in-house billing, invoicing, or payment processing — Stripe handles PRO subscription in v1.
-
-- **Recruitment platform:** No employer tooling, ATS, application tracking, or hiring-side workflows — candidate prep only.
-- **Live mock interview mode:** No voice/video synchronous mock interviews or timed live interview simulation in v1 — async open-ended + Check only.
-- **Multi-industry breadth:** Not optimizing for all industries before the IT junior/mid software wedge is validated.
-- **Self-hosted / local LLM:** No on-prem or local-model inference stack in v1 — use managed AI APIs downstream of stack selection.
-
-## Timeline acknowledgment
-
-Acknowledged on 2026-05-21: MVP scope expanded to include Stripe + FREE/PRO usage metering; may exceed ~3 weeks after-hours despite original estimate; user accepted sustained-effort / timeline risk to ship monetization in v1.
-
-Acknowledged on 2026-05-21: MVP scope further expanded — mixed ABCD + open-ended questions, Check with critical AI feedback, separate Check metering, PRO tiered fair-use (not unlimited); timeline risk accepted again.
+- **User-generated content:** No candidate-authored posts, comments, or forums in v1.
+- **Headless CMS / heavy editorial stack:** No CMS integration or complex publish workflow in v1 — repo-based static posts only.
+- **Blog AI Check:** No Check-style AI grading on blog open-ended content in v1.
+- **Paywalled blog:** All launch posts remain free to read.
+- **Multi-language blog:** English-only (or single-locale) content in v1.
+- **Rewrite core app for blog:** No redesign of auth, practice flow, or billing driven by blog work.
 
 ## Quality cross-check
 
-Re-checked after question-mix & fair-use amendment (2026-05-21): Access Control, Business Logic, Non-Goals, timeline acknowledgment present. Scope larger than MC-only MVP — open-ended Check and PRO tiered limits add build and UX surface.
+Re-checked 2026-05-26: Access Control present; Business Logic has one-sentence new rule; timeline acknowledgment present for expanded scope; Non-Goals populated; Constraints & Preserved Behavior names must-not-break items. All elements present — **accepted**.
 
 ## Open Questions
 
-- **CV upload format:** Paste-only vs file upload (PDF/DOCX parsing) for v1 — affects MVP effort; resolve during stack selection / planning.
-- **PRO price:** Monthly subscription amount (USD) and whether to show annual option later.
-- **Stripe lifecycle:** Cancel/downgrade to FREE, failed payment, and grace period — product rules before implementation.
-- **Study plans / weak-area scoring:** Explicitly deferred from v1; revisit after practice flow validation.
-- **PRO soft-limit UX:** Exact copy and UI when crossing 100 generations/month (warning vs silent daily-cap enforcement).
-- **Score summary for open-ended:** How open-ended/Check results aggregate in end-of-set summary (informational only vs weighted score).
-- **Default theme on first visit:** Light by default, dark by default, or match OS preference before first explicit choice — resolve during implementation.
+- **Interactive quiz format:** Single reusable quiz component vs per-post custom markup — resolve during implementation planning.
+- **Structured data:** JSON-LD (Article, FAQ, Quiz) for rich results — include in v1 or fast-follow?
+- **Analytics:** Privacy-friendly traffic measurement for blog → sign-in funnel (tool choice deferred).
+- **Post URL scheme:** `/blog/[slug]` vs topic hierarchy — resolve during implementation.
