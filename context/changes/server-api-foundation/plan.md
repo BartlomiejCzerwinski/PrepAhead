@@ -40,7 +40,7 @@ After this plan:
 
 ## What We're NOT Doing
 
-- Installing or calling Supabase, Stripe, or OpenRouter SDKs
+- Installing or calling Supabase, Stripe, or OpenAI API SDKs
 - Implementing OAuth callbacks, session cookies, or route protection (F-03)
 - Generation, Check, or quota enforcement endpoints (S-02, S-04)
 - Stripe checkout or webhook handlers (S-05)
@@ -122,7 +122,7 @@ Add the health endpoint and minimal server utilities that downstream API routes 
 
 **Intent**: Centralize “required server env missing” handling for future routes; health may not use it yet.
 
-**Contract**: Export `requireEnv(name: EnvKey): string` where `EnvKey` is a union of known server env names from `.env.example` (e.g. `'OPENROUTER_API_KEY' | 'STRIPE_SECRET_KEY' | …`). Implementation must use **static** `import.meta.env.<KEY>` access per key (switch or explicit branches) — not dynamic `import.meta.env[name]`, which Vite does not inline and breaks on Vercel. Throw or return 500 when missing. Document: server-only vars must not use `PUBLIC_` unless intentionally client-safe.
+**Contract**: Export `requireEnv(name: EnvKey): string` where `EnvKey` is a union of known server env names from `.env.example` (e.g. `'OPENAI_API_KEY' | 'STRIPE_SECRET_KEY' | …`). Implementation must use **static** `import.meta.env.<KEY>` access per key (switch or explicit branches) — not dynamic `import.meta.env[name]`, which Vite does not inline and breaks on Vercel. Throw or return 500 when missing. Document: server-only vars must not use `PUBLIC_` unless intentionally client-safe.
 
 #### 3. Health endpoint
 
@@ -135,7 +135,7 @@ Add the health endpoint and minimal server utilities that downstream API routes 
 - `import type { APIRoute } from 'astro'`
 - `export const prerender = false`
 - `export const GET: APIRoute` returns `jsonResponse({ ok: true })` with status 200
-- No dependency on Supabase/Stripe/OpenRouter env vars (must succeed when those are unset)
+- No dependency on Supabase/Stripe/OpenAI env vars (must succeed when those are unset)
 - Do not log environment values
 
 Optional: include `timestamp: new Date().toISOString()` in the JSON body.
@@ -186,7 +186,7 @@ Document secret names for upcoming slices, align deploy documentation with hybri
 | `PUBLIC_SUPABASE_URL` | Public | Supabase project URL |
 | `PUBLIC_SUPABASE_ANON_KEY` | Public | Supabase anon key (client) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server | Supabase admin/server operations |
-| `OPENROUTER_API_KEY` | Server | Model provider for generation/Check |
+| `OPENAI_API_KEY` | Server | Model provider for generation/Check |
 | `STRIPE_SECRET_KEY` | Server | Stripe API |
 | `STRIPE_WEBHOOK_SECRET` | Server | Webhook signature verification |
 | `PUBLIC_SITE_URL` | Public | Canonical site URL for redirects/links |
@@ -295,16 +295,16 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Manual
 
-- [ ] 2.4 Local `curl /api/health` returns 200 and `"ok":true`
-- [ ] 2.5 Landing at `/` still works after API addition
+- [ x] 2.4 Local `curl /api/health` returns 200 and `"ok":true`
+- [ x] 2.5 Landing at `/` still works after API addition
 
 ### Phase 3: Env & docs
 
 #### Automated
 
-- [ ] 3.1 `npm run build` — exit 0
-- [ ] 3.2 `npm run astro -- check` — exit 0
-- [ ] 3.3 `.env.example` exists with empty placeholder values only
+- [x] 3.1 `npm run build` — exit 0
+- [x] 3.2 `npm run astro -- check` — exit 0
+- [x] 3.3 `.env.example` exists with empty placeholder values only
 
 #### Manual
 

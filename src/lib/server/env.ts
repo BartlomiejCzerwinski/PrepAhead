@@ -4,7 +4,7 @@ export type EnvKey =
   | 'PUBLIC_SUPABASE_ANON_KEY'
   | 'PUBLIC_SITE_URL'
   | 'SUPABASE_SERVICE_ROLE_KEY'
-  | 'OPENROUTER_API_KEY'
+  | 'OPENAI_API_KEY'
   | 'STRIPE_SECRET_KEY'
   | 'STRIPE_WEBHOOK_SECRET';
 
@@ -25,8 +25,8 @@ function readEnv(key: EnvKey): string | undefined {
       return import.meta.env.PUBLIC_SITE_URL;
     case 'SUPABASE_SERVICE_ROLE_KEY':
       return import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
-    case 'OPENROUTER_API_KEY':
-      return import.meta.env.OPENROUTER_API_KEY;
+    case 'OPENAI_API_KEY':
+      return import.meta.env.OPENAI_API_KEY;
     case 'STRIPE_SECRET_KEY':
       return import.meta.env.STRIPE_SECRET_KEY;
     case 'STRIPE_WEBHOOK_SECRET':
