@@ -1,6 +1,6 @@
 ---
 change_id: server-api-foundation
-status: plan_reviewed
+status: implementing
 created: 2026-05-26
 updated: 2026-05-26
 roadmap_ref: F-01

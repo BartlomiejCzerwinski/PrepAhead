@@ -277,9 +277,9 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Automated
 
-- [ ] 1.1 `npm run build` completes with exit code 0
-- [ ] 1.2 `npm run astro -- check` completes with exit code 0
-- [ ] 1.3 Build succeeds with adapter + maxDuration; no Astro 6 config errors
+- [x] 1.1 `npm run build` completes with exit code 0
+- [x] 1.2 `npm run astro -- check` completes with exit code 0
+- [x] 1.3 Build succeeds with adapter + maxDuration; no Astro 6 config errors
 
 #### Manual
 
