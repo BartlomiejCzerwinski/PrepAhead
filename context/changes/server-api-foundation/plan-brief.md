@@ -4,7 +4,7 @@
 
 ## What & Why
 
-PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the server so secrets never reach the client (`AGENTS.md`, `tech-stack.md`). Today the repo is static-only: `@astrojs/vercel` is wired but there are no API routes. This change turns on **hybrid** Astro output on Vercel, sets **60s** function duration for upcoming AI routes, and establishes the `/api/*` + `src/lib/server` pattern with a live **health** endpoint.
+PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the server so secrets never reach the client (`AGENTS.md`, `tech-stack.md`). Today the repo is static-only: `@astrojs/vercel` is wired but there are no API routes. This change keeps Astro’s default **static** output, enables **on-demand** `/api/*` routes on Vercel (`prerender = false`), sets **60s** function duration for upcoming AI routes, and establishes the `src/lib/server` pattern with a live **health** endpoint.
 
 ## Starting Point
 
@@ -14,7 +14,7 @@ PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the s
 
 ## Desired End State
 
-- `npm run build` and `npm run astro -- check` pass with `output: 'hybrid'` and `vercel({ maxDuration: 60 })`.
+- `npm run build` and `npm run astro -- check` pass with default static output and `vercel({ maxDuration: 60 })`.
 - `GET /api/health` returns JSON `{ "ok": true }` on local preview and Vercel Preview (not prerendered).
 - `.env.example` documents all upcoming secret **names** (no values); `deploy-plan.md` reflects hybrid + API foundation.
 - Downstream changes (F-03 auth, S-02 generation, S-05 Stripe) add routes beside the same pattern — no config rework.
@@ -23,7 +23,7 @@ PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the s
 
 | Decision | Choice | Why (1 sentence) | Source |
 | --- | --- | --- | --- |
-| Output mode | `hybrid` | Keeps marketing/blog pages static; only `/api/*` is serverless. | Plan |
+| Output mode | `static` + on-demand APIs | Astro 6 removed `hybrid`; default static + `prerender = false` on `/api/*`. | Plan |
 | F-01 API surface | `/api/health` only | Proves deploy path without stubbing unfinished domains. | Plan |
 | Route layout | `src/pages/api/*.ts` (`APIRoute`) | Matches Astro docs and `deploy-plan` backlog. | Plan |
 | `.env.example` | Full skeleton | Unblocks F-02/F-03/S-02 env naming before secrets exist. | Plan |
@@ -36,7 +36,7 @@ PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the s
 
 **In scope:**
 
-- `output: 'hybrid'`, `adapter: vercel({ maxDuration: 60 })`
+- Default static output, `adapter: vercel({ maxDuration: 60 })`, `prerender = false` on API routes
 - `src/pages/api/health.ts` with `prerender = false`
 - `src/lib/server/` minimal helpers
 - `.env.example` (names only)
@@ -55,7 +55,7 @@ PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the s
 ## Architecture / Approach
 
 ```
-[Static pages]  index.astro, future blog/*.astro  →  prerendered (default in hybrid)
+[Static pages]  index.astro, future blog/*.astro  →  prerendered (default static output)
 [API routes]    src/pages/api/*.ts               →  Vercel serverless (prerender = false)
 [Shared]        src/lib/server/*                 →  json helpers, env guards (no provider SDKs)
 [Secrets]       import.meta.env.*                →  Vercel env + .env.local (gitignored)
@@ -67,7 +67,7 @@ Future routes (`/api/auth/*`, `/api/generate`, `/api/webhooks/stripe`) colocate 
 
 | Phase | What it delivers | Key risk |
 | --- | --- | --- |
-| 1. Config & adapter | Hybrid output + 60s timeout; build green | Hybrid mis-config breaks static pages |
+| 1. Config & adapter | Adapter + 60s timeout; build green | Invalid `output: 'hybrid'` breaks build on Astro 6 |
 | 2. API pattern | `/api/health` + `src/lib/server` helpers | Forgetting `prerender = false` → static 404 on Vercel |
 | 3. Env & docs | `.env.example`, deploy-plan, Preview smoke | Preview env vars empty — health should still 200 |
 
@@ -84,4 +84,4 @@ Future routes (`/api/auth/*`, `/api/generate`, `/api/webhooks/stripe`) colocate 
 
 - Production build succeeds with hybrid + extended duration.
 - `/api/health` responds on Vercel Preview without auth.
-- `.env.example` lists upcoming secret names; deploy docs no longer say “static only.”
+- `.env.example` lists upcoming secret names; deploy docs describe static + on-demand `/api/*`.

@@ -1,6 +1,6 @@
 ---
 change_id: server-api-foundation
-status: planned
+status: plan_reviewed
 created: 2026-05-26
 updated: 2026-05-26
 roadmap_ref: F-01
@@ -12,4 +12,4 @@ prd_refs:
 
 # Change: server-api-foundation
 
-Foundation slice from `context/foundation/roadmap.md` **F-01**. Enables Astro hybrid output on Vercel, adapter timeouts, and a repeatable server endpoint pattern before Supabase, auth, AI, or Stripe land in later changes.
+Foundation slice from `context/foundation/roadmap.md` **F-01**. Enables Astro static output with on-demand API routes on Vercel, adapter timeouts, and a repeatable server endpoint pattern before Supabase, auth, AI, or Stripe land in later changes.

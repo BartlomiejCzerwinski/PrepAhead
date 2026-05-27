@@ -2,7 +2,7 @@
 
 ## Overview
 
-Enable Astro **hybrid** output on Vercel with a **60-second** serverless timeout, add a production-verifiable **`GET /api/health`** endpoint, introduce minimal **`src/lib/server`** helpers for future routes, and document environment variable names in **`.env.example`**. This implements roadmap **F-01** (`server-api-foundation`) so later changes can add auth callbacks, AI generation, and Stripe webhooks without reworking deploy configuration.
+Enable Astro **static** output (default) with **on-demand** API routes on Vercel and a **60-second** serverless timeout, add a production-verifiable **`GET /api/health`** endpoint, introduce minimal **`src/lib/server`** helpers for future routes, and document environment variable names in **`.env.example`**. This implements roadmap **F-01** (`server-api-foundation`) so later changes can add auth callbacks, AI generation, and Stripe webhooks without reworking deploy configuration.
 
 ## Current State Analysis
 
@@ -25,7 +25,7 @@ Enable Astro **hybrid** output on Vercel with a **60-second** serverless timeout
 
 After this plan:
 
-1. **`astro.config.mjs`** sets `output: 'hybrid'` and `adapter: vercel({ maxDuration: 60 })`.
+1. **`astro.config.mjs`** keeps default `output: 'static'` (omit the key) and sets `adapter: vercel({ maxDuration: 60 })`.
 2. **`GET /api/health`** returns `200` with JSON body `{ "ok": true }` (optional ISO `timestamp` field allowed). No authentication, no secrets, no JD/CV handling.
 3. **`src/lib/server/`** exports small helpers used by `health.ts` and documented for copy-paste into future routes (`jsonResponse`, `requireEnv` or equivalent guard that throws/returns 500 when a required server env is missing).
 4. **`.env.example`** lists placeholder names for Supabase, Stripe, model API, and public site URL — values empty, comments mark server-only vs public.
@@ -51,11 +51,11 @@ After this plan:
 
 ## Implementation Approach
 
-Use Astro **`APIRoute`** handlers under **`src/pages/api/`**. In hybrid mode, existing `.astro` pages remain prerendered by default; each API file exports **`export const prerender = false`**. Shared response/env utilities live in **`src/lib/server/`** so F-03/S-02/S-05 add files without duplicating boilerplate. Secrets stay in **`import.meta.env`** (Vercel-scoped); health route must not read or echo secret values.
+Use Astro **`APIRoute`** handlers under **`src/pages/api/`**. With default static output, existing `.astro` pages remain prerendered; each API file exports **`export const prerender = false`** for on-demand server rendering. Shared response/env utilities live in **`src/lib/server/`** so F-03/S-02/S-05 add files without duplicating boilerplate. Secrets stay in **`import.meta.env`** (Vercel-scoped); health route must not read or echo secret values.
 
 ## Critical Implementation Details
 
-**Hybrid prerender default:** Without `export const prerender = false` on API files, Astro may prerender `/api/health` at build time, producing a static file that does not execute on Vercel Functions — Preview would fail the smoke test. Every new `src/pages/api/*.ts` file must include that export until a project-wide API convention is added later.
+**On-demand API default:** Without `export const prerender = false` on API files, Astro prerenders `/api/health` at build time as static JSON — Preview would not exercise Vercel Functions and the smoke test would not validate the server path. Every new `src/pages/api/*.ts` file must include that export until a project-wide API convention is added later.
 
 **Do not log request bodies** on future routes; for F-01, health has no body — establish the pattern that handlers avoid logging sensitive payloads (`AGENTS.md`).
 
@@ -63,7 +63,7 @@ Use Astro **`APIRoute`** handlers under **`src/pages/api/`**. In hybrid mode, ex
 
 ### Overview
 
-Switch the project to hybrid output and configure the Vercel adapter for 60s function duration. Confirm the existing static landing still builds.
+Configure the Vercel adapter for 60s function duration (keep default static output). Confirm the existing landing still builds before API routes land in Phase 2.
 
 ### Changes Required:
 
@@ -73,7 +73,7 @@ Switch the project to hybrid output and configure the Vercel adapter for 60s fun
 
 **Intent**: Enable serverless API routes while keeping static prerender for pages.
 
-**Contract**: Add `output: 'hybrid'` to `defineConfig({ ... })`. Replace `adapter: vercel()` with `adapter: vercel({ maxDuration: 60 })`. Keep existing `integrations` and `vite.plugins` unchanged.
+**Contract**: Do **not** set `output: 'hybrid'` (removed in Astro 6). Omit `output` or set `output: 'static'`. Replace `adapter: vercel()` with `adapter: vercel({ maxDuration: 60 })`. Keep existing `integrations` and `vite.plugins` unchanged.
 
 #### 2. TypeScript env typings (if missing)
 
@@ -81,7 +81,7 @@ Switch the project to hybrid output and configure the Vercel adapter for 60s fun
 
 **Intent**: Allow `import.meta.env` access in `.ts` API routes without type errors.
 
-**Contract**: Extend Astro’s `ImportMetaEnv` interface with optional string keys matching `.env.example` names (no runtime values). Skip if `astro/client` types already suffice for F-01.
+**Contract**: Extend Astro’s `ImportMetaEnv` interface with optional string keys matching `.env.example` names (no runtime values). **Add only if** `npm run astro -- check` fails after Phase 2; `tsconfig.json` already includes `.astro/types.d.ts`.
 
 ### Success Criteria:
 
@@ -89,7 +89,7 @@ Switch the project to hybrid output and configure the Vercel adapter for 60s fun
 
 - `npm run build` completes with exit code 0
 - `npm run astro -- check` completes with exit code 0
-- Build output includes evidence of server/API bundling (Astro build log mentions server or API routes — not only static pages)
+- Build succeeds with updated adapter; no config validation errors (Astro 6 rejects `output: 'hybrid'`)
 
 #### Manual Verification:
 
@@ -122,7 +122,7 @@ Add the health endpoint and minimal server utilities that downstream API routes 
 
 **Intent**: Centralize “required server env missing” handling for future routes; health may not use it yet.
 
-**Contract**: Export `requireEnv(name: string): string` that reads `import.meta.env[name]`, returns the value if non-empty, otherwise throws an error type catchable by handlers OR export `getEnv(name: string): string | undefined` plus `requireEnv` wrapper — implementer picks the smallest pattern. Document in a one-line comment: server-only vars must not use `PUBLIC_` prefix unless intentionally client-safe.
+**Contract**: Export `requireEnv(name: EnvKey): string` where `EnvKey` is a union of known server env names from `.env.example` (e.g. `'OPENROUTER_API_KEY' | 'STRIPE_SECRET_KEY' | …`). Implementation must use **static** `import.meta.env.<KEY>` access per key (switch or explicit branches) — not dynamic `import.meta.env[name]`, which Vite does not inline and breaks on Vercel. Throw or return 500 when missing. Document: server-only vars must not use `PUBLIC_` unless intentionally client-safe.
 
 #### 3. Health endpoint
 
@@ -154,6 +154,7 @@ Optional: include `timestamp: new Date().toISOString()` in the JSON body.
 
 - `npm run build` — exit 0
 - `npm run astro -- check` — exit 0
+- Build output includes server/API bundling for `/api/health` (on-demand route, not only static pages)
 
 #### Manual Verification:
 
@@ -200,15 +201,15 @@ Add a short header comment: copy to `.env.local`, never commit `.env`, set Produ
 
 **Contract**:
 
-- Update the line describing “Current app output is **static**” to **hybrid** (static pages + server `/api/*`).
-- In “What was missing” / deferred table, mark `output: 'server'|'hybrid'` and `src/pages/api/` as addressed for foundation (health); note AI/Stripe routes still deferred to later changes.
+- Clarify “Current app output is **static**” with **on-demand** `/api/*` routes (`prerender = false`), not `output: 'hybrid'` (removed in Astro 6).
+- In “What was missing” / deferred table, mark on-demand API routes + `maxDuration: 60` as addressed for foundation (health); note AI/Stripe routes still deferred to later changes.
 - Add `/api/health` under optional status route or verification section as the smoke URL.
 
 #### 3. AGENTS.md (optional one-liner)
 
 **File**: `AGENTS.md`
 
-**Intent**: Point agents at hybrid + `/api` convention.
+**Intent**: Point agents at static + on-demand `/api` convention.
 
 **Contract**: Under project structure or a single bullet, note API routes live in `src/pages/api/` with `prerender = false`. Only add if not redundant after deploy-plan edit — skip if deploy-plan cross-link is enough.
 
@@ -256,7 +257,7 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 ## Migration Notes
 
-- First deploy with hybrid may change Vercel function count vs pure static — expect one function bundle for API routes.
+- First deploy with on-demand API routes may add Vercel Functions vs pure static — expect function bundle(s) for `/api/*`.
 - No database migration.
 - Rolling back: revert `output` and adapter options to prior commit; remove `src/pages/api/health.ts` if full rollback needed.
 
@@ -278,7 +279,7 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 - [ ] 1.1 `npm run build` completes with exit code 0
 - [ ] 1.2 `npm run astro -- check` completes with exit code 0
-- [ ] 1.3 Build output indicates server/API bundling for hybrid mode
+- [ ] 1.3 Build succeeds with adapter + maxDuration; no Astro 6 config errors
 
 #### Manual
 
@@ -290,11 +291,12 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 - [ ] 2.1 `npm run build` — exit 0
 - [ ] 2.2 `npm run astro -- check` — exit 0
+- [ ] 2.3 Build output includes server/API bundling for `/api/health`
 
 #### Manual
 
-- [ ] 2.3 Local `curl /api/health` returns 200 and `"ok":true`
-- [ ] 2.4 Landing at `/` still works after API addition
+- [ ] 2.4 Local `curl /api/health` returns 200 and `"ok":true`
+- [ ] 2.5 Landing at `/` still works after API addition
 
 ### Phase 3: Env & docs
 
@@ -307,4 +309,4 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 #### Manual
 
 - [ ] 3.4 Vercel Preview `/api/health` returns 200
-- [ ] 3.5 `deploy-plan.md` reflects hybrid output and health smoke URL
+- [ ] 3.5 `deploy-plan.md` reflects static + on-demand API routes and health smoke URL
