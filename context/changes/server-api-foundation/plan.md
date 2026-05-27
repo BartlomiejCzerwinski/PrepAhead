@@ -289,9 +289,9 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Automated
 
-- [ ] 2.1 `npm run build` — exit 0
-- [ ] 2.2 `npm run astro -- check` — exit 0
-- [ ] 2.3 Build output includes server/API bundling for `/api/health`
+- [x] 2.1 `npm run build` — exit 0
+- [x] 2.2 `npm run astro -- check` — exit 0
+- [x] 2.3 Build output includes server/API bundling for `/api/health`
 
 #### Manual
 
