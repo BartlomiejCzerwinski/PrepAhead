@@ -16,7 +16,7 @@ rated_at: 2026-05-22
 
 PrepAhead’s hosting pipeline is **live**: Vercel is linked to GitHub, the **production branch is `prod`**, and production serves **`https://prepahead.dev`**. This document is the canonical workflow for shipping changes—**PR into `prod` first**, Vercel Preview on the PR, merge, then production updates the custom domain.
 
-It complements [`context/foundation/infrastructure.md`](../foundation/infrastructure.md) (platform decision) and [`context/foundation/tech-stack.md`](../foundation/tech-stack.md) (stack). Current app output is **static** (Astro basics + `@astrojs/vercel`); MVP server routes and secrets are deferred.
+It complements [`context/foundation/infrastructure.md`](../foundation/infrastructure.md) (platform decision) and [`context/foundation/tech-stack.md`](../foundation/tech-stack.md) (stack). Current app output is **static** (prerendered pages) with **on-demand** server routes under `src/pages/api/*` (each route uses `export const prerender = false`). This is **not** `output: 'hybrid'` (removed in Astro 6).
 
 ## Live configuration
 
@@ -101,7 +101,7 @@ Vercel → Deployments → previous green **Production** → **Promote to Produc
 | Step | Pass criteria |
 |------|----------------|
 | Local build | `npm run build` exit 0 |
-| Preview | PR preview URL returns 200; visible starter UI |
+| Preview | PR preview URL returns 200; visible starter UI; `GET /api/health` returns 200 |
 | Production | `https://prepahead.dev` returns 200; same visible UI as preview for same commit |
 | Logs | No build failure; Functions tab quiet for static deploy |
 
@@ -135,15 +135,15 @@ Gaps identified when this plan was written (2026-05-22). Use as a backlog; check
 
 | Gap | When |
 |-----|------|
-| `maxDuration: 60` in `astro.config.mjs` | Before first AI/API route |
-| `.env.example` + Vercel env scopes (Supabase, payments, models) | Before Supabase/Stripe |
+| `maxDuration: 60` in `astro.config.mjs` | **Resolved (foundation)** — enabled for on-demand routes (e.g. `/api/health`) |
+| `.env.example` + Vercel env scopes (Supabase, payments, models) | **Partially resolved (foundation)** — `.env.example` added (names only). Still needs env values configured in Vercel when features land |
 | Deployment Protection on Vercel previews | Before real JD/CV on preview builds |
 | Vercel spend / invocation alerts | Before public launch |
 | Webhook idempotency design | Before Stripe webhooks |
 | Supabase Auth + Postgres | MVP |
-| `src/pages/api/` server routes | MVP |
+| `src/pages/api/` server routes | **Resolved (foundation)** — on-demand API routes enabled (e.g. `/api/health`) |
 | shadcn/ui init | MVP UI |
-| `output: 'server'` or hybrid when SSR/API added | With API routes |
+| `output: 'server'` when SSR pages are introduced | Only if/when pages stop being prerendered; API routes do not require SSR pages |
 | GitHub Actions deploy workflow | Only if added—**disable duplicate** Vercel Git deploy path |
 | npm audit: 3 high on `@astrojs/vercel` chain | Before production secrets / heavy traffic |
 | GitHub branch protection on `prod` | Recommended now |
