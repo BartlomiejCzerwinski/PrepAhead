@@ -283,7 +283,7 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Manual
 
-- [ ] 1.4 `npm run preview` serves landing at `/` without regression
+- [x] 1.4 `npm run preview` serves landing at `/` without regression
 
 ### Phase 2: API pattern
 
@@ -295,8 +295,8 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Manual
 
-- [ x] 2.4 Local `curl /api/health` returns 200 and `"ok":true`
-- [ x] 2.5 Landing at `/` still works after API addition
+- [x] 2.4 Local `curl /api/health` returns 200 and `"ok":true`
+- [x] 2.5 Landing at `/` still works after API addition
 
 ### Phase 3: Env & docs
 
@@ -308,5 +308,5 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Manual
 
-- [ ] 3.4 Vercel Preview `/api/health` returns 200
-- [ ] 3.5 `deploy-plan.md` reflects static + on-demand API routes and health smoke URL
+- [x] 3.4 Vercel Preview `/api/health` returns 200
+- [x] 3.5 `deploy-plan.md` reflects static + on-demand API routes and health smoke URL
