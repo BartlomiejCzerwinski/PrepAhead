@@ -3,6 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-22
+updated: 2026-05-28
 context_type: greenfield
 product_type: web-app
 target_scale:
@@ -35,7 +36,7 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 
 ### Primary
 
-- A signed-in candidate sees plan (FREE or PRO) and remaining **generations** and **Check** calls for the month, pastes a job description (and optionally CV text), receives a generated set of ~20 questions (~15 ABCD + ~5 open-ended architecture/behavioral) grounded in that JD within plan limits, completes practice (ABCD: immediate correct/incorrect + explanation; open-ended: free-text + optional Check within Check limits), and sees a simple score summary at the end (ABCD scored objectively; open-ended reflected as attempted/checked where applicable).
+- A signed-in candidate sees plan (FREE or PRO) and remaining **generations** and **Check** calls for the **current usage period**, pastes a job description (and optionally CV text), receives a generated set of ~20 questions (~15 ABCD + ~5 open-ended architecture/behavioral) grounded in that JD within plan limits, completes practice (ABCD: immediate correct/incorrect + explanation; open-ended: free-text + optional Check within Check limits), and sees a simple score summary at the end (ABCD scored objectively; open-ended reflected as attempted/checked where applicable).
 - An anonymous visitor reaches a **blog index** on prepahead.dev listing published posts; opens at least one each of a **static quiz article**, an **open-ended question article**, and an **interactive quiz** (in-page answer selection + result summary); blog pages ship with **SEO basics** (unique titles, meta descriptions, clean URLs); and can follow a **CTA** from blog content to sign in and use JD-based practice.
 
 ### Secondary
@@ -70,13 +71,13 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 - When CV is omitted, the product does not reference specific candidate experience not provided
 - When CV is provided, questions or explanations may reference only content present in JD and/or CV
 - Practice set size is approximately twenty questions unless generation fails (user sees a clear error, not a silent partial set)
-- FREE users with zero remaining generations cannot start a new generation until the next calendar month or PRO upgrade
-- Successful generation increments monthly generation usage; regenerate counts as a separate generation
-- Each successful Check increments monthly Check usage; blocked when Check limit reached
+- FREE users with zero remaining generations cannot start a new generation until the next **usage period** resets or they upgrade to PRO
+- Successful generation increments generation usage for the current usage period; regenerate counts as a separate generation
+- Each successful Check increments Check usage for the current usage period; blocked when Check limit reached
 
 ### US-02: Upgrade when FREE limit reached
 
-- **Given** a signed-in FREE candidate who has used their one generation for the current calendar month
+- **Given** a signed-in FREE candidate who has used their one generation for the current usage period
 - **When** they attempt another practice-set generation
 - **Then** generation is blocked, they see remaining usage (0) and a clear upgrade path to PRO
 
@@ -93,9 +94,9 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 
 #### Acceptance Criteria
 
-- Check is unavailable when monthly Check limit is exhausted (FREE: 1, PRO: 500)
+- Check is unavailable when the usage-period Check limit is exhausted (FREE: 1, PRO: 500)
 - Feedback does not invent candidate history beyond JD/CV provided
-- One Check tap consumes one Check call from monthly allowance
+- One Check tap consumes one Check call from the current usage-period allowance
 
 ### US-04: Choose and keep a theme
 
@@ -147,7 +148,7 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
   > Socrates: No counter-argument; it stands as written.
 - FR-017: Candidate can tap Check on an open-ended answer to receive critical feedback on their free-text response. Priority: must-have
   > Socrates: Counter-argument: subjective automated grading may feel arbitrary or erode trust. Resolution: kept — framed as critical feedback, not a pass/fail grade; separate Check usage caps apply.
-- FR-018: System blocks Check when the user has reached their monthly Check-call limit and shows remaining Check usage or upgrade path. Priority: must-have
+- FR-018: System blocks Check when the user has reached their Check-call limit for the current usage period and shows remaining Check usage or upgrade path. Priority: must-have
   > Socrates: No counter-argument; it stands as written.
 - FR-007: Candidate sees a simple score summary after completing a practice set (objective counts for ABCD; open-ended shown as attempted and/or checked, not as a single pass/fail grade). Priority: must-have
   > Socrates: Counter-argument: ABCD score may imply interview readiness. Resolution: kept — label as practice drill score only; open-ended excluded from numeric "readiness" score; no readiness guarantees in copy.
@@ -165,7 +166,7 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 
 ### Plans, usage & billing
 
-- FR-012: Candidate can view their current plan (FREE or PRO), remaining practice-set generations, and remaining Check calls for the current calendar month. Priority: must-have
+- FR-012: Candidate can view their current plan (FREE or PRO), remaining practice-set generations, and remaining Check calls for the **current usage period**, including when the period resets. Priority: must-have
   > Socrates: No counter-argument; it stands as written.
 - FR-013: Candidate can subscribe to PRO via integrated monthly subscription checkout. Priority: must-have
   > Socrates: Counter-argument: paid checkout in MVP may blow the 3-week timeline. Resolution: kept in MVP — user accepted timeline risk (see Open Questions / timeline acknowledgment in shape input).
@@ -175,11 +176,11 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
   > Socrates: No counter-argument; it stands as written.
 - FR-019: System increments the user's Check-call usage count when a Check completes successfully. Priority: must-have
   > Socrates: No counter-argument; it stands as written.
-- FR-016: Candidate on PRO can generate practice sets under PRO fair-use rules (soft threshold 100/month, daily max 10 generations when above soft limit, hard stop at 300/month); the app displays generation and Check usage. Priority: must-have
+- FR-016: Candidate on PRO can generate practice sets under PRO fair-use rules (soft threshold 100 generations per usage period, daily max 10 generations per **calendar day** when above soft limit, hard stop at 300 per usage period); the app displays generation and Check usage. Priority: must-have
   > Socrates: Counter-argument: tiered fair-use is complex to build and explain. Resolution: kept — user-specified caps; UX must surface soft/hard/daily limits clearly.
-- FR-020: System enforces PRO daily generation cap (10 per calendar day) when monthly generation count is above the soft limit (100) and below the hard cap (300). Priority: must-have
+- FR-020: System enforces PRO daily generation cap (10 per **calendar day**, UTC) when usage-period generation count is above the soft limit (100) and below the hard cap (300). Priority: must-have
   > Socrates: No counter-argument; it stands as written.
-- FR-021: System blocks new practice-set generation for PRO at 300 generations in the current calendar month until the next monthly reset. Priority: must-have
+- FR-021: System blocks new practice-set generation for PRO at 300 generations in the current usage period until the next usage-period reset. Priority: must-have
   > Socrates: No counter-argument; it stands as written.
 
 ### Appearance & preferences
@@ -224,7 +225,7 @@ Generic interview-prep products optimize for breadth; PrepAhead optimizes for *t
 - **Generation responsiveness:** For a typical-length pasted JD, the user sees visible progress during generation and receives a full practice set or a clear failure message within approximately sixty seconds under normal conditions.
 - **Data isolation:** A user's job descriptions and CV content are not exposed to other users (binary commitment).
 - **Practice UX tone:** Copy and question framing read as interview preparation for a specific role, not as a generic academic quiz.
-- **Billing integrity:** Plan tier, generation counts, and Check counts reflect active paid subscription state and successful usage only — limits cannot be bypassed without upgrading or monthly reset.
+- **Billing integrity:** Plan tier, generation counts, and Check counts reflect active paid subscription state and successful usage only — limits cannot be bypassed without upgrading or usage-period reset.
 - **Check feedback quality:** Open-ended Check responses are critical and specific to the user's submitted text and the question context — not generic praise.
 - **Theme readability:** In both light and dark modes, primary text and controls meet a readable contrast bar for normal use (binary: no unreadable primary actions in either mode).
 - **Blog read performance:** Blog index and post pages feel snappy on mobile for typical post length (binary: no multi-second blank screen before readable content).
@@ -242,8 +243,8 @@ Supporting detail:
 - **Blog output:** Readable articles (static quiz, open-ended lists, interactive quiz with result summary); indexable pages with metadata; CTA path to sign-in.
 - **User encounter (practice):** After sign-in, user sees plan/usage → supplies JD → optional CV → requests generation (blocked if at generation limit) → practices each question type → uses Check on open-ended items (blocked if at Check limit) → sees score summary.
 - **User encounter (blog):** Search or nav → blog index → post → (optional quiz interaction) → CTA → existing practice flow.
-- **Plan rules — generations:** FREE — 1 practice-set generation / calendar month. PRO — fair-use: soft at 100/month, then daily max 10/day until hard cap 300/month, then block until reset.
-- **Plan rules — Check calls:** FREE — 1 Check / calendar month. PRO — 500 Checks / calendar month.
+- **Plan rules — generations:** FREE — 1 practice-set generation / usage period. PRO — fair-use: soft at 100 per usage period, then daily max 10 per **calendar day** (UTC) until hard cap 300 per usage period, then block until the next usage-period reset.
+- **Plan rules — Check calls:** FREE — 1 Check / usage period. PRO — 500 Checks / usage period.
 - **Practice-set composition:** One generation produces ~20 questions (~15 ABCD + ~5 open-ended architecture/behavioral). Regenerate counts as another generation.
 - **Honesty constraint:** When CV is absent, personalization is limited to the JD; feedback must not fabricate employment history, projects, or skills.
 - **Blog boundary:** Blog does not consume or display user JD/CV; does not run Check or plan-metered AI on blog pages in v1.
@@ -253,8 +254,9 @@ Supporting detail:
 - **Authentication:** Signed-in user required for practice flows — third-party OAuth (social sign-in).
 - **Roles:** Flat user model only; no admin/member/guest separation in MVP.
 - **Plans:** Every signed-in user has a plan tier — **FREE** (default) or **PRO** (paid). Plan determines generation and Check quotas, not separate RBAC roles.
-- **FREE limits:** 1 practice-set generation and 1 Check call per calendar month; block at limit with upgrade path to PRO.
-- **PRO limits:** Generations under fair-use (1–100/month normal; 101–300/month with max 10 generations per calendar day; hard block at 300/month). 500 Check calls per calendar month. Usage counters reset each calendar month.
+- **Usage period (metering):** Generation and Check quotas use a **rolling usage period** per account, anchored at account creation (same day/time each cycle, **UTC** — e.g. user who joins 15 May resets 15 Jun). This is **not** a shared calendar month (1st–last). The dashboard shows remaining allowance for the current period and the next reset time. **PRO daily cap (FR-020)** uses **calendar day** (UTC), separate from the rolling period boundary.
+- **FREE limits:** 1 practice-set generation and 1 Check call per usage period; block at limit with upgrade path to PRO.
+- **PRO limits:** Generations under fair-use (1–100 per usage period normal; 101–300 per usage period with max 10 generations per calendar day; hard block at 300 per usage period). 500 Check calls per usage period. Generation and Check counters reset at each usage-period boundary.
 - **Blog read access:** All blog posts are **public** — anonymous visitors and search crawlers can read full content without signing in.
 - **Blog authoring (v1):** **Founder-authored static content** deployed with the site; no new author roles, no signed-in candidate publishing.
 - **Implication:** Practice sessions and generated question sets are tied to a signed-in identity; plan and usage are evaluated before each generation and each Check.
@@ -280,7 +282,7 @@ Supporting detail:
 1. **CV upload format** — Paste-only vs file upload (PDF/DOCX parsing) for v1. Owner: product. Affects MVP effort; resolve during stack selection / planning.
 2. **PRO price** — Monthly subscription amount and whether to offer annual billing later. Owner: product.
 3. **Subscription lifecycle** — Cancel/downgrade to FREE, failed payment, and grace-period rules before launch. Owner: product.
-4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations/month (warning vs silent daily-cap enforcement). Owner: product.
+4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations per usage period (warning vs silent daily-cap enforcement). Owner: product.
 5. **Score summary for open-ended** — How open-ended/Check results aggregate in end-of-set summary (informational only vs weighted score). Owner: product.
 6. **MVP timeline vs scope** — Blog v1 (static quiz, open-ended articles, interactive quiz, SEO basics, CTA) plus core practice scope may exceed ~3 weeks after-hours; sustained-effort / slip risk was accepted on 2026-05-26. Owner: builder.
 7. **Default theme on first visit** — Light by default, dark by default, or match OS preference before the user makes an explicit choice. Owner: product. Resolve during implementation.
