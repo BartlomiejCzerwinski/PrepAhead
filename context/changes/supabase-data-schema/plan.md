@@ -362,12 +362,12 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Automated
 
-- [ ] 1.1 `npx supabase --version` succeeds
-- [ ] 1.2 `npx supabase init` has been run (repo contains `supabase/`)
+- [x] 1.1 `npx supabase --version` succeeds
+- [x] 1.2 `npx supabase init` has been run (repo contains `supabase/`)
 - [ ] 1.3 `npx supabase start` succeeds locally
 - [ ] 1.4 `npx supabase db reset` succeeds (empty/minimal schema ok)
-- [ ] 1.5 `npm run build` exits 0
-- [ ] 1.6 `npm run astro -- check` exits 0
+- [x] 1.5 `npm run build` exits 0
+- [x] 1.6 `npm run astro -- check` exits 0
 
 #### Manual
 
