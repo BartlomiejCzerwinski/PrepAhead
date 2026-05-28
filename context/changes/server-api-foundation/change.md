@@ -1,8 +1,8 @@
 ---
 change_id: server-api-foundation
-status: implemented
+status: impl_reviewed
 created: 2026-05-26
-updated: 2026-05-27
+updated: 2026-05-28
 roadmap_ref: F-01
 roadmap_outcome: (foundation) run server endpoints on Vercel for AI, auth callbacks, and billing
 prd_refs:
