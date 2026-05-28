@@ -364,14 +364,14 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 - [x] 1.1 `npx supabase --version` succeeds
 - [x] 1.2 `npx supabase init` has been run (repo contains `supabase/`)
-- [ ] 1.3 `npx supabase start` succeeds locally
-- [ ] 1.4 `npx supabase db reset` succeeds (empty/minimal schema ok)
+- [x] 1.3 `npx supabase start` succeeds locally
+- [x] 1.4 `npx supabase db reset` succeeds (empty/minimal schema ok)
 - [x] 1.5 `npm run build` exits 0
 - [x] 1.6 `npm run astro -- check` exits 0
 
 #### Manual
 
-- [ ] 1.7 `supabase/` directory is tracked in git and Studio is reachable
+- [x] 1.7 `supabase/` directory is tracked in git and Studio is reachable
 
 ### Phase 2: Core tables (users, plan, settings, usage)
 
