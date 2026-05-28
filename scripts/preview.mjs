@@ -107,7 +107,11 @@ function listen(server, port) {
 
 const server = createServer(async (req, res) => {
   try {
-    const pathname = new URL(req.url ?? '/', `http://${req.headers.host}`).pathname;
+    const host =
+      typeof req.headers.host === 'string' && req.headers.host.trim()
+        ? req.headers.host.trim()
+        : 'localhost';
+    const pathname = new URL(req.url ?? '/', `http://${host}`).pathname;
 
     if (!needsServerHandler(pathname) && (req.method === 'GET' || req.method === 'HEAD')) {
       const file = resolveStaticFile(pathname);
@@ -128,7 +132,11 @@ const server = createServer(async (req, res) => {
     const response = await handler.fetch(request);
     await writeResponse(response, res);
   } catch (error) {
-    console.error('[preview]', error);
+    if (error instanceof Error) {
+      console.error('[preview]', error.message);
+    } else {
+      console.error('[preview]', String(error));
+    }
     res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Internal Server Error');
   }

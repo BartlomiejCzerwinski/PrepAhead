@@ -161,6 +161,8 @@ Optional: include `timestamp: new Date().toISOString()` in the JSON body.
 - `npm run preview` then `curl -sS http://localhost:4321/api/health` returns HTTP 200 and JSON containing `"ok":true`
 - `curl -sS http://localhost:4321/` still serves landing page (no regression)
 
+**Implementation Note**: `astro preview` serves static `dist/` only and does not execute on-demand `/api/*` routes under `@astrojs/vercel`. This plan uses a custom `npm run preview` (`scripts/preview.mjs`) so local `/api/health` curls actually exercise the serverless handler output.
+
 **Implementation Note**: Pause after manual health curl succeeds before Phase 3.
 
 ---
