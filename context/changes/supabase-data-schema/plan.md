@@ -397,9 +397,9 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Automated
 
-- [x] 4.1 `npx supabase db reset` applies policy/RPC migrations cleanly
+- [x] 4.1 `npx supabase db reset` applies policy/RPC migrations cleanly — c311dad
 
 #### Manual
 
-- [ ] 4.2 RLS + policies exist on every app table; usage increment RPC is concurrency-safe
+- [x] 4.2 RLS + policies exist on every app table; usage increment RPC is concurrency-safe — c311dad
 

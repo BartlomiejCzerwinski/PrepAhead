@@ -1,0 +1,1 @@
+-- F-02: no seed data. Schema is applied via migrations only.
