@@ -359,6 +359,14 @@ Document OAuth setup for contributors and Vercel; run manual E2E and RLS cross-u
 
 **Implementation Note**: Mark `change.md` `status: implemented` only after Preview OAuth + RLS proof pass (human confirmation).
 
+#### 5. Supporting files (addendum — not in original phase scope)
+
+**Files**: `astro.config.mjs`, `scripts/preview.mjs`
+
+**Intent**: Stable local OAuth origin and on-demand route preview for manual verification.
+
+**Contract**: `astro.config.mjs` pins `server.port: 4321`, `host: true`, and `strictPort: true` so `PUBLIC_SITE_URL=http://localhost:4321` matches the dev/preview origin used in Supabase redirect URLs. `scripts/preview.mjs` (invoked by `npm run preview`) routes `/api/*`, `/app`, and `/login` to the Vercel server bundle so auth middleware and API routes behave like production during local smoke tests.
+
 ---
 
 ## Testing Strategy
