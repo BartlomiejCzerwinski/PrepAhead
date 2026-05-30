@@ -377,17 +377,17 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Automated
 
-- [x] 2.1 `npx supabase db reset` applies core tables migrations cleanly
+- [x] 2.1 `npx supabase db reset` applies core tables migrations cleanly — 82c877b
 
 #### Manual
 
-- [ ] 2.2 Tables exist with expected columns/constraints; RLS enabled + policies present; `handle_new_user` trigger creates profile + settings on test Auth insert
+- [x] 2.2 Tables exist with expected columns/constraints; RLS enabled + policies present; `handle_new_user` trigger creates profile + settings on test Auth insert — 82c877b
 
 ### Phase 3: Practice sets (JSONB content) + soft-delete
 
 #### Automated
 
-- [ ] 3.1 `npx supabase db reset` applies `practice_sets` migration cleanly
+- [x] 3.1 `npx supabase db reset` applies `practice_sets` migration cleanly
 
 #### Manual
 
