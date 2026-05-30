@@ -62,6 +62,7 @@ After this plan:
 - Blog CTA to sign-in (S-08 parallel track)
 - Local Supabase stack Google OAuth configuration (hosted project for OAuth dev)
 - Enabling `middlewareMode: 'edge'` unless `prerender = false` on `/app/**` proves insufficient
+- Full usage dashboard at `/app` (S-01 replaces stub content; route and post-login redirect exist in F-03)
 
 ## Implementation Approach
 
@@ -75,7 +76,11 @@ Follow F-01’s **`APIRoute` + `prerender = false`** convention for all auth end
 
 **Supabase redirect URLs:** Dashboard → Authentication → URL Configuration must include `${PUBLIC_SITE_URL}/api/auth/callback` for each environment (Production, Preview, local dev with hosted Supabase). Mismatch is the most common OAuth failure.
 
+**Vercel Preview origins:** Browsing a Preview at `https://<project>-<hash>.vercel.app` while `PUBLIC_SITE_URL` points at Production breaks OAuth. Mitigations (pick one, document in deploy-plan): (a) Supabase Redirect URL wildcard `https://*.vercel.app/**` plus Preview-scoped `PUBLIC_SITE_URL` in Vercel Preview env, or (b) runtime site URL from `VERCEL_URL` when set, falling back to `PUBLIC_SITE_URL` for Production.
+
 **Do not log** OAuth codes, tokens, or session payloads (`AGENTS.md`).
+
+**`setAll` cache headers:** `@supabase/ssr` passes cache-control headers as the second argument to `setAll(cookiesToSet, headers)` on token refresh. Forward these via `context.response.headers.set` in middleware and on auth API route responses — omitting them can cause CDN/browser session leakage on Vercel.
 
 ## Phase 1: Dependencies & Supabase clients
 
@@ -99,7 +104,7 @@ Install Supabase packages and add typed, reusable client factories for server (m
 
 **Intent**: Single place to create a per-request Supabase server client with correct cookie read/write for Astro middleware and API routes.
 
-**Contract**: Export a factory (e.g. `createSupabaseServerClient`) accepting Astro’s cookie context (`cookies` from `APIRoute`/`Middleware`, or equivalent from middleware `context.cookies`). Use `createServerClient` from `@supabase/ssr` with `parseCookieHeader` for reads and `setAll` forwarding to Astro `cookies.set`. Use `requireEnv('PUBLIC_SUPABASE_URL')` and `requireEnv('PUBLIC_SUPABASE_ANON_KEY')`. **New instance per request** — no module-level singleton.
+**Contract**: Export a factory (e.g. `createSupabaseServerClient`) accepting Astro’s cookie context (`cookies` from `APIRoute`/`Middleware`, or equivalent from middleware `context.cookies`) and optional response header sink (middleware `context.response.headers` or API route response). Use `createServerClient` from `@supabase/ssr` with `parseCookieHeader` for reads and `setAll` forwarding to Astro `cookies.set` **and** applying the `headers` argument from `setAll` to the response header sink. Use `requireEnv('PUBLIC_SUPABASE_URL')` and `requireEnv('PUBLIC_SUPABASE_ANON_KEY')`. **New instance per request** — no module-level singleton.
 
 #### 3. Browser Supabase client factory (minimal)
 
@@ -153,7 +158,7 @@ Implement the Google OAuth lifecycle: initiate sign-in, exchange authorization c
 - `POST` handler (form POST from `/login` is acceptable)
 - Uses server Supabase client factory
 - Calls `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${requireEnv('PUBLIC_SITE_URL')}/api/auth/callback` } })`
-- Optional: accept `next` form field; store in cookie or append to callback state if Supabase supports `queryParams` — otherwise pass through callback via cookie named safely (e.g. short-lived httpOnly cookie `oauth_next`)
+- Optional: accept `next` form field; store in a short-lived httpOnly cookie `oauth_next` (required when `next` is present on sign-in or when middleware redirected with `?next=`)
 - On success: redirect to Supabase/Google URL; on failure: redirect to `/login?error=…`
 
 #### 2. OAuth callback route
@@ -168,7 +173,7 @@ Implement the Google OAuth lifecycle: initiate sign-in, exchange authorization c
 - `GET` handler
 - Read `code` from query; handle `error` query param from provider
 - `supabase.auth.exchangeCodeForSession(code)`
-- Resolve post-auth path: validate stored/`next` param → default `/app`
+- Resolve post-auth path: read and clear `oauth_next` cookie, else validate `next` query param via shared validator → default `/app`
 - Redirect to resolved path on success; `/login?error=…` on failure
 - Do not log `code` or tokens
 
@@ -185,13 +190,13 @@ Implement the Google OAuth lifecycle: initiate sign-in, exchange authorization c
 - `supabase.auth.signOut()`
 - Redirect to `/login` (or `/` — pick `/login` for consistency)
 
-#### 4. Shared redirect helper (optional)
+#### 4. Shared redirect helper
 
-**File**: `src/lib/server/auth-redirect.ts` (new, optional)
+**File**: `src/lib/server/auth-redirect.ts` (new)
 
-**Intent**: Centralize safe `?next=` path validation used by callback and middleware.
+**Intent**: Centralize safe `?next=` path validation used by sign-in, callback, and middleware.
 
-**Contract**: Export function that returns `/app` for invalid input; accepts only relative paths starting with `/` and not `//`.
+**Contract**: Export function that returns `/app` for invalid input; accepts only relative paths starting with `/` and not `//`. Used when setting `oauth_next` cookie and when resolving post-auth redirect in callback.
 
 ### Success Criteria:
 
@@ -231,7 +236,8 @@ Add session-aware middleware, protect `/app/*`, ship `/login` and a signed-in st
 - Call `supabase.auth.getUser()` (not `getSession()` alone)
 - Set `context.locals.user = user ?? null`
 - If `pathname.startsWith('/app')` and no user → redirect to `/login?next=<encoded-path>`
-- Exclude: `/login`, `/api/auth/*`, static assets, public marketing routes
+- If `pathname === '/login'` and user exists → redirect to `/app`
+- Exclude: `/api/auth/*`, static assets, public marketing routes (except `/login` gate above)
 - Do not gate `/api/health`
 
 #### 2. Protected app stub
@@ -256,8 +262,8 @@ Add session-aware middleware, protect `/app/*`, ship `/login` and a signed-in st
 
 **Contract**:
 
-- May remain **static** (`prerender = true` default) — OAuth starts via POST to on-demand API route
-- “Continue with Google” via `<form method="POST" action="/api/auth/sign-in">` (optionally hidden `next` from query string)
+- **`export const prerender = false`** — middleware must run at request time to redirect already-signed-in users to `/app` and to support future server-side login state
+- “Continue with Google” via `<form method="POST" action="/api/auth/sign-in">` (hidden `next` from query string when present)
 - Display friendly error when `?error=` present
 - Link back to `/`
 - Uses existing layout and Tailwind tokens from `global.css`
@@ -291,9 +297,8 @@ Add session-aware middleware, protect `/app/*`, ship `/login` and a signed-in st
 - Unauthenticated visit to `/app` redirects to `/login?next=/app`
 - `/login` renders Google sign-in form
 - Landing CTA navigates to `/login`
-- After OAuth (Phase 4): authenticated `/app` shows user info; sign-out clears session
 
-**Implementation Note**: Pause for manual OAuth confirmation on Preview before Phase 4 sign-off.
+**Implementation Note**: Pause for manual OAuth confirmation on Preview before Phase 4 sign-off. Post-OAuth `/app` stub and sign-out are verified in Phase 4 (4.3, 4.6).
 
 ---
 
@@ -311,7 +316,7 @@ Document OAuth setup for contributors and Vercel; run manual E2E and RLS cross-u
 
 **Intent**: Clarify OAuth-related vars and hosted-Supabase dev workflow.
 
-**Contract**: Add comments that `PUBLIC_SITE_URL` must match the browser origin used for OAuth (e.g. `http://localhost:4321` local, Preview URL for PR testing). Note Google OAuth is configured in **Supabase dashboard**, not in repo secrets. No real values.
+**Contract**: Add comments that `PUBLIC_SITE_URL` must match the browser origin used for OAuth (e.g. `http://localhost:4321` local, Preview deployment URL for PR testing — or use `VERCEL_URL` runtime fallback documented in deploy-plan). Note Google OAuth is configured in **Supabase dashboard**, not in repo secrets. Note Supabase Redirect URLs should include a Vercel Preview wildcard (`https://*.vercel.app/**`) unless using per-Preview allowlist. No real values.
 
 #### 2. Deploy plan OAuth section
 
@@ -319,7 +324,7 @@ Document OAuth setup for contributors and Vercel; run manual E2E and RLS cross-u
 
 **Intent**: Record redirect URL requirements and Preview verification steps for auth.
 
-**Contract**: Short subsection under verification or env: Supabase redirect URLs must include `https://prepahead.dev/api/auth/callback`, local dev URL, and Vercel Preview pattern; F-03 smoke = sign-in → `/app`. Cross-link `.env.example`.
+**Contract**: Short subsection under verification or env: Supabase redirect URLs must include `https://prepahead.dev/api/auth/callback`, local dev URL, and a **Vercel Preview wildcard** (`https://*.vercel.app/**`) or per-Preview allowlist; document Preview `PUBLIC_SITE_URL` strategy (Preview-scoped env var or `VERCEL_URL` runtime fallback). F-03 smoke = sign-in → `/app`. Cross-link `.env.example`.
 
 #### 3. Supabase OAuth setup checklist (in plan or README snippet)
 
@@ -378,7 +383,7 @@ Manual only for F-03:
 4. Configure Supabase Google provider + redirect URLs
 5. Open PR to `prod`; test OAuth on Preview URL (update `PUBLIC_SITE_URL` or Supabase allowlist for Preview origin)
 6. Sign in as User A — confirm `/app` stub and DB rows
-7. Sign in as User B in separate browser/profile — confirm User A cannot read B’s data via Supabase client with A’s session (Studio SQL as `authenticated` role or small temporary debug route removed before merge — prefer Supabase Studio JWT inspector)
+7. Sign in as User B in separate browser/profile — **RLS cross-user proof (canonical):** in Supabase Studio → Authentication, copy User A's JWT; run `select * from profiles where id = '<user-b-uuid>'` (or REST GET with `Authorization: Bearer <jwt-a>`) — expect empty/denied. Repeat with User B's JWT against User A's row.
 8. Sign out — confirm redirect and `/app` blocked
 
 ### RLS verification (F-03 canonical proof)
@@ -387,12 +392,12 @@ Manual only for F-03:
 | --- | --- |
 | OAuth sign-in → session cookies | Browser devtools / Preview |
 | `handle_new_user` creates rows | Supabase Studio after first login |
-| `auth.uid()` blocks other user’s rows | Two test Google accounts |
+| `auth.uid()` blocks other user’s rows | Two test Google accounts + Studio JWT SQL select against other user’s `profiles.id` |
 
 ## Performance Considerations
 
 - Middleware `getUser()` adds one Supabase Auth round-trip per on-demand request to `/app/**` and auth API routes — acceptable for MVP.
-- Keep `/login` and marketing static to avoid unnecessary function invocations.
+- Keep marketing (`/`, landing sections) static to avoid unnecessary function invocations. `/login` and `/app/**` are on-demand for middleware auth checks.
 
 ## Migration Notes
 
@@ -437,6 +442,7 @@ Manual only for F-03:
 
 - [ ] 2.3 POST `/api/auth/sign-in` returns OAuth redirect when env configured
 - [ ] 2.4 `/api/health` still returns 200
+- [ ] 2.5 Callback route returns redirect response (smoke without real code)
 
 ### Phase 3: Middleware, protected routes & sign-in UI
 
