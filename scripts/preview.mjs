@@ -89,6 +89,8 @@ function resolveStaticFile(pathname) {
 function needsServerHandler(pathname) {
   return (
     pathname.startsWith('/api/') ||
+    pathname.startsWith('/app') ||
+    pathname === '/login' ||
     pathname.startsWith('/_image') ||
     pathname.startsWith('/_server-islands/')
   );
@@ -98,7 +100,8 @@ function needsServerHandler(pathname) {
 function listen(server, port) {
   return new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(port, () => {
+    // Bind explicitly to localhost so we do not compete with astro dev on another stack.
+    server.listen(port, '127.0.0.1', () => {
       server.off('error', reject);
       resolve(port);
     });
@@ -149,7 +152,10 @@ try {
 } catch (error) {
   if (error && typeof error === 'object' && 'code' in error && error.code === 'EADDRINUSE') {
     console.warn(
-      `[preview] Port ${preferredPort} is in use (often \`astro preview\`, which does not run /api routes).`,
+      `[preview] Port ${preferredPort} is in use. Stop other Node servers first (astro dev, old preview, astro preview).`,
+    );
+    console.warn(
+      '[preview] On Windows, two processes can share one port on IPv4 vs IPv6 — run: Get-NetTCPConnection -LocalPort 4321 | Select-Object OwningProcess',
     );
     for (let candidate = preferredPort + 1; candidate <= preferredPort + 10; candidate += 1) {
       try {
@@ -176,8 +182,9 @@ try {
   }
 }
 
-console.log(`Preview (static + API): http://localhost:${activePort}/`);
+console.log(`Preview (static + on-demand routes): http://localhost:${activePort}/`);
+console.log(`Login: http://localhost:${activePort}/login`);
 console.log(`Health check: http://localhost:${activePort}/api/health`);
 console.log(
-  'Note: `npm run preview:astro` serves static files only — API routes need this preview script.',
+  'Use this script (`npm run preview`), not `npm run preview:astro` — astro preview is static-only (no /login, /app, or /api/*).',
 );

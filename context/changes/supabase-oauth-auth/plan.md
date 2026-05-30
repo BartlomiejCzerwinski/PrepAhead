@@ -435,27 +435,27 @@ Manual only for F-03:
 
 #### Automated
 
-- [x] 2.1 `npm run build` — exit 0
-- [x] 2.2 `npm run astro -- check` — exit 0
+- [x] 2.1 `npm run build` — exit 0 — 58ab2a7
+- [x] 2.2 `npm run astro -- check` — exit 0 — 58ab2a7
 
 #### Manual
 
-- [x] 2.3 POST `/api/auth/sign-in` returns OAuth redirect when env configured
-- [x] 2.4 `/api/health` still returns 200
-- [x] 2.5 Callback route returns redirect response (smoke without real code)
+- [x] 2.3 POST `/api/auth/sign-in` returns OAuth redirect when env configured — 58ab2a7
+- [x] 2.4 `/api/health` still returns 200 — 58ab2a7
+- [x] 2.5 Callback route returns redirect response (smoke without real code) — 58ab2a7
 
 ### Phase 3: Middleware, protected routes & sign-in UI
 
 #### Automated
 
-- [ ] 3.1 `npm run build` — exit 0
-- [ ] 3.2 `npm run astro -- check` — exit 0
-- [ ] 3.3 Build output includes on-demand `/app` route
+- [x] 3.1 `npm run build` — exit 0
+- [x] 3.2 `npm run astro -- check` — exit 0
+- [x] 3.3 Build output includes on-demand `/app` route
 
 #### Manual
 
-- [ ] 3.4 Unauthenticated `/app` redirects to `/login?next=/app`
-- [ ] 3.5 `/login` renders Google sign-in; landing CTA links to `/login`
+- [x] 3.4 Unauthenticated `/app` redirects to `/login?next=/app`
+- [x] 3.5 `/login` renders Google sign-in; landing CTA links to `/login`
 
 ### Phase 4: Docs, env & verification
 
