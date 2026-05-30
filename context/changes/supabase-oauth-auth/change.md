@@ -1,6 +1,6 @@
 ---
 change_id: supabase-oauth-auth
-status: plan_reviewed
+status: implementing
 created: 2026-05-30
 updated: 2026-05-30
 notes: Google OAuth only; middleware gate on /app/*; hosted Supabase for local OAuth dev
