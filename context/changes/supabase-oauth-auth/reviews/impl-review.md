@@ -40,7 +40,7 @@
   - Tradeoff: Slightly stricter — legitimate paths with `%` in query strings are already excluded (path-only validator).
   - Confidence: HIGH — standard open-redirect hardening pattern.
   - Blind spot: Exact browser `Location` normalization across Safari/Firefox/Chrome should be spot-checked once.
-- **Decision**: PENDING
+- **Decision**: DEFERRED — impl phase closed 2026-05-30; track in follow-ups/review-fixes.md (before S-01)
 
 ### F2 — Middleware fail-open when `getUser()` throws
 
@@ -59,7 +59,7 @@
   - Tradeoff: Extra route/copy; still must not render signed-in content.
   - Confidence: MEDIUM — better UX but more surface area.
   - Blind spot: Whether marketing should link to that page.
-- **Decision**: PENDING
+- **Decision**: DEFERRED — impl phase closed 2026-05-30
 
 ### F3 — `oauth_next` cookie survives failed code exchange
 
@@ -69,7 +69,7 @@
 - **Location**: src/pages/api/auth/callback.ts:33-35
 - **Detail**: On `exchange_failed`, `oauth_next` is not deleted (only cleared on success). A stale cookie could affect the next successful sign-in destination.
 - **Fix**: Call `cookies.delete(OAUTH_NEXT_COOKIE, { path: '/' })` on all error return paths before redirecting to `/login`.
-- **Decision**: PENDING
+- **Decision**: DEFERRED — impl phase closed 2026-05-30
 
 ### F4 — Optional `locals.supabase` not typed
 
@@ -79,7 +79,7 @@
 - **Location**: src/env.d.ts:7-9
 - **Detail**: Phase 1 contract lists optional `Astro.locals.supabase`; only `user` is declared. No runtime impact — middleware creates clients per request without exposing on locals.
 - **Fix**: Add optional `supabase` to `App.Locals`, or note in plan that per-request factory without locals exposure was chosen.
-- **Decision**: PENDING
+- **Decision**: DEFERRED — impl phase closed 2026-05-30
 
 ## Prior review (2026-05-30, same day)
 
