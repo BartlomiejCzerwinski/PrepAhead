@@ -423,20 +423,20 @@ Manual only for F-03:
 
 #### Automated
 
-- [x] 1.1 `npm run build` — exit 0
-- [x] 1.2 `npm run astro -- check` — exit 0
-- [x] 1.3 `package.json` lists `@supabase/ssr` and `@supabase/supabase-js`
+- [x] 1.1 `npm run build` — exit 0 — 1ad5caa
+- [x] 1.2 `npm run astro -- check` — exit 0 — 1ad5caa
+- [x] 1.3 `package.json` lists `@supabase/ssr` and `@supabase/supabase-js` — 1ad5caa
 
 #### Manual
 
-- [x] 1.4 No service role key in `src/lib/supabase/` client factories
+- [x] 1.4 No service role key in `src/lib/supabase/` client factories — 1ad5caa
 
 ### Phase 2: Auth API routes & OAuth flow
 
 #### Automated
 
-- [ ] 2.1 `npm run build` — exit 0
-- [ ] 2.2 `npm run astro -- check` — exit 0
+- [x] 2.1 `npm run build` — exit 0
+- [x] 2.2 `npm run astro -- check` — exit 0
 
 #### Manual
 

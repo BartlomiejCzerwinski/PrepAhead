@@ -15,7 +15,8 @@ PrepAhead.dev is an interview-prep web MVP: candidates paste a job description (
 
 ## Project structure
 
-- `src/pages/` — Astro routes.
+- `src/pages/` — Astro routes; Google OAuth under `src/pages/api/auth/` (`sign-in`, `callback`, `sign-out`).
+- `src/middleware.ts` — session refresh via `getUser()`; unauthenticated `/app/*` → `/login`.
 - `src/layouts/` — HTML shells; global CSS via `src/styles/global.css`.
 - `src/components/` — `.astro` and React islands (interactive UI → React; shadcn/ui planned per tech stack).
 - `public/` — static assets.

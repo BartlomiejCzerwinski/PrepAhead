@@ -41,4 +41,4 @@ Grounding: 10/10 paths ✓, 4/4 symbols ✓, brief↔plan ✓
 - **Location**: Phase 3 — Header sign-in link (optional)
 - **Detail**: `Header.astro` already has “Start free” → `#get-started`; Cta becomes `/login`. Nav `/login` may duplicate entry points.
 - **Fix**: Default to skip Header link unless nav parity with Cta is desired.
-- **Decision**: PENDING
+- **Decision**: SKIPPED (default: no Header `/login` link; Cta is primary entry)

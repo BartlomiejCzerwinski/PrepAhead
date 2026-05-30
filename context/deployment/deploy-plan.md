@@ -80,6 +80,21 @@ flowchart TD
 - [ ] Vercel Preview deployment attached to PR
 - [ ] Preview URL loads (starter: Welcome page, CSS, favicon)
 - [ ] Build logs show no adapter/static errors
+- [ ] **F-03 OAuth smoke (when auth ships):** `/login` → Google → `/app` with session on the **same** Preview origin
+
+### Google OAuth (F-03)
+
+Configure in the **Supabase Dashboard** (not repo secrets). See [`.env.example`](../../.env.example) for variable names.
+
+| Environment | `PUBLIC_SITE_URL` | Supabase Redirect URLs (add to Auth → URL Configuration) |
+|-------------|-------------------|----------------------------------------------------------|
+| Production | `https://prepahead.dev` | `https://prepahead.dev/api/auth/callback` |
+| Local dev | `http://localhost:4321` (or your `npm run preview` origin) | Matching `…/api/auth/callback` |
+| Vercel Preview | **Preview-scoped** value: set `PUBLIC_SITE_URL` in Vercel → Environment → Preview to the deployment URL for that PR, **or** implement a `VERCEL_URL` runtime fallback in auth routes | `https://*.vercel.app/**` wildcard **or** per-preview callback URL |
+
+**Preview pitfall:** Browsing a Preview at `https://<project>-<hash>.vercel.app` while `PUBLIC_SITE_URL` points at Production breaks OAuth (`redirectTo` and cookies won't match). Fix: Preview env var per deployment or runtime site URL from `VERCEL_URL`.
+
+**F-03 smoke:** Sign in on Preview → land on `/app`; sign out → `/app` redirects to `/login`.
 
 ### Phase 3 — Production (after merge to `prod`)
 

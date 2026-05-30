@@ -1,0 +1,30 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+const display =
+	user?.email ?? (user?.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
+---
+
+<Layout title="App" description="Signed-in area for PrepAhead practice.">
+	<main class="mx-auto max-w-lg px-4 py-16 sm:px-6">
+		<h1 class="text-2xl font-bold text-[var(--text)]">You are signed in</h1>
+		<p class="mt-2 text-sm text-[var(--text-muted)]">{display}</p>
+		<p class="mt-6 text-[var(--text-muted)]">
+			Signed in — usage dashboard and practice flows arrive in S-01.
+		</p>
+		<form method="POST" action="/api/auth/sign-out" class="mt-8">
+			<button
+				type="submit"
+				class="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-muted)]"
+			>
+				Sign out
+			</button>
+		</form>
+		<p class="mt-6 text-sm">
+			<a href="/" class="text-[var(--brand)] no-underline hover:underline">Back to home</a>
+		</p>
+	</main>
+</Layout>
