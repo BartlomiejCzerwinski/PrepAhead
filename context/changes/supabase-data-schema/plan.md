@@ -401,5 +401,5 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Manual
 
-- [ ] 4.2 RLS + policies exist on every app table; usage increment RPC is concurrency-safe
+- [x] 4.2 RLS + policies exist on every app table; usage increment RPC is concurrency-safe
 
