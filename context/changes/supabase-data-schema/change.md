@@ -2,7 +2,7 @@
 change_id: supabase-data-schema
 status: implementing
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-05-30
 status_note: plan re-reviewed 2026-05-28 — SOUND (3 warnings)
 notes: Rolling usage_periods; JSONB practice_sets; handle_new_user trigger; auth.uid() usage RPCs; plan-review fixes applied 2026-05-28
 roadmap_ref: F-02

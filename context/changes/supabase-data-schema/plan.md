@@ -381,7 +381,7 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Manual
 
-- [ ] 2.2 Tables exist with expected columns/constraints; RLS enabled + policies present; `handle_new_user` trigger creates profile + settings on test Auth insert
+- [x] 2.2 Tables exist with expected columns/constraints; RLS enabled + policies present; `handle_new_user` trigger creates profile + settings on test Auth insert
 
 ### Phase 3: Practice sets (JSONB content) + soft-delete
 
