@@ -1,6 +1,6 @@
 ---
 change_id: supabase-data-schema
-status: implemented
+status: impl_reviewed
 created: 2026-05-28
 updated: 2026-05-30
 status_note: plan re-reviewed 2026-05-28 — SOUND (3 warnings)
