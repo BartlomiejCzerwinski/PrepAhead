@@ -377,7 +377,7 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Automated
 
-- [ ] 2.1 `npx supabase db reset` applies core tables migrations cleanly
+- [x] 2.1 `npx supabase db reset` applies core tables migrations cleanly
 
 #### Manual
 
