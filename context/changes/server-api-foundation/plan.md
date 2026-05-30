@@ -29,7 +29,7 @@ After this plan:
 2. **`GET /api/health`** returns `200` with JSON body `{ "ok": true }` (optional ISO `timestamp` field allowed). No authentication, no secrets, no JD/CV handling.
 3. **`src/lib/server/`** exports small helpers used by `health.ts` and documented for copy-paste into future routes (`jsonResponse`, `requireEnv` or equivalent guard that throws/returns 500 when a required server env is missing).
 4. **`.env.example`** lists placeholder names for Supabase, Stripe, model API, and public site URL — values empty, comments mark server-only vs public.
-5. **`deploy-plan.md`** describes hybrid output and documents `/api/health` as the verification route.
+5. **`deploy-plan.md`** describes **static pages + on-demand** `/api/*` routes and documents `/api/health` as the verification route.
 6. **Vercel Preview** on a PR to `prod` serves `/api/health` successfully.
 
 ### Verification commands
@@ -161,6 +161,8 @@ Optional: include `timestamp: new Date().toISOString()` in the JSON body.
 - `npm run preview` then `curl -sS http://localhost:4321/api/health` returns HTTP 200 and JSON containing `"ok":true`
 - `curl -sS http://localhost:4321/` still serves landing page (no regression)
 
+**Implementation Note**: `astro preview` serves static `dist/` only and does not execute on-demand `/api/*` routes under `@astrojs/vercel`. This plan uses a custom `npm run preview` (`scripts/preview.mjs`) so local `/api/health` curls actually exercise the serverless handler output.
+
 **Implementation Note**: Pause after manual health curl succeeds before Phase 3.
 
 ---
@@ -169,7 +171,7 @@ Optional: include `timestamp: new Date().toISOString()` in the JSON body.
 
 ### Overview
 
-Document secret names for upcoming slices, align deploy documentation with hybrid output, and verify on Vercel Preview.
+Document secret names for upcoming slices, align deploy documentation with **static pages + on-demand** API routes, and verify on Vercel Preview.
 
 ### Changes Required:
 
@@ -226,7 +228,7 @@ Add a short header comment: copy to `.env.local`, never commit `.env`, set Produ
 - Open PR to **`prod`** per `deploy-plan.md`; Vercel Preview deploy succeeds
 - `curl -sS https://<preview-deployment>/api/health` → 200, `"ok":true`
 - Confirm Preview deployment logs show a Function invocation for `/api/health` (Vercel dashboard)
-- Review `deploy-plan.md` diff for accurate hybrid wording
+- Review `deploy-plan.md` diff for accurate static + on-demand API wording
 
 **Implementation Note**: Phase 3 completes F-01. Update `change.md` `status` to `implemented` only after Preview smoke passes (human confirmation).
 
@@ -283,7 +285,7 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Manual
 
-- [ ] 1.4 `npm run preview` serves landing at `/` without regression
+- [x] 1.4 `npm run preview` serves landing at `/` without regression
 
 ### Phase 2: API pattern
 
@@ -295,8 +297,8 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Manual
 
-- [ x] 2.4 Local `curl /api/health` returns 200 and `"ok":true`
-- [ x] 2.5 Landing at `/` still works after API addition
+- [x] 2.4 Local `curl /api/health` returns 200 and `"ok":true`
+- [x] 2.5 Landing at `/` still works after API addition
 
 ### Phase 3: Env & docs
 
@@ -308,5 +310,5 @@ Deferred until a test harness exists. Manual Preview curl is the integration gat
 
 #### Manual
 
-- [ ] 3.4 Vercel Preview `/api/health` returns 200
-- [ ] 3.5 `deploy-plan.md` reflects static + on-demand API routes and health smoke URL
+- [x] 3.4 Vercel Preview `/api/health` returns 200
+- [x] 3.5 `deploy-plan.md` reflects static + on-demand API routes and health smoke URL

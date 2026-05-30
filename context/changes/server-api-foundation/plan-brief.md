@@ -9,14 +9,14 @@ PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the s
 ## Starting Point
 
 - `astro.config.mjs` uses `adapter: vercel()` with default static output; no `src/pages/api/`.
-- `deploy-plan.md` documents static scope and lists `output: 'server'|'hybrid'` and `maxDuration: 60` as deferred.
+- `deploy-plan.md` documents static scope and lists `output: 'server'` and `maxDuration: 60` as deferred (Astro 6 removed `output: 'hybrid'`).
 - Landing pages exist under `src/pages/index.astro` and `src/components/landing/`.
 
 ## Desired End State
 
 - `npm run build` and `npm run astro -- check` pass with default static output and `vercel({ maxDuration: 60 })`.
 - `GET /api/health` returns JSON `{ "ok": true }` on local preview and Vercel Preview (not prerendered).
-- `.env.example` documents all upcoming secret **names** (no values); `deploy-plan.md` reflects hybrid + API foundation.
+- `.env.example` documents all upcoming secret **names** (no values); `deploy-plan.md` reflects static pages + on-demand API foundation.
 - Downstream changes (F-03 auth, S-02 generation, S-05 Stripe) add routes beside the same pattern — no config rework.
 
 ## Key Decisions Made
@@ -30,7 +30,7 @@ PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the s
 | Shared server lib | Minimal (`jsonResponse`, env guard) | Avoids premature abstraction; enough for consistent handlers. | Plan |
 | `maxDuration` | Set to 60 in F-01 | PRD ~60s generation target; deploy-plan requires it before AI. | Plan |
 | Verification | Build + astro check + Preview `/api/health` | Catches Vercel-only issues static build misses. | Plan |
-| Docs | Update `deploy-plan.md` | Repo truth must match hybrid output after merge. | Plan |
+| Docs | Update `deploy-plan.md` | Repo truth must match static pages + on-demand API routes after merge. | Plan |
 
 ## Scope
 
@@ -46,7 +46,7 @@ PrepAhead must run AI generation, billing webhooks, and OAuth callbacks on the s
 
 - Supabase client, schema, migrations (F-02)
 - Google OAuth, session middleware, protected pages (F-03)
-- OpenRouter / generation or Check endpoints (S-02, S-04)
+- OpenAI / generation or Check endpoints (S-02, S-04)
 - Stripe checkout or webhooks (S-05)
 - Auth or quota enforcement on `/api/health`
 - Test runner / CI workflow
@@ -76,12 +76,12 @@ Future routes (`/api/auth/*`, `/api/generate`, `/api/webhooks/stripe`) colocate 
 
 ## Open Risks & Assumptions
 
-- First hybrid deploy may surface Vercel adapter warnings (bundle size, route list) — acceptable for health-only surface.
+- First deploy with on-demand API routes may surface Vercel adapter warnings (bundle size, route list) — acceptable for health-only surface.
 - `npm run preview` behavior may differ slightly from Vercel Preview; Preview smoke remains the gate.
 - No test runner in repo — verification is build + manual/Preview only.
 
 ## Success Criteria (Summary)
 
-- Production build succeeds with hybrid + extended duration.
+- Production build succeeds with static pages + on-demand API routes + extended duration.
 - `/api/health` responds on Vercel Preview without auth.
 - `.env.example` lists upcoming secret names; deploy docs describe static + on-demand `/api/*`.

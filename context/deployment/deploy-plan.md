@@ -162,7 +162,9 @@ Before treating production as MVP-ready:
 1. Add `.env.example` (names only) and Vercel env vars (Production + Preview).
 2. Set `adapter: vercel({ maxDuration: 60 })` when adding generation/Check routes.
 3. Enable preview Deployment Protection when previews can show user content.
-4. Implement Supabase, server endpoints, shadcn—per [`verification.md`](../changes/bootstrap-verification/verification.md) next steps.
+4. Implement Supabase schema (`supabase/migrations/`, local `npx supabase start` / `db reset` — see [`supabase/README.md`](../../supabase/README.md)); server endpoints, shadcn—per [`verification.md`](../changes/bootstrap-verification/verification.md) next steps.
+
+**Database vs app deploy:** Merging to `prod` updates the Vercel app only. Supabase schema changes are applied separately (`supabase db push` or dashboard) and **do not roll back** with a Vercel deployment promote.
 
 ## Execution log
 
