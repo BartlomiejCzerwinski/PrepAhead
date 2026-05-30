@@ -387,17 +387,17 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Automated
 
-- [x] 3.1 `npx supabase db reset` applies `practice_sets` migration cleanly
+- [x] 3.1 `npx supabase db reset` applies `practice_sets` migration cleanly — b036447
 
 #### Manual
 
-- [ ] 3.2 RLS blocks cross-user reads; soft-delete supported; `title` + `content` jsonb present
+- [x] 3.2 RLS blocks cross-user reads; soft-delete supported; `title` + `content` jsonb present — b036447
 
 ### Phase 4: RLS hardening + atomic usage helpers
 
 #### Automated
 
-- [ ] 4.1 `npx supabase db reset` applies policy/RPC migrations cleanly
+- [x] 4.1 `npx supabase db reset` applies policy/RPC migrations cleanly
 
 #### Manual
 
