@@ -1,7 +1,11 @@
 import type { APIRoute } from 'astro';
 
-import { OAUTH_NEXT_COOKIE, safeAuthRedirectPath } from '../../../lib/server/auth-redirect';
-import { MissingEnvError, requireEnv } from '../../../lib/server/env';
+import {
+  getOAuthSiteUrl,
+  OAUTH_NEXT_COOKIE,
+  safeAuthRedirectPath,
+} from '../../../lib/server/auth-redirect';
+import { MissingEnvError } from '../../../lib/server/env';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
 export const prerender = false;
@@ -32,7 +36,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
 
-    const siteUrl = requireEnv('PUBLIC_SITE_URL');
+    const siteUrl = getOAuthSiteUrl(request);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

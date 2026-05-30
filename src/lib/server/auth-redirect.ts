@@ -1,4 +1,30 @@
+import { requireEnv } from './env';
+
 const DEFAULT_AUTH_REDIRECT = '/app';
+
+/**
+ * Origin used in OAuth redirectTo. In dev, prefer the request origin so port
+ * matches the server you are actually using (e.g. preview on 4322).
+ */
+export function getOAuthSiteUrl(request: Request): string {
+  const configured = requireEnv('PUBLIC_SITE_URL').replace(/\/$/, '');
+
+  if (import.meta.env.DEV) {
+    try {
+      const origin = new URL(request.url).origin;
+      if (
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:')
+      ) {
+        return origin;
+      }
+    } catch {
+      /* use configured URL */
+    }
+  }
+
+  return configured;
+}
 
 /**
  * Validates a post-auth redirect path. Rejects open redirects and absolute URLs.

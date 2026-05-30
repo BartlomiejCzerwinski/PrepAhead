@@ -440,9 +440,9 @@ Manual only for F-03:
 
 #### Manual
 
-- [ ] 2.3 POST `/api/auth/sign-in` returns OAuth redirect when env configured
-- [ ] 2.4 `/api/health` still returns 200
-- [ ] 2.5 Callback route returns redirect response (smoke without real code)
+- [x] 2.3 POST `/api/auth/sign-in` returns OAuth redirect when env configured
+- [x] 2.4 `/api/health` still returns 200
+- [x] 2.5 Callback route returns redirect response (smoke without real code)
 
 ### Phase 3: Middleware, protected routes & sign-in UI
 
