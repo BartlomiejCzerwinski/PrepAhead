@@ -391,7 +391,7 @@ Deferred to later changes that add auth and server routes, where we can verify e
 
 #### Manual
 
-- [ ] 3.2 RLS blocks cross-user reads; soft-delete supported; `title` + `content` jsonb present
+- [x] 3.2 RLS blocks cross-user reads; soft-delete supported; `title` + `content` jsonb present
 
 ### Phase 4: RLS hardening + atomic usage helpers
 
