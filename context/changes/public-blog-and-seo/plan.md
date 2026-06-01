@@ -442,13 +442,13 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [ ] 1.1 `npm run build` completes with exit code 0
-- [ ] 1.2 `npm run astro -- check` completes with exit code 0
-- [ ] 1.3 Invalid frontmatter fails check or build with schema error
+- [x] 1.1 `npm run build` completes with exit code 0
+- [x] 1.2 `npm run astro -- check` completes with exit code 0
+- [x] 1.3 Invalid frontmatter fails check or build with schema error
 
 #### Manual
 
-- [ ] 1.4 `PUBLIC_SITE_URL` documented for production-like builds
+- [x] 1.4 `PUBLIC_SITE_URL` documented for production-like builds
 
 ### Phase 2: SEO and site chrome
 

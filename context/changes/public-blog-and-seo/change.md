@@ -1,9 +1,9 @@
 ---
 id: public-blog-and-seo
 title: Public blog and SEO
-status: plan_reviewed
+status: implementing
 created: 2026-05-30
-updated: 2026-05-30
+updated: 2026-06-01
 roadmap: S-08
 prd_refs:
   - FR-024
@@ -24,4 +24,4 @@ Roadmap slice **S-08**: public blog index, three launch post formats (static qui
 
 ## Notes
 
-<!-- Planning in progress via /10x-plan -->
+- **PUBLIC_SITE_URL:** Required on Vercel/CI (`VERCEL=1` or `CI=true`); local `npm run build` defaults to `http://localhost:4321` when unset. Set in Vercel for correct canonical URLs and sitemap on Preview/Production.
