@@ -442,20 +442,20 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [x] 1.1 `npm run build` completes with exit code 0
-- [x] 1.2 `npm run astro -- check` completes with exit code 0
-- [x] 1.3 Invalid frontmatter fails check or build with schema error
+- [x] 1.1 `npm run build` completes with exit code 0 — e80c02c
+- [x] 1.2 `npm run astro -- check` completes with exit code 0 — e80c02c
+- [x] 1.3 Invalid frontmatter fails check or build with schema error — e80c02c
 
 #### Manual
 
-- [x] 1.4 `PUBLIC_SITE_URL` documented for production-like builds
+- [x] 1.4 `PUBLIC_SITE_URL` documented for production-like builds — e80c02c
 
 ### Phase 2: SEO and site chrome
 
 #### Automated
 
-- [ ] 2.1 `npm run build` produces sitemap artifact(s)
-- [ ] 2.2 `npm run astro -- check` passes
+- [x] 2.1 `npm run build` produces sitemap artifact(s)
+- [x] 2.2 `npm run astro -- check` passes
 
 #### Manual
 
@@ -467,8 +467,8 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [ ] 3.1 Build generates `/blog` and per-slug HTML
-- [ ] 3.2 `npm run astro -- check` passes
+- [x] 3.1 Build generates `/blog` and per-slug HTML
+- [x] 3.2 `npm run astro -- check` passes
 
 #### Manual
 
@@ -479,8 +479,8 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [ ] 4.1 `npm run build` succeeds with interactive post
-- [ ] 4.2 `npm run astro -- check` passes
+- [x] 4.1 `npm run build` succeeds with interactive post
+- [x] 4.2 `npm run astro -- check` passes
 
 #### Manual
 
@@ -492,8 +492,8 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [ ] 5.1 `npm run build` — exit 0
-- [ ] 5.2 `npm run astro -- check` — exit 0
+- [x] 5.1 `npm run build` — exit 0
+- [x] 5.2 `npm run astro -- check` — exit 0
 
 #### Manual
 

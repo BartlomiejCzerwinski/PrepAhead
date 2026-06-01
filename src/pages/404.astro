@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BlogHeader from '../components/blog/BlogHeader.astro';
+import Footer from '../components/landing/Footer.astro';
+---
+
+<Layout title="Page not found" description="The page you requested could not be found.">
+  <BlogHeader backHref="/" />
+  <main class="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6">
+    <h1 class="text-3xl font-bold text-[var(--text)]">Page not found</h1>
+    <p class="mt-4 text-[var(--text-muted)]">That URL does not exist on PrepAhead.</p>
+    <a href="/blog" class="btn-primary mt-8 inline-flex rounded-xl px-6 py-3 text-sm font-semibold no-underline">
+      Visit the interview blog
+    </a>
+  </main>
+  <Footer />
+</Layout>

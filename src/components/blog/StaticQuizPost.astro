@@ -1,0 +1,18 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'blog'>;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<div class="blog-prose">
+  <Content />
+</div>
+<p class="mt-8 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-muted)]">
+  Want critical feedback on open-ended answers? Sign in and use Check on your tailored practice
+  set—blog posts are editorial; AI Check runs in the app.
+</p>

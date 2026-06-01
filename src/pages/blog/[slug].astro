@@ -1,0 +1,34 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import BlogPostLayout from '../../components/blog/BlogPostLayout.astro';
+import StaticQuizPost from '../../components/blog/StaticQuizPost.astro';
+import OpenEndedPost from '../../components/blog/OpenEndedPost.astro';
+import InteractiveQuizPost from '../../components/blog/InteractiveQuizPost.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((entry) => ({
+    params: { slug: entry.id },
+    props: { id: entry.id },
+  }));
+}
+
+const { slug } = Astro.params;
+const entry = slug ? await getEntry('blog', slug) : undefined;
+
+if (!entry) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const { title, description, pubDate, tags, type } = entry.data;
+const canonicalPath = `/blog/${slug}`;
+---
+
+<Layout {title} {description} {canonicalPath}>
+  <BlogPostLayout {title} {pubDate} {tags}>
+    {type === 'static-quiz' && <StaticQuizPost {entry} />}
+    {type === 'open-ended' && <OpenEndedPost {entry} />}
+    {type === 'interactive-quiz' && <InteractiveQuizPost {entry} />}
+  </BlogPostLayout>
+</Layout>

@@ -1,0 +1,71 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import BlogHeader from '../../components/blog/BlogHeader.astro';
+import Footer from '../../components/landing/Footer.astro';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+
+const pageTitle = 'Interview blog';
+const pageDescription =
+  'Role- and skill-focused interview quizzes and question sets from PrepAhead—free to read, with practice tailored to your job description in the app.';
+---
+
+<Layout title={pageTitle} description={pageDescription} canonicalPath="/blog">
+  <BlogHeader backHref="/" />
+  <main class="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+    <header class="mb-10">
+      <h1 class="text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
+        {pageTitle}
+      </h1>
+      <p class="mt-4 text-lg leading-8 text-[var(--text-muted)]">
+        Curated interview material for specific skills and levels—static quizzes, open-ended
+        prompts, and interactive drills. When you are ready for questions grounded in a real job
+        posting, practice in the app.
+      </p>
+      <a
+        href="/app"
+        class="btn-primary mt-6 inline-flex rounded-xl px-6 py-3 text-sm font-semibold no-underline shadow-sm"
+      >
+        Practice for your role
+      </a>
+    </header>
+
+    {
+      posts.length === 0 ? (
+        <p class="text-[var(--text-muted)]">Posts are on the way—check back soon.</p>
+      ) : (
+        <ul class="space-y-6 list-none p-0">
+          {posts.map((post) => {
+            const formattedDate = post.data.pubDate.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            });
+            return (
+              <li class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 transition duration-200 ease-out hover:border-brand-500/30 sm:p-6">
+                <a href={`/blog/${post.id}`} class="block no-underline">
+                  <h2 class="text-xl font-semibold text-[var(--text)]">{post.data.title}</h2>
+                  <p class="mt-2 text-sm text-[var(--text-muted)]">{formattedDate}</p>
+                  <p class="mt-3 text-[var(--text-muted)] leading-7">{post.data.description}</p>
+                  {post.data.tags && post.data.tags.length > 0 && (
+                    <ul class="mt-4 flex flex-wrap gap-2 list-none p-0">
+                      {post.data.tags.map((tag) => (
+                        <li class="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-muted)]">
+                          {tag}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )
+    }
+  </main>
+  <Footer />
+</Layout>

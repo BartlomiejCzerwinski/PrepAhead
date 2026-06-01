@@ -1,0 +1,59 @@
+---
+import Footer from '../landing/Footer.astro';
+import BlogHeader from './BlogHeader.astro';
+
+interface Props {
+  title: string;
+  pubDate: Date;
+  tags?: string[];
+}
+
+const { title, pubDate, tags = [] } = Astro.props;
+
+const formattedDate = pubDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<BlogHeader backHref="/blog" />
+<main class="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+  <article class="blog-prose">
+    <header class="mb-8 border-b border-[var(--border)] pb-8">
+      <h1 class="!mt-0 text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
+        {title}
+      </h1>
+      <p class="mt-3 text-sm text-[var(--text-muted)]">{formattedDate}</p>
+      {
+        tags.length > 0 && (
+          <ul class="mt-4 flex flex-wrap gap-2 list-none p-0">
+            {tags.map((tag) => (
+              <li class="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-medium text-[var(--text-muted)]">
+                {tag}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+    <slot />
+  </article>
+
+  <aside
+    class="mt-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-8 text-center shadow-[0_8px_30px_rgba(17,24,39,0.06)] dark:shadow-none"
+  >
+    <h2 class="text-xl font-bold text-[var(--text)]">Practice for your role</h2>
+    <p class="mx-auto mt-3 max-w-lg text-sm leading-7 text-[var(--text-muted)]">
+      Paste the job description you applied to and get a tailored practice set—ABCD and
+      open-ended questions grounded in that posting, with Check feedback after sign-in.
+    </p>
+    <a
+      href="/app"
+      class="btn-primary mt-6 inline-flex rounded-xl px-6 py-3 text-sm font-semibold no-underline shadow-sm"
+    >
+      Start role-specific practice
+    </a>
+  </aside>
+</main>
+<Footer />

@@ -1,0 +1,22 @@
+---
+const { backHref = '/' } = Astro.props;
+---
+
+<header class="border-b border-[var(--border)] bg-[var(--surface-elevated)]/90 backdrop-blur-md">
+	<div class="mx-auto flex h-[4.5rem] max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
+		<a href="/" class="flex items-center gap-3 font-semibold tracking-tight text-[var(--text)] no-underline">
+			<span
+				class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-500 text-sm font-bold text-white shadow-sm"
+				aria-hidden="true">P</span>
+			<span class="text-[15px] sm:text-base">PrepAhead</span>
+		</a>
+		<a
+			href={backHref}
+			class="text-sm font-medium text-[var(--text-muted)] no-underline transition duration-200 ease-out hover:text-[var(--text)]"
+		>
+			{Astro.url.pathname.startsWith('/blog/') && Astro.url.pathname !== '/blog'
+				? '← All posts'
+				: 'Home'}
+		</a>
+	</div>
+</header>

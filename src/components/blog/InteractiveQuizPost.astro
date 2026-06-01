@@ -1,0 +1,26 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import InteractiveQuiz from './InteractiveQuiz';
+
+interface Props {
+  entry: CollectionEntry<'blog'>;
+}
+
+const { entry } = Astro.props;
+
+if (entry.data.type !== 'interactive-quiz') {
+  return null;
+}
+
+const { Content } = await render(entry);
+const { quiz } = entry.data;
+---
+
+<div class="blog-prose">
+  <Content />
+</div>
+<InteractiveQuiz client:visible quiz={quiz} />
+<p class="mt-8 text-sm text-[var(--text-muted)]">
+  This quiz is self-scored in your browser. For JD-tailored questions and Check feedback, use
+  practice in the app.
+</p>
