@@ -1,12 +1,20 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import BlogHeader from '../../components/blog/BlogHeader.astro';
+import Header from '../../components/landing/Header.astro';
 import Footer from '../../components/landing/Footer.astro';
 
 const posts = (await getCollection('blog')).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
+const typeLabels = {
+  'static-quiz': 'Static quiz',
+  'open-ended': 'Open-ended',
+  'interactive-quiz': 'Interactive quiz',
+} as const;
+
+const postTypes = Object.entries(typeLabels).map(([value, label]) => ({ value, label }));
 
 const pageTitle = 'Interview blog';
 const pageDescription =
@@ -14,58 +22,176 @@ const pageDescription =
 ---
 
 <Layout title={pageTitle} description={pageDescription} canonicalPath="/blog">
-  <BlogHeader backHref="/" />
-  <main class="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-    <header class="mb-10">
-      <h1 class="text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
-        {pageTitle}
-      </h1>
-      <p class="mt-4 text-lg leading-8 text-[var(--text-muted)]">
-        Curated interview material for specific skills and levels—static quizzes, open-ended
-        prompts, and interactive drills. When you are ready for questions grounded in a real job
-        posting, practice in the app.
-      </p>
-      <a
-        href="/app"
-        class="btn-primary mt-6 inline-flex rounded-xl px-6 py-3 text-sm font-semibold no-underline shadow-sm"
-      >
-        Practice for your role
-      </a>
-    </header>
+  <Header />
+  <main>
+    <section class="border-b border-[var(--border)] py-20 sm:py-24">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="mx-auto max-w-3xl text-center">
+          <div class="inline-flex rounded-full border border-brand-500/15 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+            Interview blog
+          </div>
+          <h1 class="mt-5 text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
+          {pageTitle}
+          </h1>
+          <p class="mt-4 text-lg leading-8 text-[var(--text-muted)]">
+            Curated interview material for specific skills and levels—static quizzes, open-ended
+            prompts, and interactive drills. When you are ready for questions grounded in a real job
+            posting, practice in the app.
+          </p>
+          <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href="/app"
+              class="btn-primary inline-flex rounded-xl px-6 py-3 text-sm font-semibold no-underline shadow-sm"
+            >
+              Practice for your role
+            </a>
+            <a
+              href="#blog-post-list"
+              class="inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 py-3 text-sm font-semibold text-[var(--text)] no-underline transition duration-200 ease-out hover:bg-[var(--surface-muted)]"
+            >
+              Browse articles
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    {
-      posts.length === 0 ? (
-        <p class="text-[var(--text-muted)]">Posts are on the way—check back soon.</p>
-      ) : (
-        <ul class="space-y-6 list-none p-0">
-          {posts.map((post) => {
-            const formattedDate = post.data.pubDate.toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            });
-            return (
-              <li class="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 transition duration-200 ease-out hover:border-brand-500/30 sm:p-6">
-                <a href={`/blog/${post.id}`} class="block no-underline">
-                  <h2 class="text-xl font-semibold text-[var(--text)]">{post.data.title}</h2>
-                  <p class="mt-2 text-sm text-[var(--text-muted)]">{formattedDate}</p>
-                  <p class="mt-3 text-[var(--text-muted)] leading-7">{post.data.description}</p>
-                  {post.data.tags && post.data.tags.length > 0 && (
-                    <ul class="mt-4 flex flex-wrap gap-2 list-none p-0">
-                      {post.data.tags.map((tag) => (
-                        <li class="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-muted)]">
-                          {tag}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      )
-    }
+    <section class="py-20 sm:py-24">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="mx-auto max-w-5xl">
+          <div class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm dark:shadow-none sm:p-6">
+            <div class="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_220px] md:items-end">
+              <label class="block">
+                <span class="text-sm font-medium text-[var(--text)]">Search posts</span>
+                <input
+                  id="blog-search"
+                  type="search"
+                  placeholder="Java, system design, behavioral..."
+                  class="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text)] outline-none transition duration-200 ease-out placeholder:text-[var(--text-soft)] focus:border-brand-500/40"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-sm font-medium text-[var(--text)]">Type</span>
+                <select
+                  id="blog-type-filter"
+                  class="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text)] outline-none transition duration-200 ease-out focus:border-brand-500/40"
+                >
+                  <option value="">All types</option>
+                  {postTypes.map((type) => (
+                    <option value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <p id="blog-results-count" class="text-sm text-[var(--text-muted)]">
+                Showing {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+              </p>
+              <button
+                id="blog-clear-filters"
+                type="button"
+                class="inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--surface-muted)]"
+              >
+                Clear filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {
+          posts.length === 0 ? (
+            <p class="mt-10 text-center text-lg text-[var(--text-muted)]">
+              Posts are on the way—check back soon.
+            </p>
+          ) : (
+            <ul id="blog-post-list" class="mx-auto mt-10 grid max-w-5xl list-none gap-6 p-0 md:grid-cols-2">
+              {posts.map((post) => {
+                const formattedDate = post.data.pubDate.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                });
+                return (
+                  <li
+                    class="blog-post-card rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-brand-500/30 dark:shadow-none"
+                    data-title={post.data.title.toLowerCase()}
+                    data-description={post.data.description.toLowerCase()}
+                    data-type={post.data.type}
+                  >
+                    <a href={`/blog/${post.id}`} class="block no-underline">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded-full border border-brand-500/15 bg-[var(--brand-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--brand)]">
+                          {typeLabels[post.data.type]}
+                        </span>
+                        <p class="text-sm text-[var(--text-muted)]">{formattedDate}</p>
+                      </div>
+                      <h2 class="mt-4 text-lg font-semibold text-[var(--text)]">{post.data.title}</h2>
+                      <p class="mt-3 leading-7 text-[var(--text-muted)]">{post.data.description}</p>
+                      {post.data.tags && post.data.tags.length > 0 && (
+                        <ul class="mt-4 flex flex-wrap gap-2 list-none p-0">
+                          {post.data.tags.map((tag) => (
+                            <li class="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-muted)]">
+                              {tag}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )
+        }
+      </div>
+    </section>
   </main>
   <Footer />
 </Layout>
+
+<script>
+  const searchInput = document.querySelector('#blog-search');
+  const typeFilter = document.querySelector('#blog-type-filter');
+  const clearButton = document.querySelector('#blog-clear-filters');
+  const resultCount = document.querySelector('#blog-results-count');
+  const postCards = Array.from(document.querySelectorAll('.blog-post-card'));
+
+  const updateVisiblePosts = () => {
+    const query = searchInput instanceof HTMLInputElement ? searchInput.value.trim().toLowerCase() : '';
+    const selectedType = typeFilter instanceof HTMLSelectElement ? typeFilter.value : '';
+
+    let visibleCount = 0;
+
+    for (const card of postCards) {
+      if (!(card instanceof HTMLElement)) continue;
+
+      const title = card.dataset.title ?? '';
+      const description = card.dataset.description ?? '';
+      const type = card.dataset.type ?? '';
+
+      const matchesQuery = query.length === 0 || title.includes(query) || description.includes(query);
+      const matchesType = selectedType.length === 0 || type === selectedType;
+
+      const matches = matchesQuery && matchesType;
+      card.style.display = matches ? '' : 'none';
+      if (matches) visibleCount += 1;
+    }
+
+    if (resultCount instanceof HTMLElement) {
+      resultCount.textContent =
+        visibleCount === 0
+          ? 'No posts match these filters'
+          : `Showing ${visibleCount} ${visibleCount === 1 ? 'post' : 'posts'}`;
+    }
+  };
+
+  searchInput?.addEventListener('input', updateVisiblePosts);
+  typeFilter?.addEventListener('change', updateVisiblePosts);
+  clearButton?.addEventListener('click', () => {
+    if (searchInput instanceof HTMLInputElement) searchInput.value = '';
+    if (typeFilter instanceof HTMLSelectElement) typeFilter.value = '';
+    updateVisiblePosts();
+  });
+</script>
