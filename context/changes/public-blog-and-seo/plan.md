@@ -454,8 +454,8 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [x] 2.1 `npm run build` produces sitemap artifact(s)
-- [x] 2.2 `npm run astro -- check` passes
+- [x] 2.1 `npm run build` produces sitemap artifact(s) — adac2da
+- [x] 2.2 `npm run astro -- check` passes — adac2da
 
 #### Manual
 
@@ -467,8 +467,8 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [x] 3.1 Build generates `/blog` and per-slug HTML
-- [x] 3.2 `npm run astro -- check` passes
+- [x] 3.1 Build generates `/blog` and per-slug HTML — adac2da
+- [x] 3.2 `npm run astro -- check` passes — adac2da
 
 #### Manual
 
@@ -479,8 +479,8 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [x] 4.1 `npm run build` succeeds with interactive post
-- [x] 4.2 `npm run astro -- check` passes
+- [x] 4.1 `npm run build` succeeds with interactive post — adac2da
+- [x] 4.2 `npm run astro -- check` passes — adac2da
 
 #### Manual
 
@@ -492,8 +492,8 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Automated
 
-- [x] 5.1 `npm run build` — exit 0
-- [x] 5.2 `npm run astro -- check` — exit 0
+- [x] 5.1 `npm run build` — exit 0 — adac2da
+- [x] 5.2 `npm run astro -- check` — exit 0 — adac2da
 
 #### Manual
 
