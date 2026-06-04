@@ -3,7 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-05-30
+updated: 2026-06-04
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -33,8 +33,8 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 |---|---|---|---|---|---|
 | F-01 | server-api-foundation | (foundation) run server endpoints on Vercel for AI, auth callbacks, and billing | — | NFR (generation responsiveness), Access Control | done |
 | F-02 | supabase-data-schema | (foundation) persist users, plans, usage, practice sets, and theme preference | — | NFR (data isolation), Access Control | done |
-| F-03 | supabase-oauth-auth | (foundation) sign in via Google OAuth; sessions protect practice routes | F-01, F-02 | FR-001, Access Control | proposed |
-| S-01 | sign-in-and-usage-dashboard | sign in and see FREE plan with remaining generations and Check calls | F-01, F-02, F-03 | FR-001, FR-012, US-02 | proposed |
+| F-03 | supabase-oauth-auth | (foundation) sign in via Google OAuth; sessions protect practice routes | F-01, F-02 | FR-001, Access Control | done |
+| S-01 | sign-in-and-usage-dashboard | sign in and see FREE plan with remaining generations and Check calls | F-01, F-02, F-03 | FR-001, FR-012, US-02 | ready |
 | S-02 | jd-gated-generation | paste a JD (and optional CV), request generation, and receive a ~20-question set within limits | S-01 | FR-002, FR-003, FR-004, FR-014, FR-015, US-01 | blocked |
 | S-03 | abcd-practice-and-summary | answer ABCD items with immediate feedback and see an end-of-set score summary | S-02 | FR-005, FR-006, FR-007, FR-009, US-01 | proposed |
 | S-04 | open-ended-check-flow | submit open-ended answers and receive Check feedback within Check limits | S-03 | FR-017, FR-018, FR-019, US-01, US-03 | proposed |
@@ -50,7 +50,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme | Chain | Note |
 |---|---|---|---|
-| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | **F-01** and **F-02** shipped; next: **F-03** OAuth. |
+| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | **F-01**, **F-02**, and **F-03** shipped; next: **S-01** usage dashboard. |
 | B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **S-02** is the north star; completes **US-01** with **S-03**–**S-04**. |
 | C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
 | D | Blog & SEO | `S-08` | Parallel public track — no auth prerequisite; can start while Stream A runs. |
@@ -58,13 +58,13 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 ## Baseline
 
-What's already in place in the codebase as of `2026-05-30` (foundations **F-01**, **F-02** shipped).
+What's already in place in the codebase as of `2026-06-04` (foundations **F-01**, **F-02**, **F-03** shipped).
 Foundations below assume these are present and do NOT re-scaffold them.
 
-- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); React integrated, no `.tsx` islands; shadcn not installed (planned per `tech-stack.md`)
-- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health); server env helpers; AI/auth/billing routes not yet built
-- **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets, RLS, usage RPCs); GitHub → `prod` deploy; no app Supabase client yet
-- **Auth:** absent — no auth SDK, middleware, or session routes (planned: Supabase + Google OAuth; schema trigger `handle_new_user` ready)
+- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog (`/blog`); React integrated, no `.tsx` islands; shadcn not installed (planned per `tech-stack.md`)
+- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth sign-in/callback/sign-out); server env helpers; AI/billing routes not yet built
+- **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets, RLS, usage RPCs); GitHub → `prod` deploy; Supabase SSR clients in app code
+- **Auth:** partial — Google OAuth via Supabase (`@supabase/ssr`), middleware gates `/app/*`, `/login`; usage dashboard and practice UI not yet built
 - **Deploy / infra:** partial — Vercel adapter + `context/deployment/deploy-plan.md`; no `.github/workflows/` in repo
 - **Observability:** absent — no app logging, error tracking, or analytics in code
 
@@ -107,7 +107,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Auth touches every signed-in slice — deferring it blocks the entire practice stream.
-- **Status:** proposed
+- **Status:** done
 
 ## Slices
 
@@ -121,7 +121,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Thin dashboard is enough for speed — avoids building practice UI before identity and quotas exist.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-02: JD-gated generation
 
@@ -234,8 +234,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 |---|---|---|---|---|
 | F-01 | server-api-foundation | Enable Astro server routes on Vercel | — | Shipped 2026-05-28 (`impl_reviewed`) |
 | F-02 | supabase-data-schema | Add Supabase schema for users, plans, and practice data | — | Shipped 2026-05-30 (`impl_reviewed`); prod via GitHub → `prod` |
-| F-03 | supabase-oauth-auth | Wire Google OAuth and protected practice routes | yes | Prerequisites F-01 + F-02 complete |
-| S-01 | sign-in-and-usage-dashboard | Sign-in with usage dashboard (FREE plan) | no | After F-03 |
+| F-03 | supabase-oauth-auth | Wire Google OAuth and protected practice routes | — | Shipped 2026-05-30 (`implemented`); OAuth verified on Preview |
+| S-01 | sign-in-and-usage-dashboard | Sign-in with usage dashboard (FREE plan) | yes | F-03 complete; `/app` is stub until this slice |
 | S-02 | jd-gated-generation | JD paste + gated AI generation (~20 questions) | no | Blocked: CV input format (OQ 1) |
 | S-03 | abcd-practice-and-summary | ABCD practice loop + score summary | no | After S-02 |
 | S-04 | open-ended-check-flow | Open-ended answers + Check feedback | no | After S-03 |
@@ -271,3 +271,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **F-01** `server-api-foundation` — Astro server on Vercel, health API, env helpers (2026-05-28).
 - **F-02** `supabase-data-schema` — Postgres schema, RLS, migrations workflow, usage RPCs; deployed to prod (2026-05-30).
+- **F-03** `supabase-oauth-auth` — Google OAuth, SSR session cookies, `/api/auth/*`, middleware on `/app/*`, `/login` (2026-05-30; verified working 2026-06-04).

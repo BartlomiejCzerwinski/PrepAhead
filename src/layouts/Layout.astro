@@ -4,14 +4,19 @@ import '../styles/global.css';
 interface Props {
 	title?: string;
 	description?: string;
+	canonicalPath?: string;
 }
 
 const {
 	title = 'PrepAhead — Interview practice for the role you applied to',
 	description = 'Paste a job description, get a tailored practice set of multiple-choice and open-ended questions with feedback—grounded in that posting, not generic trivia.',
+	canonicalPath,
 } = Astro.props;
 
 const pageTitle = title.includes('PrepAhead') ? title : `${title} · PrepAhead`;
+
+const canonicalUrl =
+	canonicalPath && Astro.site ? new URL(canonicalPath, Astro.site).href : undefined;
 ---
 
 <!doctype html>
@@ -20,6 +25,7 @@ const pageTitle = title.includes('PrepAhead') ? title : `${title} · PrepAhead`;
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content={description} />
+		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />

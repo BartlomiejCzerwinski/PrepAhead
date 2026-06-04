@@ -359,6 +359,14 @@ Document OAuth setup for contributors and Vercel; run manual E2E and RLS cross-u
 
 **Implementation Note**: Mark `change.md` `status: implemented` only after Preview OAuth + RLS proof pass (human confirmation).
 
+#### 5. Supporting files (addendum — not in original phase scope)
+
+**Files**: `astro.config.mjs`, `scripts/preview.mjs`
+
+**Intent**: Stable local OAuth origin and on-demand route preview for manual verification.
+
+**Contract**: `astro.config.mjs` pins `server.port: 4321`, `host: true`, and `strictPort: true` so `PUBLIC_SITE_URL=http://localhost:4321` matches the dev/preview origin used in Supabase redirect URLs. `scripts/preview.mjs` (invoked by `npm run preview`) routes `/api/*`, `/app`, and `/login` to the Vercel server bundle so auth middleware and API routes behave like production during local smoke tests.
+
 ---
 
 ## Testing Strategy
@@ -448,25 +456,25 @@ Manual only for F-03:
 
 #### Automated
 
-- [x] 3.1 `npm run build` — exit 0
-- [x] 3.2 `npm run astro -- check` — exit 0
-- [x] 3.3 Build output includes on-demand `/app` route
+- [x] 3.1 `npm run build` — exit 0 — 8a2701b
+- [x] 3.2 `npm run astro -- check` — exit 0 — 8a2701b
+- [x] 3.3 Build output includes on-demand `/app` route — 8a2701b
 
 #### Manual
 
-- [x] 3.4 Unauthenticated `/app` redirects to `/login?next=/app`
-- [x] 3.5 `/login` renders Google sign-in; landing CTA links to `/login`
+- [x] 3.4 Unauthenticated `/app` redirects to `/login?next=/app` — 8a2701b
+- [x] 3.5 `/login` renders Google sign-in; landing CTA links to `/login` — 8a2701b
 
 ### Phase 4: Docs, env & verification
 
 #### Automated
 
-- [ ] 4.1 `npm run build` — exit 0
-- [ ] 4.2 `npm run astro -- check` — exit 0
+- [x] 4.1 `npm run build` — exit 0
+- [x] 4.2 `npm run astro -- check` — exit 0
 
 #### Manual
 
-- [ ] 4.3 Preview OAuth E2E: sign-in → `/app`
-- [ ] 4.4 Profile + settings rows created on first sign-in
-- [ ] 4.5 RLS blocks cross-user read (two test accounts)
-- [ ] 4.6 Sign-out clears session; `?next=` cannot open external redirect
+- [x] 4.3 Preview OAuth E2E: sign-in → `/app`
+- [x] 4.4 Profile + settings rows created on first sign-in
+- [x] 4.5 RLS blocks cross-user read (two test accounts)
+- [x] 4.6 Sign-out clears session; `?next=` cannot open external redirect

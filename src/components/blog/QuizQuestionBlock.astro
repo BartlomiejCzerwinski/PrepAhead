@@ -1,0 +1,90 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type QuizItem = Extract<CollectionEntry<'blog'>['data'], { type: 'interactive-quiz' }>['quiz'][number];
+
+interface Props {
+  item: QuizItem;
+  index: number;
+}
+
+const { item, index } = Astro.props;
+const questionNumber = index + 1;
+const fieldName = `quiz-q${questionNumber}`;
+const correctOption = item.options[item.correctIndex];
+---
+
+<section class="quiz-question rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm dark:shadow-none sm:p-6">
+  <p class="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">
+    Question {questionNumber}
+  </p>
+  <h2 class="!mt-2 !mb-0 text-xl font-bold tracking-tight text-[var(--text)] sm:text-2xl">
+    {item.question}
+  </h2>
+
+  <fieldset class="mt-6 border-0 p-0" data-correct-index={item.correctIndex}>
+    <legend class="mb-3 text-sm font-medium text-[var(--text)]">
+      Pick an answer to see if you are correct
+    </legend>
+    <ul class="space-y-2 list-none p-0">
+      {
+        item.options.map((option, optionIndex) => {
+          const id = `${fieldName}-option-${optionIndex}`;
+          return (
+            <li class="quiz-option">
+              <label
+                for={id}
+                class="quiz-option-label flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm transition duration-200 ease-out hover:border-brand-500/25"
+              >
+                <input
+                  id={id}
+                  type="radio"
+                  name={fieldName}
+                  value={optionIndex}
+                  class="mt-0.5"
+                />
+                <span class="text-[var(--text)]">{option}</span>
+              </label>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </fieldset>
+
+  <details class="quiz-reveal mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)]">
+    <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-[var(--text)]">
+      Reveal answer
+    </summary>
+    <div class="quiz-answer-body border-t border-[var(--border)] px-4 py-4 sm:px-5 sm:py-5">
+      <p class="text-sm font-semibold text-[var(--text)]">Answer</p>
+      <p class="mt-2 text-[var(--text-muted)]">
+        <strong class="text-[var(--text)]">{correctOption}</strong>
+        {' - '}
+        {item.answer}
+      </p>
+
+      <p class="mt-5 text-sm font-semibold text-[var(--text)]">Explanation</p>
+      <p class="mt-2 text-[var(--text-muted)]">{item.explanation}</p>
+
+      {
+        item.example && (
+          <>
+            <p class="mt-5 text-sm font-semibold text-[var(--text)]">Example</p>
+            <pre class="quiz-code mt-2 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm leading-6 text-[var(--text)]"><code
+              set:text={item.example.trim()} /></pre>
+          </>
+        )
+      }
+
+      {
+        item.interviewNotes && (
+          <>
+            <p class="mt-5 text-sm font-semibold text-[var(--text)]">Common interview notes</p>
+            <p class="mt-2 text-[var(--text-muted)]">{item.interviewNotes}</p>
+          </>
+        )
+      }
+    </div>
+  </details>
+</section>

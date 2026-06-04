@@ -1,0 +1,56 @@
+---
+interface Props {
+  variant?: 'inline' | 'score';
+}
+
+const { variant = 'inline' } = Astro.props;
+
+const isScore = variant === 'score';
+---
+
+<aside
+  class:list={[
+    'quiz-app-cta relative overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] text-center shadow-[0_8px_30px_rgba(17,24,39,0.06)] dark:shadow-none',
+    isScore ? 'mt-6 px-5 py-6 sm:px-8' : 'mt-8 px-5 py-8 sm:px-10',
+  ]}
+>
+  <div
+    class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.14),transparent_42%)]"
+    aria-hidden="true"
+  ></div>
+  <div class="relative">
+    {
+      !isScore && (
+        <div class="inline-flex rounded-full border border-brand-500/15 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+          Ready for your actual role?
+        </div>
+      )
+    }
+    <h3
+      class:list={[
+        'font-bold tracking-tight text-[var(--text)]',
+        isScore ? 'text-lg sm:text-xl' : 'mt-4 text-xl sm:text-2xl',
+      ]}
+    >
+      Practice for the job you applied to
+    </h3>
+    <p
+      class:list={[
+        'mx-auto text-[var(--text-muted)]',
+        isScore ? 'mt-2 max-w-md text-sm leading-6' : 'mt-3 max-w-lg text-sm leading-7 sm:text-base',
+      ]}
+    >
+      Paste your job description and get a tailored set of questions grounded in that posting, with
+      Check feedback after sign-in.
+    </p>
+    <a
+      href="/app"
+      class:list={[
+        'btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm',
+        isScore ? 'mt-5' : 'mt-6',
+      ]}
+    >
+      Start role-specific practice
+    </a>
+  </div>
+</aside>

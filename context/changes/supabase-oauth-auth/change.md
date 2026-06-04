@@ -1,9 +1,9 @@
 ---
 change_id: supabase-oauth-auth
-status: implementing
+status: implemented
 created: 2026-05-30
 updated: 2026-05-30
-notes: Google OAuth only; middleware gate on /app/*; hosted Supabase for local OAuth dev
+notes: Google OAuth only; middleware gate on /app/*; hosted Supabase for local OAuth dev. Impl closed 2026-05-30 — Preview OAuth + RLS verified; impl-review warnings deferred (see follow-ups/review-fixes.md).
 roadmap_ref: F-03
 roadmap_outcome: (foundation) sign in via Google OAuth; sessions protect practice routes
 prd_refs:

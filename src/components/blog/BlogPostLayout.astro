@@ -1,0 +1,81 @@
+---
+import Footer from '../landing/Footer.astro';
+import Header from '../landing/Header.astro';
+
+interface Props {
+  title: string;
+  pubDate: Date;
+  tags?: string[];
+}
+
+const { title, pubDate, tags = [] } = Astro.props;
+
+const formattedDate = pubDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Header />
+<main>
+  <article class="border-b border-[var(--border)] py-20 sm:py-24">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <a
+        href="/blog"
+        class="text-sm font-medium text-[var(--text-muted)] no-underline transition duration-200 ease-out hover:text-[var(--text)]"
+      >
+        ← All posts
+      </a>
+      <header class="mt-6 max-w-3xl border-b border-[var(--border)] pb-10">
+        <h1 class="text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
+          {title}
+        </h1>
+        <p class="mt-4 text-base text-[var(--text-muted)]">{formattedDate}</p>
+        {
+          tags.length > 0 && (
+            <ul class="mt-5 flex flex-wrap gap-2 list-none p-0">
+              {tags.map((tag) => (
+                <li class="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-medium text-[var(--text-muted)]">
+                  {tag}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </header>
+      <div class="blog-prose mt-10 max-w-3xl">
+        <slot />
+      </div>
+    </div>
+  </article>
+
+  <section class="py-20 sm:py-24">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <aside
+        class="relative overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-14 text-center shadow-[0_16px_50px_rgba(17,24,39,0.08)] dark:shadow-none sm:px-12"
+      >
+        <div
+          class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.16),transparent_38%)]"
+          aria-hidden="true"
+        ></div>
+        <div class="relative">
+          <h2 class="text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">
+            Practice for your role
+          </h2>
+          <p class="mx-auto mt-4 max-w-2xl text-lg leading-8 text-[var(--text-muted)]">
+            Paste the job description you applied to and get a tailored practice set with ABCD and
+            open-ended questions grounded in that posting, with Check feedback after sign-in.
+          </p>
+          <a
+            href="/app"
+            class="btn-primary mt-8 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm"
+          >
+            Start role-specific practice
+          </a>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+<Footer />

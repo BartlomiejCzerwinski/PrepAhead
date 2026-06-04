@@ -1,9 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { safeAuthRedirectPath } from '../lib/server/auth-redirect';
 
 export const prerender = false;
 
-const next = Astro.url.searchParams.get('next');
+const nextRaw = Astro.url.searchParams.get('next');
+const sanitizedNext = nextRaw ? safeAuthRedirectPath(nextRaw) : null;
+const nextHidden =
+  sanitizedNext && sanitizedNext !== '/app' ? sanitizedNext : null;
 const errorCode = Astro.url.searchParams.get('error');
 
 const errorMessages: Record<string, string> = {
@@ -49,7 +53,7 @@ const errorMessage = errorCode ? (errorMessages[errorCode] ?? 'Something went wr
 				}
 
 				<form method="POST" action="/api/auth/sign-in" class="mt-8">
-					{next && <input type="hidden" name="next" value={next} />}
+					{nextHidden && <input type="hidden" name="next" value={nextHidden} />}
 					<button type="submit" class="btn-primary inline-flex w-full items-center justify-center gap-3 rounded-xl px-5 py-3 text-sm font-semibold shadow-sm">
 						<span class="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-bold text-[#4285f4]" aria-hidden="true">G</span>
 						Continue with Google

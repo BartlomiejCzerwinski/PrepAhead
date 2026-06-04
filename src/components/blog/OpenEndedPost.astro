@@ -1,0 +1,24 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { resolveRelatedPosts } from '../../lib/blog/related-posts';
+import BlogArticleIntro from './BlogArticleIntro.astro';
+import BlogPostNote from './BlogPostNote.astro';
+import RelatedBlogPosts from './RelatedBlogPosts.astro';
+
+interface Props {
+  entry: CollectionEntry<'blog'>;
+}
+
+const { entry } = Astro.props;
+
+if (entry.data.type !== 'open-ended') {
+  return null;
+}
+
+const allPosts = await getCollection('blog');
+const relatedPosts = resolveRelatedPosts(entry, allPosts, 6);
+---
+
+<BlogArticleIntro {entry} />
+<RelatedBlogPosts posts={relatedPosts} />
+<BlogPostNote variant="open-ended" />
