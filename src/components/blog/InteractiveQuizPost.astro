@@ -1,6 +1,12 @@
 ---
-import { render, type CollectionEntry } from 'astro:content';
-import InteractiveQuiz from './InteractiveQuiz';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { resolveRelatedPosts } from '../../lib/blog/related-posts';
+import BlogArticleIntro from './BlogArticleIntro.astro';
+import BlogPostNote from './BlogPostNote.astro';
+import QuizQuestionBlock from './QuizQuestionBlock.astro';
+import QuizFullAnswerKey from './QuizFullAnswerKey.astro';
+import RelatedBlogPosts from './RelatedBlogPosts.astro';
+import QuizAppCta from './QuizAppCta.astro';
 
 interface Props {
   entry: CollectionEntry<'blog'>;
@@ -12,15 +18,43 @@ if (entry.data.type !== 'interactive-quiz') {
   return null;
 }
 
-const { Content } = await render(entry);
 const { quiz } = entry.data;
+const allPosts = await getCollection('blog');
+const relatedPosts = resolveRelatedPosts(entry, allPosts, 6);
 ---
 
-<div class="blog-prose">
-  <Content />
+<BlogArticleIntro {entry} class="blog-prose quiz-intro" />
+
+<section class="quiz-practice mt-10 space-y-8" aria-label="Practice questions">
+  <QuizQuestionBlock item={quiz[0]} index={0} />
+  <QuizAppCta variant="inline" />
+  {
+    quiz.slice(1).map((item, index) => (
+      <QuizQuestionBlock item={item} index={index + 1} />
+    ))
+  }
+</section>
+
+<div
+  id="quiz-practice-score"
+  class="quiz-score-panel mx-auto mt-10 hidden max-w-3xl rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-8 text-center shadow-[0_8px_30px_rgba(17,24,39,0.06)] dark:shadow-none"
+  aria-hidden="true"
+  role="status"
+>
+  <p class="text-sm font-medium text-[var(--text-muted)]">Your result</p>
+  <p id="quiz-score-text" class="mt-2 text-3xl font-bold text-[var(--text)]"></p>
+  <p class="mt-2 text-sm text-[var(--text-muted)]">
+    Review the full answer key below for explanations and interview notes.
+  </p>
+  <QuizAppCta variant="score" />
 </div>
-<InteractiveQuiz client:visible quiz={quiz} />
-<p class="mt-8 text-sm text-[var(--text-muted)]">
-  This quiz is self-scored in your browser. For JD-tailored questions and Check feedback, use
-  practice in the app.
-</p>
+
+<QuizFullAnswerKey {quiz} />
+<RelatedBlogPosts posts={relatedPosts} />
+<BlogPostNote variant="interactive-quiz" />
+
+<script>
+  import { initQuizPractice } from '../../lib/blog/quiz-practice-client';
+
+  initQuizPractice();
+</script>

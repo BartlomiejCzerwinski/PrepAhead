@@ -1,0 +1,16 @@
+---
+interface Props {
+  variant: 'open-ended' | 'interactive-quiz';
+}
+
+const { variant } = Astro.props;
+
+const copy =
+  variant === 'open-ended'
+    ? 'These prompts are for self-reflection here. Critical feedback on your answers is available in signed-in practice with Check - not on blog pages.'
+    : 'Try each question on your own, then open "Reveal answer" for the full write-up. For tailored practice and Check feedback on open-ended responses, use PrepAhead in the app - not on blog pages.';
+---
+
+<p class="mt-10 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-muted)]">
+  {copy}
+</p>

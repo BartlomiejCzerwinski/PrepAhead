@@ -1,0 +1,51 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type QuizItem = Extract<CollectionEntry<'blog'>['data'], { type: 'interactive-quiz' }>['quiz'][number];
+
+interface Props {
+  quiz: QuizItem[];
+}
+
+const { quiz } = Astro.props;
+---
+
+<section class="quiz-answer-key mt-16 border-t border-[var(--border)] pt-12" aria-labelledby="full-answer-key-heading">
+  <h2 id="full-answer-key-heading" class="!mt-0 text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">
+    Full answer key
+  </h2>
+  <p class="mt-3 text-[var(--text-muted)]">
+    Review every answer in one place, with explanations and interview tips below.
+  </p>
+
+  <div class="mt-8 space-y-8">
+    {
+      quiz.map((item, index) => {
+        const correctOption = item.options[item.correctIndex];
+        return (
+          <article class="rounded-[1.25rem] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+            <h3 class="!mt-0 text-lg font-semibold text-[var(--text)]">
+              {index + 1}. {item.question}
+            </h3>
+            <p class="mt-3 text-sm font-semibold text-[var(--text)]">Answer summary</p>
+            <p class="mt-2 text-[var(--text-muted)]">
+              <strong class="text-[var(--text)]">{correctOption}</strong>
+              {' — '}
+              {item.answer}
+            </p>
+            <p class="mt-4 text-sm text-[var(--text-muted)]">{item.explanation}</p>
+            {item.example && (
+              <pre class="quiz-code mt-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4 text-sm leading-6 text-[var(--text)]"><code
+                set:text={item.example.trim()} /></pre>
+            )}
+            {item.interviewNotes && (
+              <p class="mt-4 text-sm text-[var(--text-muted)]">
+                <strong class="text-[var(--text)]">Interview tip:</strong> {item.interviewNotes}
+              </p>
+            )}
+          </article>
+        );
+      })
+    }
+  </div>
+</section>

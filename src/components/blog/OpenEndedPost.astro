@@ -1,18 +1,24 @@
 ---
-import { render, type CollectionEntry } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { resolveRelatedPosts } from '../../lib/blog/related-posts';
+import BlogArticleIntro from './BlogArticleIntro.astro';
+import BlogPostNote from './BlogPostNote.astro';
+import RelatedBlogPosts from './RelatedBlogPosts.astro';
 
 interface Props {
   entry: CollectionEntry<'blog'>;
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+
+if (entry.data.type !== 'open-ended') {
+  return null;
+}
+
+const allPosts = await getCollection('blog');
+const relatedPosts = resolveRelatedPosts(entry, allPosts, 6);
 ---
 
-<div class="blog-prose">
-  <Content />
-</div>
-<p class="mt-8 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-muted)]">
-  These prompts are for self-reflection here. Critical feedback on your answers is available in
-  signed-in practice with Check—not on blog pages.
-</p>
+<BlogArticleIntro {entry} />
+<RelatedBlogPosts posts={relatedPosts} />
+<BlogPostNote variant="open-ended" />

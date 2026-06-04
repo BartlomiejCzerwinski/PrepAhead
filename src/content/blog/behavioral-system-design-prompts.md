@@ -1,52 +1,87 @@
 ---
-title: Behavioral and system design prompts for mid-level interviews
-description: Eight open-ended interview prompts on collaboration, trade-offs, and architecture—practice framing answers out loud before your loop.
+title: Behavioral and system design interview prompts for mid-level engineers
+description: Eight realistic interview prompts on collaboration, incidents, architecture, and trade-offs, with guidance on what a strong answer should cover.
 pubDate: 2026-05-29
 type: open-ended
 tags:
   - Behavioral
   - System design
   - Mid-level
+relatedSlugs:
+  - java-mid-interview-quiz
+  - java-collections-quick-quiz
 ---
 
-These prompts mirror what interviewers ask when they want reasoning, not a single correct ABCD option. Draft bullet outlines, then practice speaking for two to three minutes per question.
+These prompts are written to sound closer to how interviewers actually ask them in live screens and onsite loops. For each one, do more than name a tool or pattern. Explain the decision you made, the trade-offs you considered, and the result you drove.
 
 ## Behavioral
 
-**1. Tell me about a time you disagreed with a teammate on a technical approach.**
+**1. Tell me about a time you disagreed with a teammate or tech lead on an implementation approach. How did you handle it?**
 
-What was at stake? How did you align on criteria (risk, time, maintainability)? What was the outcome?
+A strong answer should cover:
 
-**2. Describe a production incident you helped resolve.**
+- what decision mattered and why it was worth discussing
+- how you aligned on criteria such as risk, effort, performance, or maintainability
+- what changed after the conversation and what you learned
 
-What did you observe first? How did you communicate status? What did you change afterward to prevent recurrence?
+**2. Tell me about a production issue or incident you were personally involved in resolving.**
 
-**3. When have you simplified a system that had grown too complex?**
+A strong answer should cover:
 
-What pain triggered the work? What did you remove or consolidate? How did you validate you did not break consumers?
+- what signals told you something was wrong
+- how you communicated status and coordinated with others
+- the immediate fix and the longer-term prevention work
+
+**3. Describe a time you simplified a system, workflow, or code path that had become too complex.**
+
+A strong answer should cover:
+
+- what pain the old design created for engineers or users
+- what you removed, merged, or redesigned
+- how you verified the change improved things without breaking consumers
 
 ## System design (mid-level scope)
 
-**4. Design a URL shortener for internal team use (not global scale).**
+**4. Design a URL shortener for internal company use, not internet scale. What would you ask first, and what would your first version look like?**
 
-Clarify read/write ratio, retention, and auth. Sketch API, storage, and how you would generate unique codes.
+A strong answer should cover:
 
-**5. How would you add rate limiting to an existing REST API?**
+- traffic expectations, retention, permissions, and whether links expire
+- a simple API and data model before advanced scaling ideas
+- how unique codes are generated and what happens on collisions
 
-Compare token bucket vs sliding window at the edge vs in-app. Where do you store counters? What happens when limits are hit?
+**5. You need to add rate limiting to an existing REST API that already has paying customers. How would you approach it?**
 
-**6. You need to cache job listing results for five minutes.**
+A strong answer should cover:
 
-What are cache keys? How do you invalidate on updates? What failures are acceptable (stale data vs overload)?
+- where rate limiting should live, such as the edge, gateway, or application layer
+- the algorithm choice and why it fits the product behavior
+- how clients learn they are limited and how you avoid breaking current integrations
 
-**7. Explain how you would migrate a monolith endpoint to a separate service without a big-bang release.**
+**6. Search results for job listings are expensive to compute, and the product team wants them cached for five minutes. How would you design that?**
 
-Strangler pattern, dual writes, feature flags, and rollback plan—in your own words.
+A strong answer should cover:
 
-**8. What metrics and logs would you add before launching a new checkout flow?**
+- cache key design and what request attributes belong in the key
+- invalidation strategy when jobs are updated or removed
+- what stale-data behavior is acceptable and how you would monitor it
 
-Think success rate, latency percentiles, business events, and alert thresholds—not tool names only.
+**7. A monolith endpoint is under heavy load, and the team wants to move it into a separate service without a risky big-bang migration. Walk through your plan.**
+
+A strong answer should cover:
+
+- how traffic would be shifted gradually
+- whether you need dual writes, backfills, or synchronization during the transition
+- rollback strategy if latency, correctness, or cost gets worse
+
+**8. Before launching a new checkout flow, what metrics, logs, and alerts would you add?**
+
+A strong answer should cover:
+
+- business metrics such as conversion and payment success rate
+- technical signals such as latency, error rate, and dependency failures
+- how alerts would point responders to meaningful symptoms rather than noisy dashboards
 
 ## How to use this post
 
-Read each prompt, outline **situation → action → result** for behavioral items, and **requirements → design → trade-offs** for design items. Timed practice beats rereading silently.
+Practice these out loud, not just in your head. For behavioral prompts, use **situation → action → result → reflection**. For system design prompts, use **requirements → constraints → design → trade-offs → rollout**. Two clear minutes with specifics will usually outperform a long vague answer.

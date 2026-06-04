@@ -1,24 +1,29 @@
 ---
-import { getCollection, getEntry } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import BlogPostLayout from '../../components/blog/BlogPostLayout.astro';
-import StaticQuizPost from '../../components/blog/StaticQuizPost.astro';
 import OpenEndedPost from '../../components/blog/OpenEndedPost.astro';
 import InteractiveQuizPost from '../../components/blog/InteractiveQuizPost.astro';
+
+export const prerender = true;
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
   return posts.map((entry) => ({
     params: { slug: entry.id },
-    props: { id: entry.id },
+    props: { entry },
   }));
 }
 
-const { slug } = Astro.params;
-const entry = slug ? await getEntry('blog', slug) : undefined;
+interface Props {
+  entry: CollectionEntry<'blog'>;
+}
 
-if (!entry) {
-  return new Response(null, { status: 404, statusText: 'Not Found' });
+const { entry } = Astro.props;
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/404');
 }
 
 const { title, description, pubDate, tags, type } = entry.data;
@@ -27,7 +32,6 @@ const canonicalPath = `/blog/${slug}`;
 
 <Layout {title} {description} {canonicalPath}>
   <BlogPostLayout {title} {pubDate} {tags}>
-    {type === 'static-quiz' && <StaticQuizPost {entry} />}
     {type === 'open-ended' && <OpenEndedPost {entry} />}
     {type === 'interactive-quiz' && <InteractiveQuizPost {entry} />}
   </BlogPostLayout>
