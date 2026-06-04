@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implement roadmap **S-08** (`public-blog-and-seo`): a public, prerendered blog on prepahead.dev with a post index, three launch content formats (static quiz, open-ended, interactive quiz), per-post and site SEO (metadata, canonical URLs, sitemap), footer discovery link, and CTAs to **`/app`** for JD-tailored practice. Content is founder-authored markdown in the repo (FR-032); no database or CMS. Satisfies PRD **FR-024–FR-032** and **US-05**.
+Implement roadmap **S-08** (`public-blog-and-seo`): a public, prerendered blog on prepahead.dev with a post index, two post types (`open-ended`, `interactive-quiz`), three launch posts, per-post and site SEO (metadata, canonical URLs, sitemap), footer discovery link, and CTAs to **`/app`** for JD-tailored practice. Content is founder-authored markdown in the repo (FR-032); no database or CMS. Satisfies PRD **FR-024–FR-032** and **US-05**. **FR-026** (readable Q&A in post content) is delivered via prerendered interactive-quiz HTML, not a separate `static-quiz` type.
 
 ## Current State Analysis
 
@@ -30,8 +30,8 @@ Implement roadmap **S-08** (`public-blog-and-seo`): a public, prerendered blog o
 After this plan:
 
 1. **`/blog`** lists all published posts (title, date, optional skill/level tags, link per post).
-2. **`/blog/[slug]`** serves each post without sign-in; layout varies by `type` (`static-quiz`, `open-ended`, `interactive-quiz`).
-3. **Interactive post** renders markdown intro/body in HTML; quiz questions and interaction use a shared **`InteractiveQuiz`** React island (`client:visible` or `client:load`) with a score/result summary — no AI Check. (Quiz Q&A is not duplicated in server HTML in v1.)
+2. **`/blog/[slug]`** serves each post without sign-in; layout varies by `type` (`open-ended`, `interactive-quiz`).
+3. **Interactive-quiz posts** render markdown intro and full Q&A in prerendered HTML; optional client script (`quiz-practice-client.ts`) provides selection grading and aggregate score — no AI Check.
 4. **SEO:** Each page has unique `title`, `meta description`, and `<link rel="canonical">` using `PUBLIC_SITE_URL`. **`@astrojs/sitemap`** emits a sitemap for `/`, `/blog`, and all post URLs. **`public/robots.txt`** allows crawlers and references the sitemap.
 5. **CTA** on index and every post points to **`/app`** with clear copy (e.g. “Practice for your role”). When F-03 middleware is live, unauthenticated `/app` requests redirect to `/login`.
 6. **Footer** on landing (and blog pages) includes a link to **`/blog`**.
@@ -61,7 +61,7 @@ After this plan:
 
 ## Implementation Approach
 
-Use Astro 6 **Content Layer** with a single `blog` collection (`src/content/blog/*.md`), Zod schema with a `type` discriminator and optional `quiz` array for interactive posts. Prerender **`src/pages/blog/index.astro`** and **`src/pages/blog/[slug].astro`** via `getStaticPaths` from collection entries (`entry.id` as slug segment). Extend **`Layout.astro`** for canonical URLs. Add **`@astrojs/sitemap`** with `site` derived from `PUBLIC_SITE_URL` at build time. Extract a small **`BlogPostLayout.astro`** (or equivalent) for shared post chrome (title, date, tags, CTA). Implement **`InteractiveQuiz.tsx`** as the first React island; keep scoring logic in a pure TS module colocated for future unit tests. Reuse landing design tokens (`var(--*)`, `.btn-primary`) for visual consistency.
+Use Astro 6 **Content Layer** with a single `blog` collection (`src/content/blog/*.md`), Zod schema with `type` (`open-ended` | `interactive-quiz`) and `quiz` array for interactive posts. Prerender **`src/pages/blog/index.astro`** and **`src/pages/blog/[slug].astro`** via `getStaticPaths` from collection entries (`entry.id` as slug segment). Extend **`Layout.astro`** for canonical URLs. Add **`@astrojs/sitemap`** with `site` derived from `PUBLIC_SITE_URL` at build time. Extract **`BlogPostLayout.astro`** for shared post chrome (title, date, tags, CTA). Quiz UX: SSR **`QuizQuestionBlock`** components + **`quiz-practice-client.ts`**; scoring in **`score-quiz.ts`**. Reuse landing design tokens (`var(--*)`, `.btn-primary`) for visual consistency.
 
 ## Critical Implementation Details
 
@@ -106,7 +106,7 @@ Add dependencies, Astro `site` config, and the blog content collection schema so
 - Import `defineCollection` from `astro:content`, `glob` from `astro/loaders`, `z` from `astro/zod`.
 - Collection key: `blog`.
 - Loader: `glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' })` (prefer `.md` only unless MDX needed).
-- Schema fields (all posts): `title` (string), `description` (string), `pubDate` (coerce date), `type` (enum: `static-quiz` | `open-ended` | `interactive-quiz`), optional `tags` (array of strings — skill/level labels).
+- Schema fields (all posts): `title` (string), `description` (string), `pubDate` (coerce date), `type` (enum: `open-ended` | `interactive-quiz`), optional `tags` (array of strings — skill/level labels), optional `relatedSlugs`.
 - Interactive posts only: `quiz` — array of objects: `question` (string), `options` (array of strings, min length 2), `correctIndex` (number/int within options range). Enforce with `.refine()` or `z.discriminatedUnion` so `quiz` is required when `type === 'interactive-quiz'` and omitted otherwise.
 
 #### 4. Content directory placeholder
@@ -247,31 +247,23 @@ Add prerendered blog index and dynamic post route wired to the content collectio
 
 ---
 
-## Phase 4: Post formats and interactive quiz island
+## Phase 4: Post formats and quiz practice client
 
 ### Overview
 
-Implement three post layouts and the reusable interactive quiz React island with server-rendered article content.
+Implement two post layouts (`open-ended`, `interactive-quiz`) with server-rendered article and quiz HTML; optional client script for scoring (no React island on blog v1).
 
 ### Changes Required:
 
-#### 1. Static quiz layout
-
-**File**: `src/components/blog/StaticQuizPost.astro` (create)
-
-**Intent**: FR-026 — questions and answers in post content.
-
-**Contract**: Render `await render(entry)` body (or `<Content />` from render result) inside article styles. Content is markdown-authored Q&A (founder formats headings/lists). No client JS required. Optional short note that AI Check is available after sign-in (honest scope — no Check on blog).
-
-#### 2. Open-ended layout
+#### 1. Open-ended layout
 
 **File**: `src/components/blog/OpenEndedPost.astro` (create)
 
 **Intent**: FR-027 — open-ended prompts without AI grading.
 
-**Contract**: Same render pattern as static quiz; copy guardrail that critical feedback is in signed-in practice. No text inputs that imply Check.
+**Contract**: Render intro via `BlogArticleIntro`; copy guardrail that critical feedback is in signed-in practice. No text inputs that imply Check.
 
-#### 3. Quiz scoring module
+#### 2. Quiz scoring module
 
 **File**: `src/lib/blog/score-quiz.ts` (create)
 
@@ -279,21 +271,29 @@ Implement three post layouts and the reusable interactive quiz React island with
 
 **Contract**: Export `scoreQuiz(questions, selectedIndices)` returning `{ correct, total, percent }` or equivalent for UI summary. No side effects; no logging of answers.
 
-#### 4. Interactive quiz island
+#### 3. Quiz question blocks (SSR)
 
-**File**: `src/components/blog/InteractiveQuiz.tsx` (create)
+**Files**: `src/components/blog/QuizQuestionBlock.astro`, `QuizFullAnswerKey.astro` (create)
 
-**Intent**: FR-028 — in-page selection and result summary.
+**Intent**: FR-026/FR-028 — questions, options, and answers in prerendered HTML (SEO-friendly; readable with JS disabled via `<details>` reveal).
 
-**Contract**: Props: quiz array matching schema. Client UI: one question at a time or scrollable list; radio/select per question; submit shows summary using `scoreQuiz`. Use `client:visible` (preferred for performance) or `client:load` if needed for short posts. Do not fetch APIs; no Supabase.
+**Contract**: Render each `quiz` item from frontmatter; escape code with `set:text`; no API calls.
+
+#### 4. Quiz practice client
+
+**File**: `src/lib/blog/quiz-practice-client.ts` (create)
+
+**Intent**: FR-028 — in-page selection and aggregate result summary.
+
+**Contract**: Inline `<script>` from `InteractiveQuizPost.astro` calls `initQuizPractice()`; uses `scoreQuiz`; `textContent` only for score UI. No `localStorage`; no Supabase.
 
 #### 5. Interactive post layout
 
 **File**: `src/components/blog/InteractiveQuizPost.astro` (create)
 
-**Intent**: Wire island to collection entry.
+**Intent**: Wire SSR quiz blocks + client script to collection entry.
 
-**Contract**: Render optional markdown intro via `render()`; mount `<InteractiveQuiz client:visible quiz={entry.data.quiz} />`. Article HTML for intro must appear in server output.
+**Contract**: Optional markdown intro via `BlogArticleIntro`; map `quiz` array to `QuizQuestionBlock`; mount practice script. Article and Q&A HTML must appear in server output.
 
 #### 6. Post route dispatch
 
@@ -301,7 +301,7 @@ Implement three post layouts and the reusable interactive quiz React island with
 
 **Intent**: Select layout by `entry.data.type`.
 
-**Contract**: `switch`/conditional importing `StaticQuizPost`, `OpenEndedPost`, or `InteractiveQuizPost`. Default: build-time error or skip unknown types via schema enum.
+**Contract**: Conditional `OpenEndedPost` or `InteractiveQuizPost` only. Unknown types rejected by schema enum at build time.
 
 #### 7. Prose / typography styles
 
@@ -320,10 +320,11 @@ Implement three post layouts and the reusable interactive quiz React island with
 
 #### Manual Verification:
 
-- Static and open-ended posts: full article visible with JS disabled
+- Open-ended posts: full article visible with JS disabled
+- Interactive-quiz posts: Q&A visible with JS disabled (`<details>`); scoring requires JS
 - Interactive post: answer all questions, submit, see result summary
 - No console errors; mobile layout acceptable
-- CTA visible on all three formats
+- CTA visible on both formats
 
 **Implementation Note**: Pause before Phase 5 content + final verification.
 
@@ -337,13 +338,13 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 ### Changes Required:
 
-#### 1. Launch post — static quiz
+#### 1. Launch post — interactive quiz (primary Java)
 
-**File**: `src/content/blog/<slug-static>.md` (create)
+**File**: `src/content/blog/java-mid-interview-quiz.md` (create)
 
-**Intent**: FR-026 launch content.
+**Intent**: FR-026/FR-028 launch content (~10 questions).
 
-**Contract**: `type: static-quiz`; real Java (or chosen skill) mid-level interview Q&A (~10 questions); `title`, `description`, `pubDate`, `tags`; quality suitable for public index (no lorem).
+**Contract**: `type: interactive-quiz`; `quiz` frontmatter array with answers/explanations; `title`, `description`, `pubDate`, `tags`; quality suitable for public index.
 
 #### 2. Launch post — open-ended
 
@@ -353,11 +354,11 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 **Contract**: `type: open-ended`; behavioral or architecture prompts list; honest framing about Check in app.
 
-#### 3. Launch post — interactive quiz
+#### 3. Launch post — interactive quiz (short)
 
-**File**: `src/content/blog/<slug-interactive>.md` (create)
+**File**: `src/content/blog/java-collections-quick-quiz.md` (create)
 
-**Intent**: FR-028 launch content.
+**Intent**: FR-028 secondary quiz content.
 
 **Contract**: `type: interactive-quiz`; valid `quiz` frontmatter array; short intro markdown body.
 
@@ -378,7 +379,7 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Manual Verification:
 
-- All three post types reachable from `/blog`
+- All three launch posts reachable from `/blog` (two `interactive-quiz`, one `open-ended`)
 - Sitemap includes `/`, `/blog`, and three post URLs on Preview (curl preview origin `/sitemap-index.xml` directly)
 - Unique title and description per post (browser tab + meta)
 - CTA navigates to `/app` (redirect to login when F-03 live)
@@ -459,9 +460,9 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Manual
 
-- [ ] 2.3 Canonical `link` present when `canonicalPath` set
-- [ ] 2.4 `robots.txt` served on preview
-- [ ] 2.5 Landing footer links to `/blog`
+- [x] 2.3 Canonical `link` present when `canonicalPath` set — impl-review 2026-06-04 (dist HTML)
+- [x] 2.4 `robots.txt` served on preview — impl-review 2026-06-04 (static serve `/robots.txt` 200)
+- [x] 2.5 Landing footer links to `/blog` — impl-review 2026-06-04
 
 ### Phase 3: Blog routes
 
@@ -472,10 +473,10 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Manual
 
-- [ ] 3.3 `/blog` lists posts; unknown slug 404
-- [ ] 3.4 Mobile-readable index and stub post
+- [x] 3.3 `/blog` lists posts; unknown slug 404 — impl-review 2026-06-04
+- [x] 3.4 Mobile-readable index and stub post — impl-review 2026-06-04 (layout tokens; full mobile pass on Preview optional)
 
-### Phase 4: Post formats and interactive quiz island
+### Phase 4: Post formats and quiz practice client
 
 #### Automated
 
@@ -484,9 +485,9 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Manual
 
-- [ ] 4.3 Static/open-ended readable with JS disabled
-- [ ] 4.4 Interactive quiz shows result summary
-- [ ] 4.5 CTA visible on all formats
+- [x] 4.3 Open-ended readable with JS disabled; interactive Q&A in SSR HTML — impl-review 2026-06-04
+- [ ] 4.4 Interactive quiz shows result summary — needs browser JS smoke
+- [x] 4.5 CTA visible on all formats — impl-review 2026-06-04 (dist `/app` links)
 
 ### Phase 5: Launch posts and verification
 
@@ -497,9 +498,9 @@ Author three real launch posts, run full build/check, and complete manual SEO an
 
 #### Manual
 
-- [ ] 5.3 Three launch posts listed and reachable
-- [ ] 5.4 Sitemap includes blog URLs on Preview (fetch `/sitemap-index.xml` on preview origin directly)
-- [ ] 5.5 Per-post title, description, canonical verified
-- [ ] 5.6 CTA `/app` behavior verified (with F-03 note)
-- [ ] 5.7 No user data on blog; landing regression OK
-- [ ] 5.8 Light/dark readability on blog pages
+- [x] 5.3 Three launch posts listed and reachable — impl-review 2026-06-04
+- [ ] 5.4 Sitemap includes blog URLs on Preview (fetch `/sitemap-index.xml` on preview origin with `PUBLIC_SITE_URL` set)
+- [x] 5.5 Per-post title, description, canonical verified — impl-review 2026-06-04 (local dist)
+- [ ] 5.6 CTA `/app` behavior verified (with F-03 note) — needs live Preview auth redirect
+- [x] 5.7 No user data on blog; landing regression OK — impl-review 2026-06-04 (code + `/` 200)
+- [ ] 5.8 Light/dark readability on blog pages — needs browser OS theme toggle

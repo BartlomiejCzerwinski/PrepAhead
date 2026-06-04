@@ -1,9 +1,9 @@
 ---
 id: public-blog-and-seo
 title: Public blog and SEO
-status: implemented
+status: impl_reviewed
 created: 2026-05-30
-updated: 2026-06-01
+updated: 2026-06-04
 roadmap: S-08
 prd_refs:
   - FR-024
@@ -20,7 +20,7 @@ prd_refs:
 
 # Public blog and SEO
 
-Roadmap slice **S-08**: public blog index, three launch post formats (static quiz, open-ended, interactive quiz), SEO metadata + sitemap, CTAs to practice flow. Parallel track — no auth prerequisite.
+Roadmap slice **S-08**: public blog index, two post types (`open-ended`, `interactive-quiz`), three launch posts, SEO metadata + sitemap, CTAs to practice flow. Parallel track — no auth prerequisite.
 
 ## Notes
 

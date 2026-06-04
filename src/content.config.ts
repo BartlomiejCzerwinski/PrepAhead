@@ -27,7 +27,7 @@ const basePostSchema = z.object({
 });
 
 const blog = defineCollection({
-  loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
+  loader: glob({ base: './src/content/blog', pattern: '**/*.md' }),
   schema: z.discriminatedUnion('type', [
     basePostSchema.extend({ type: z.literal('open-ended') }),
     basePostSchema.extend({

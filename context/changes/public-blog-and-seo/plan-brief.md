@@ -14,14 +14,14 @@ The repo has a marketing landing page (`/`) and minimal `Layout.astro` SEO (titl
 
 ## Desired End State
 
-Anonymous visitors and crawlers can open `/blog`, read **three launch posts** (static quiz, open-ended, interactive quiz with in-page scoring), see unique title/description/canonical metadata, discover URLs via a **site-wide sitemap**, and follow a CTA to **`/app`** (unauthenticated users redirect to sign-in when F-03 middleware is live). Founders add future posts by committing markdown to the repo.
+Anonymous visitors and crawlers can open `/blog`, read **three launch posts** (two interactive quizzes with in-page scoring, one open-ended article), see unique title/description/canonical metadata, discover URLs via a **site-wide sitemap**, and follow a CTA to **`/app`** (unauthenticated users redirect to sign-in when F-03 middleware is live). Founders add future posts by committing markdown to the repo.
 
 ## Key Decisions Made
 
 | Decision | Choice | Why (1 sentence) | Source |
 | --- | --- | --- | --- |
 | Post URLs | Flat `/blog/[slug]` | Simple Astro routing and stable canonicals for a small launch catalog | Plan |
-| Interactive quiz | One reusable React island | Consistent UX and testable scoring; first React pattern for the app | Plan |
+| Interactive quiz | SSR blocks + `quiz-practice-client.ts` | Full Q&A in prerendered HTML; minimal JS for scoring | Impl (2026-06-04) |
 | JSON-LD | Fast-follow | Ship FR-029/030 first; add Article/Quiz schema after URLs stabilize | Plan |
 | Blog CTA | `/app` (auth gate redirects to login) | Single funnel entry; matches F-03 protected practice prefix | Plan |
 | Site discovery | Footer link to `/blog` only | Minimal landing churn while still enabling internal links | Plan |
@@ -31,13 +31,13 @@ Anonymous visitors and crawlers can open `/blog`, read **three launch posts** (s
 
 ## Scope
 
-**In scope:** Astro Content Layer (`src/content.config.ts`); `src/content/blog/` markdown; blog index + `[slug]` routes; three post layouts; `InteractiveQuiz` React island; extended layout SEO (canonical); `@astrojs/sitemap`; `robots.txt`; footer blog link; three launch posts; `npm run build` + `astro check`.
+**In scope:** Astro Content Layer (`src/content.config.ts`); `src/content/blog/` markdown; blog index + `[slug]` routes; two post layouts (`open-ended`, `interactive-quiz`); quiz practice client; extended layout SEO (canonical); `@astrojs/sitemap`; `robots.txt`; footer blog link; three launch posts; `npm run build` + `astro check`.
 
 **Out of scope:** JSON-LD (fast-follow); analytics; headless CMS; user-generated posts; blog AI Check; paywalled posts; theme toggle persistence (S-06); Vitest/Playwright; header nav link; MDX unless required for a post body.
 
 ## Architecture / Approach
 
-Founder-authored markdown lives in a **blog** content collection with a Zod schema (`type`: `static-quiz` | `open-ended` | `interactive-quiz`). Build-time `getCollection` / `getEntry` drive prerendered `/blog` and `/blog/[slug]` pages. Article bodies render server-side via `render()`; only the interactive quiz uses a **React island** fed by frontmatter `quiz` data. `Layout.astro` gains `canonicalPath`; `astro.config.mjs` sets `site` from `PUBLIC_SITE_URL` for sitemap and canonicals. CTAs use `/app` — F-03 middleware redirect is live.
+Founder-authored markdown lives in a **blog** content collection with a Zod schema (`type`: `open-ended` | `interactive-quiz`). Build-time `getCollection` / `getEntry` drive prerendered `/blog` and `/blog/[slug]` pages. Open-ended bodies render via `render()`; interactive quizzes render Q&A from frontmatter `quiz` in SSR Astro components plus a small client script for scoring. `Layout.astro` gains `canonicalPath`; `astro.config.mjs` sets `site` from `PUBLIC_SITE_URL` for sitemap and canonicals. CTAs use `/app` — F-03 middleware redirect is live.
 
 ## Phases at a Glance
 
@@ -46,7 +46,7 @@ Founder-authored markdown lives in a **blog** content collection with a Zod sche
 | 1. Content layer & config | Schema, loaders, `site` URL, sitemap dep | Astro 6 loader/schema mistakes break build |
 | 2. SEO & site chrome | Canonical layout, sitemap, robots, footer link | Missing `PUBLIC_SITE_URL` in Vercel breaks canonicals |
 | 3. Blog routes | Index + dynamic slug pages | Wrong `entry.id` vs slug in Astro 6 paths |
-| 4. Post formats & quiz island | Three layouts + `InteractiveQuiz.tsx` | Quiz data/schema drift between posts |
+| 4. Post formats & quiz client | Two layouts + `quiz-practice-client.ts` | Quiz data/schema drift between posts |
 | 5. Launch posts & verification | 3 real posts + manual SEO smoke | Launch content quality and SEO smoke on Preview |
 
 **Prerequisites:** Landing layout exists; `PUBLIC_SITE_URL` set in Vercel Preview/Production; F-03 done (blog CTAs to `/app` redirect via middleware).
@@ -62,6 +62,6 @@ Founder-authored markdown lives in a **blog** content collection with a Zod sche
 
 ## Success Criteria (Summary)
 
-- Visitor opens `/blog`, reads all three post types without sign-in, completes interactive quiz with result summary.
+- Visitor opens `/blog`, reads all three launch posts without sign-in, completes interactive quiz with result summary.
 - View-source shows server-rendered article HTML; each post has title, description, canonical; sitemap lists blog URLs.
 - CTA on posts routes to `/app`; no user JD/CV on blog pages; `npm run build` and `astro check` pass.
