@@ -3,7 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-04
+updated: 2026-06-05
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -41,7 +41,7 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 | S-05 | stripe-pro-subscription | subscribe to PRO and operate under PRO fair-use generation and Check rules | S-01 | FR-013, FR-016, FR-020, FR-021, US-02 | blocked |
 | S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | proposed |
 | S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | proposed |
-| S-08 | public-blog-and-seo | browse the blog index, read all launch post formats, use CTAs to practice, and be indexed via SEO basics | — | FR-024–FR-032, US-05 | ready |
+| S-08 | public-blog-and-seo | browse the blog index, read all launch post formats, use CTAs to practice, and be indexed via SEO basics | — | FR-024–FR-032, US-05 | done |
 | S-09 | practice-set-history | view and reopen past generated practice sets | S-03 | FR-008, US-01 | proposed |
 
 ## Streams
@@ -50,18 +50,18 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme | Chain | Note |
 |---|---|---|---|
-| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | **F-01**, **F-02**, and **F-03** shipped; next: **S-01** usage dashboard. |
+| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | Foundations done; **S-01** usage dashboard is the next gate on the practice stream. |
 | B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **S-02** is the north star; completes **US-01** with **S-03**–**S-04**. |
 | C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
-| D | Blog & SEO | `S-08` | Parallel public track — no auth prerequisite; can start while Stream A runs. |
+| D | Blog & SEO | `S-08` | **S-08** shipped 2026-06-04; parallel track complete. |
 | E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** parallel with Stream B after **S-01**; **S-07** after **S-02**; **S-09** nice-to-have after **S-03**. |
 
 ## Baseline
 
-What's already in place in the codebase as of `2026-06-04` (foundations **F-01**, **F-02**, **F-03** shipped).
+What's already in place in the codebase as of `2026-06-05` (foundations **F-01**–**F-03** and slice **S-08** shipped).
 Foundations below assume these are present and do NOT re-scaffold them.
 
-- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog (`/blog`); React integrated, no `.tsx` islands; shadcn not installed (planned per `tech-stack.md`)
+- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog shipped (`/blog`, 3 launch posts, `src/components/blog/`); quiz interactivity via vanilla `quiz-practice-client.ts` (no React islands yet); shadcn not installed (planned per `tech-stack.md`)
 - **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth sign-in/callback/sign-out); server env helpers; AI/billing routes not yet built
 - **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets, RLS, usage RPCs); GitHub → `prod` deploy; Supabase SSR clients in app code
 - **Auth:** partial — Google OAuth via Supabase (`@supabase/ssr`), middleware gates `/app/*`, `/login`; usage dashboard and practice UI not yet built
@@ -117,7 +117,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Change ID:** sign-in-and-usage-dashboard
 - **PRD refs:** FR-001, FR-012, US-02
 - **Prerequisites:** F-01, F-02, F-03
-- **Parallel with:** S-08 (after F-01/F-02 in progress)
+- **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Thin dashboard is enough for speed — avoids building practice UI before identity and quotas exist.
@@ -203,18 +203,16 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-08: Public blog and SEO
 
-- **Outcome:** visitor can browse the blog index, read static quiz, open-ended, and interactive quiz posts without sign-in, follow CTAs to practice, and crawlers can discover posts via SEO metadata and sitemap.
+- **Outcome:** visitor can browse the blog index, read open-ended and interactive quiz posts without sign-in, follow CTAs to practice, and crawlers can discover posts via SEO metadata and sitemap.
 - **Change ID:** public-blog-and-seo
 - **PRD refs:** FR-024, FR-025, FR-026, FR-027, FR-028, FR-029, FR-030, FR-031, FR-032, US-05
 - **Prerequisites:** —
 - **Parallel with:** F-01, F-02, entire Stream B after landing layout exists
 - **Blockers:** —
 - **Unknowns:**
-  - Interactive quiz — one reusable component vs per-post markup? — Owner: builder. Block: no.
-  - Post URL scheme — flat `/blog/[slug]` vs hierarchy? — Owner: builder. Block: no.
   - JSON-LD structured data in v1 or fast-follow? — Owner: product. Block: no.
-- **Risk:** Brownfield delta from shape notes — can ship on partial frontend without auth; compounds SEO while practice stream catches up.
-- **Status:** ready
+- **Risk:** Shipped with `open-ended` + `interactive-quiz` only — static-quiz FR-026 content delivered via interactive layout with SSR `<details>` answers (plan addendum 2026-06-04). Preview smoke for CTA redirect and sitemap on live origin still open in `verification.md`.
+- **Status:** done
 
 ### S-09: Practice set history
 
@@ -242,7 +240,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-05 | stripe-pro-subscription | Stripe PRO checkout + fair-use limits | no | Blocked: PRO price + subscription lifecycle (OQ 2–3) |
 | S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | no | After S-01 |
 | S-07 | delete-practice-data | Delete practice set / personal data | no | After S-02 |
-| S-08 | public-blog-and-seo | Blog index, 3 post formats, SEO, CTA | yes | Parallel track — no auth dependency |
+| S-08 | public-blog-and-seo | Blog index, 3 post formats, SEO, CTA | — | Shipped 2026-06-04 (`impl_reviewed`); preview smoke items remain in verification.md |
 | S-09 | practice-set-history | Practice set history (nice-to-have) | no | After S-03 |
 
 ## Open Roadmap Questions
@@ -254,10 +252,10 @@ Foundations below assume these are present and do NOT re-scaffold them.
 5. **Score summary for open-ended** — How open-ended/Check results aggregate in end-of-set summary. Owner: product. Block: S-03 (no).
 6. **MVP timeline vs scope** — Blog v1 plus core practice may exceed ~3 weeks after-hours; slip risk accepted 2026-05-26. Owner: builder. Block: roadmap-wide (no).
 7. **Default theme on first visit** — Light, dark, or match OS before explicit choice. Owner: product. Block: S-06 (no).
-8. **Interactive quiz format** — Single reusable quiz component vs per-post custom markup. Owner: builder. Block: S-08 (no).
+8. ~~**Interactive quiz format**~~ — Resolved 2026-06-04: reusable Astro components + `quiz-practice-client.ts` (vanilla script, not React island). Owner: builder. Block: none.
 9. **Structured data** — JSON-LD (Article, FAQ, Quiz) for rich search results — v1 or fast-follow. Owner: product. Block: S-08 (no).
 10. **Analytics** — Privacy-friendly blog → sign-in funnel measurement (tool TBD). Owner: product. Block: roadmap-wide (no).
-11. **Post URL scheme** — Flat `/blog/[slug]` vs topic hierarchy. Owner: builder. Block: S-08 (no).
+11. ~~**Post URL scheme**~~ — Resolved 2026-06-04: flat `/blog/[slug]`. Owner: builder. Block: none.
 
 ## Parked
 
@@ -272,3 +270,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **F-01** `server-api-foundation` — Astro server on Vercel, health API, env helpers (2026-05-28).
 - **F-02** `supabase-data-schema` — Postgres schema, RLS, migrations workflow, usage RPCs; deployed to prod (2026-05-30).
 - **F-03** `supabase-oauth-auth` — Google OAuth, SSR session cookies, `/api/auth/*`, middleware on `/app/*`, `/login` (2026-05-30; verified working 2026-06-04).
+- **S-08** `public-blog-and-seo` — Blog index, 3 launch posts, open-ended + interactive-quiz formats, SEO metadata, sitemap, robots.txt, CTAs to `/app` (2026-06-04; `impl_reviewed`).
