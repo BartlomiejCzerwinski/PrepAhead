@@ -32,9 +32,9 @@ Long-lived source catalog for future `interactive-quiz` blog posts. This file is
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Java collections quick quiz | `java-collections-quick-quiz` | Java | mid backend | 5 | light | published | Existing post in `src/content/blog/java-collections-quick-quiz.md` |
 | 2 | Java mid-level interview quiz | `java-mid-interview-quiz` | Java | mid backend | 10 | standard | published | Existing post in `src/content/blog/java-mid-interview-quiz.md` |
-| 3 | Java concurrency fundamentals quiz | `java-concurrency-fundamentals-quiz` | Java | mid backend | 10 | standard | idea | - |
-| 4 | Java memory model quiz | `java-memory-model-quiz` | Java | senior backend | 15 | deep | idea | - |
-| 5 | Java streams and collectors quiz | `java-streams-and-collectors-quiz` | Java | mid backend | 10 | standard | idea | - |
+| 3 | Java concurrency fundamentals quiz | `java-concurrency-fundamentals-quiz` | Java | mid backend | 10 | standard | published | Existing post in `src/content/blog/java-concurrency-fundamentals-quiz.md` |
+| 4 | Java memory model quiz | `java-memory-model-quiz` | Java | senior backend | 15 | deep | published | Existing post in `src/content/blog/java-memory-model-quiz.md` |
+| 5 | Java streams and collectors quiz | `java-streams-and-collectors-quiz` | Java | mid backend | 10 | standard | published | Existing post in `src/content/blog/java-streams-and-collectors-quiz.md` |
 | 6 | Java generics interview quiz | `java-generics-interview-quiz` | Java | mid backend | 10 | standard | idea | - |
 | 7 | Java exception handling quiz | `java-exception-handling-quiz` | Java | junior backend | 5 | light | idea | - |
 | 8 | Java multithreading interview quiz | `java-multithreading-interview-quiz` | Java | senior backend | 15 | deep | idea | - |
