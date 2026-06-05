@@ -1,7 +1,7 @@
 ---
 id: sign-in-and-usage-dashboard
 title: Sign-in and usage dashboard
-status: planned
+status: implementing
 created: 2026-06-05
 updated: 2026-06-05
 roadmap: S-01

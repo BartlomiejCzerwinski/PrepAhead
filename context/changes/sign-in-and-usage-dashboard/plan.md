@@ -362,8 +362,8 @@ End-to-end smoke and update change metadata.
 
 #### Automated
 
-- [ ] 1.1 `npm run build` — exit 0
-- [ ] 1.2 `npm run astro -- check` — exit 0
+- [x] 1.1 `npm run build` — exit 0
+- [x] 1.2 `npm run astro -- check` — exit 0
 
 #### Manual
 
