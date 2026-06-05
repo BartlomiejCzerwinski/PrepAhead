@@ -367,8 +367,8 @@ End-to-end smoke and update change metadata.
 
 #### Manual
 
-- [ ] 1.3 FREE user with no `usage_periods` row shows 0 used, full remaining
-- [ ] 1.4 Read RPC matches direct SQL spot-check for one test user
+- [x] 1.3 FREE user with no `usage_periods` row shows 0 used, full remaining
+- [x] 1.4 Read RPC matches direct SQL spot-check for one test user
 
 ### Phase 2: Auth hardening (F1 + F2)
 
