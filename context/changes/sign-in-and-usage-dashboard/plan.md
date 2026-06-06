@@ -374,14 +374,14 @@ End-to-end smoke and update change metadata.
 
 #### Automated
 
-- [x] 2.1 `npm run build` — exit 0
-- [x] 2.2 `npm run astro -- check` — exit 0
+- [x] 2.1 `npm run build` — exit 0 — cafa98f
+- [x] 2.2 `npm run astro -- check` — exit 0 — cafa98f
 
 #### Manual
 
-- [x] 2.3 Valid OAuth `next=/app` still works
-- [x] 2.4 Encoded-slash `next` cannot redirect off-site
-- [x] 2.5 `/app` redirects to `/login?error=session` on auth verification failure
+- [x] 2.3 Valid OAuth `next=/app` still works — cafa98f
+- [x] 2.4 Encoded-slash `next` cannot redirect off-site — cafa98f
+- [x] 2.5 `/app` redirects to `/login?error=session` on auth verification failure — cafa98f
 
 ### Phase 3: App shell and dashboard UI
 

@@ -1,0 +1,47 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  userEmail: string;
+}
+
+const {
+  title,
+  description = 'Your PrepAhead usage dashboard and practice workspace.',
+  userEmail,
+} = Astro.props;
+---
+
+<Layout title={title} description={description}>
+  <div class="min-h-screen bg-[var(--surface)]">
+    <header class="border-b border-[var(--border)] bg-[var(--surface-elevated)]/90 backdrop-blur-md">
+      <div class="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <a href="/" class="inline-flex items-center gap-3 text-[var(--text)] no-underline">
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-500 text-sm font-bold text-white shadow-sm"
+            aria-hidden="true">P</span>
+          <span class="text-base font-semibold tracking-tight">PrepAhead</span>
+        </a>
+        <div class="flex items-center gap-3 sm:gap-4">
+          <span class="hidden max-w-[12rem] truncate text-sm text-[var(--text-muted)] sm:inline">
+            {userEmail}
+          </span>
+          <form method="POST" action="/api/auth/sign-out">
+            <button
+              type="submit"
+              class="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-muted)]"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+      <slot />
+    </main>
+  </div>
+</Layout>
