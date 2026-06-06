@@ -35,6 +35,14 @@ export function safeAuthRedirectPath(input: string | null | undefined): string {
   }
 
   const trimmed = input.trim();
+  // Reject encoded path tricks and non-path characters.
+  if (
+    /%/i.test(trimmed) ||
+    trimmed.includes('\\') ||
+    /[\u0000-\u001F\u007F]/.test(trimmed)
+  ) {
+    return DEFAULT_AUTH_REDIRECT;
+  }
   if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
     return DEFAULT_AUTH_REDIRECT;
   }

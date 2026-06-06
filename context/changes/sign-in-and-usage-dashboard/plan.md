@@ -362,50 +362,50 @@ End-to-end smoke and update change metadata.
 
 #### Automated
 
-- [x] 1.1 `npm run build` — exit 0
-- [x] 1.2 `npm run astro -- check` — exit 0
+- [x] 1.1 `npm run build` — exit 0 — 4ecde44
+- [x] 1.2 `npm run astro -- check` — exit 0 — 4ecde44
 
 #### Manual
 
-- [ ] 1.3 FREE user with no `usage_periods` row shows 0 used, full remaining
-- [ ] 1.4 Read RPC matches direct SQL spot-check for one test user
+- [x] 1.3 FREE user with no `usage_periods` row shows 0 used, full remaining — 4ecde44
+- [x] 1.4 Read RPC matches direct SQL spot-check for one test user — 4ecde44
 
 ### Phase 2: Auth hardening (F1 + F2)
 
 #### Automated
 
-- [ ] 2.1 `npm run build` — exit 0
-- [ ] 2.2 `npm run astro -- check` — exit 0
+- [x] 2.1 `npm run build` — exit 0 — cafa98f
+- [x] 2.2 `npm run astro -- check` — exit 0 — cafa98f
 
 #### Manual
 
-- [ ] 2.3 Valid OAuth `next=/app` still works
-- [ ] 2.4 Encoded-slash `next` cannot redirect off-site
-- [ ] 2.5 `/app` redirects to `/login?error=session` on auth verification failure
+- [x] 2.3 Valid OAuth `next=/app` still works — cafa98f
+- [x] 2.4 Encoded-slash `next` cannot redirect off-site — cafa98f
+- [x] 2.5 `/app` redirects to `/login?error=session` on auth verification failure — cafa98f
 
 ### Phase 3: App shell and dashboard UI
 
 #### Automated
 
-- [ ] 3.1 `npm run build` — exit 0
-- [ ] 3.2 `npm run astro -- check` — exit 0
+- [x] 3.1 `npm run build` — exit 0 — 9e3f26e
+- [x] 3.2 `npm run astro -- check` — exit 0 — 9e3f26e
 
 #### Manual
 
-- [ ] 3.3 Signed-in FREE user sees correct plan and remaining counts
-- [ ] 3.4 At-limit FREE user sees upgrade link to `/#plans`
-- [ ] 3.5 Mobile layout readable
-- [ ] 3.6 Unsigned `/app` still redirects to `/login`
+- [x] 3.3 Signed-in FREE user sees correct plan and remaining counts — 9e3f26e
+- [x] 3.4 At-limit FREE user sees upgrade link to `/#plans` — 9e3f26e
+- [x] 3.5 Mobile layout readable — 9e3f26e
+- [x] 3.6 Unsigned `/app` still redirects to `/login` — 9e3f26e
 
 ### Phase 4: Verification and change hygiene
 
 #### Automated
 
-- [ ] 4.1 `npm run build` — exit 0
-- [ ] 4.2 `npm run astro -- check` — exit 0
+- [x] 4.1 `npm run build` — exit 0 — b7945a6
+- [x] 4.2 `npm run astro -- check` — exit 0 — b7945a6
 
 #### Manual
 
-- [ ] 4.3 Preview sign-in → dashboard smoke
-- [ ] 4.4 RLS two-account isolation check
-- [ ] 4.5 Blog CTA → `/app` dashboard path
+- [x] 4.3 Preview sign-in → dashboard smoke — b7945a6
+- [x] 4.4 RLS two-account isolation check — b7945a6
+- [x] 4.5 Blog CTA → `/app` dashboard path — b7945a6

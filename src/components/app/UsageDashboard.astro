@@ -1,0 +1,119 @@
+---
+import type { UsageSummary } from '../../lib/plan';
+
+interface Props {
+  summary?: UsageSummary;
+  error?: boolean;
+}
+
+const { summary, error = false } = Astro.props;
+
+const locale = Astro.request.headers.get('accept-language')?.split(',')[0]?.trim() ?? 'en';
+
+function formatResetDate(iso: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(iso));
+}
+
+const showUpgradeBanner =
+  summary &&
+  summary.planTier === 'FREE' &&
+  (summary.isAtGenerationLimit || summary.isAtCheckLimit);
+---
+
+<section class="space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">Usage dashboard</h1>
+    <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+      Your current plan and remaining practice-set generations and Check calls for this usage period.
+    </p>
+  </div>
+
+  {
+    error && (
+      <div
+        class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-700 dark:text-red-300"
+        role="alert"
+      >
+        Could not load usage — try refreshing.
+      </div>
+    )
+  }
+
+  {
+    summary && (
+      <>
+        <div class="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--brand)]">
+          <span>Plan</span>
+          <span>{summary.planTier}</span>
+        </div>
+
+        {
+          showUpgradeBanner && (
+            <div
+              class="rounded-[1.75rem] border border-brand-500/30 bg-[var(--brand-soft)] px-5 py-4 text-sm leading-6 text-[var(--text)]"
+              role="status"
+            >
+              <p class="font-semibold">You have reached your FREE plan limit for this period.</p>
+              <p class="mt-2 text-[var(--text-muted)]">
+                Upgrade to PRO for more practice-set generations and Check calls.
+              </p>
+              <a
+                href="/#plans"
+                class="btn-primary mt-4 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+              >
+                Upgrade to PRO
+              </a>
+            </div>
+          )
+        }
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              Practice-set generations
+            </h2>
+            <p class="mt-4 text-3xl font-bold text-[var(--text)]">
+              {summary.generationRemaining}
+              <span class="text-lg font-medium text-[var(--text-muted)]">
+                / {summary.generationLimit} remaining
+              </span>
+            </p>
+            <p class="mt-2 text-sm text-[var(--text-muted)]">
+              {summary.generationUsed} used this period
+            </p>
+          </article>
+
+          <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              Check calls
+            </h2>
+            <p class="mt-4 text-3xl font-bold text-[var(--text)]">
+              {summary.checkRemaining}
+              <span class="text-lg font-medium text-[var(--text-muted)]">
+                / {summary.checkLimit} remaining
+              </span>
+            </p>
+            <p class="mt-2 text-sm text-[var(--text-muted)]">
+              {summary.checkUsed} used this period
+            </p>
+          </article>
+        </div>
+
+        <p class="text-sm leading-6 text-[var(--text-muted)]">
+          Usage period resets on {formatResetDate(summary.periodEnd)} (rolling monthly cycle, UTC anchor).
+        </p>
+
+        {
+          summary.proFairUseNote && (
+            <p class="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm leading-6 text-[var(--text-muted)]">
+              {summary.proFairUseNote}
+            </p>
+          )
+        }
+      </>
+    )
+  }
+</section>
