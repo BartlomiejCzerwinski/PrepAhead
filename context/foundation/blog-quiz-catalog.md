@@ -55,9 +55,9 @@ Long-lived source catalog for future `interactive-quiz` blog posts. This file is
 
 | # | Topic | Slug | Category | Audience | Planned Questions | Depth | Status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 21 | JavaScript fundamentals quiz | `javascript-fundamentals-quiz` | JavaScript | junior frontend | 10 | standard | idea | - |
-| 22 | JavaScript closures and scope quiz | `javascript-closures-and-scope-quiz` | JavaScript | mid frontend | 10 | standard | idea | - |
-| 23 | JavaScript async and await quiz | `javascript-async-and-await-quiz` | JavaScript | mid full-stack | 10 | standard | idea | - |
+| 21 | JavaScript fundamentals quiz | `javascript-fundamentals-quiz` | JavaScript | junior frontend | 10 | standard | published | Existing post in `src/content/blog/javascript-fundamentals-quiz.md` |
+| 22 | JavaScript closures and scope quiz | `javascript-closures-and-scope-quiz` | JavaScript | mid frontend | 10 | standard | published | Existing post in `src/content/blog/javascript-closures-and-scope-quiz.md` |
+| 23 | JavaScript async and await quiz | `javascript-async-and-await-quiz` | JavaScript | mid full-stack | 10 | standard | published | Existing post in `src/content/blog/javascript-async-and-await-quiz.md` |
 | 24 | JavaScript event loop quiz | `javascript-event-loop-quiz` | JavaScript | mid frontend | 15 | deep | idea | - |
 | 25 | JavaScript promises quiz | `javascript-promises-quiz` | JavaScript | mid full-stack | 10 | standard | idea | - |
 | 26 | JavaScript array methods quiz | `javascript-array-methods-quiz` | JavaScript | junior frontend | 5 | light | idea | - |

@@ -21,6 +21,9 @@ const showUpgradeBanner =
   summary &&
   summary.planTier === 'FREE' &&
   (summary.isAtGenerationLimit || summary.isAtCheckLimit);
+
+const canStartGeneration = summary ? !summary.isAtGenerationLimit : false;
+const showGenerationUpgrade = summary?.planTier === 'FREE' && summary.isAtGenerationLimit;
 ---
 
 <section class="space-y-6">
@@ -101,6 +104,51 @@ const showUpgradeBanner =
             </p>
           </article>
         </div>
+
+        <section class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold text-[var(--text)]">Generate a practice set</h2>
+              <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+                Paste a job description, optionally add a PDF CV, and start a tailored practice flow.
+              </p>
+            </div>
+
+            {
+              canStartGeneration ? (
+                <a
+                  href="/app/generate"
+                  class="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+                >
+                  Start generation
+                </a>
+              ) : showGenerationUpgrade ? (
+                <a
+                  href="/#plans"
+                  class="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+                >
+                  Upgrade to PRO
+                </a>
+              ) : (
+                <span class="inline-flex items-center justify-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text-muted)]">
+                  Limit reached
+                </span>
+              )
+            }
+          </div>
+
+          {
+            summary.isAtGenerationLimit && (
+              <p class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--text-muted)]">
+                {
+                  showGenerationUpgrade
+                    ? 'You have no practice-set generations remaining in this period. Upgrade to PRO to continue before the reset.'
+                    : 'You have no practice-set generations remaining in this period. Wait for the next reset to continue.'
+                }
+              </p>
+            )
+          }
+        </section>
 
         <p class="text-sm leading-6 text-[var(--text-muted)]">
           Usage period resets on {formatResetDate(summary.periodEnd)} (rolling monthly cycle, UTC anchor).
