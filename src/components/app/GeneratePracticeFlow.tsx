@@ -26,33 +26,32 @@ type UploadState =
   | { status: 'ready'; fileName: string; message: string }
   | { status: 'error'; message: string };
 
-const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024;
 const GENERATION_STAGES = [
   'Reviewing the job description',
   'Preparing optional CV context',
-  'Warming up the generation pipeline',
+  'Generating interview questions',
+  'Validating and saving the practice set',
 ] as const;
 
-function isPdfFile(file: File): boolean {
-  return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+type GenerationSuccess = {
+  jobId: string;
+  practiceSetId: string;
+  summary: {
+    abcdCount: number;
+    openEndedCount: number;
+  };
+};
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function simulatePdfParse(file: File): Promise<string> {
-  if (!isPdfFile(file)) {
-    throw new Error('Please upload a PDF file. DOCX and OCR-based uploads are not supported in this step.');
+async function parseApiResponse(response: Response): Promise<any> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
   }
-
-  if (file.size === 0) {
-    throw new Error('This PDF looks empty. Try another file.');
-  }
-
-  if (file.size > MAX_PDF_SIZE_BYTES) {
-    throw new Error('This PDF is too large for the current upload flow. Keep it under 5 MB.');
-  }
-
-  await new Promise((resolve) => window.setTimeout(resolve, 900));
-
-  return `phase-1-placeholder:${file.name}`;
 }
 
 export default function GeneratePracticeFlow({
@@ -65,9 +64,11 @@ export default function GeneratePracticeFlow({
   const [resumeText, setResumeText] = useState('');
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationComplete, setGenerationComplete] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const stageTimerRef = useRef<number | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationSuccess, setGenerationSuccess] = useState<GenerationSuccess | null>(null);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const isAtGenerationLimit = usageSummary?.isAtGenerationLimit ?? false;
   const showUpgradePath = usageSummary?.planTier === 'FREE' && isAtGenerationLimit;
@@ -97,10 +98,6 @@ export default function GeneratePracticeFlow({
     }
 
     if (stageIndex >= GENERATION_STAGES.length - 1) {
-      stageTimerRef.current = window.setTimeout(() => {
-        setGenerationComplete(true);
-        setIsGenerating(false);
-      }, 1100);
       return undefined;
     }
 
@@ -126,9 +123,25 @@ export default function GeneratePracticeFlow({
     }
 
     setUploadState({ status: 'parsing', fileName: file.name });
+    setGenerationError(null);
 
     try {
-      const parsedResumeText = await simulatePdfParse(file);
+      const formData = new FormData();
+      formData.set('file', file);
+
+      const response = await fetch('/api/resume/parse', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+      });
+
+      const payload = await parseApiResponse(response);
+
+      if (!response.ok || !payload?.ok || typeof payload.resumeText !== 'string') {
+        throw new Error(payload?.message ?? 'We could not accept that PDF. Try another file.');
+      }
+
+      const parsedResumeText = payload.resumeText;
       setResumeText(parsedResumeText);
       setUploadState({
         status: 'ready',
@@ -149,10 +162,50 @@ export default function GeneratePracticeFlow({
     }
   }
 
-  function resetFlow() {
+  function resetDraft(keepInputs = false) {
     setIsGenerating(false);
-    setGenerationComplete(false);
     setStageIndex(0);
+    setGenerationError(null);
+    setGenerationSuccess(null);
+    idempotencyKeyRef.current = null;
+
+    if (!keepInputs) {
+      setJobDescription('');
+      setResumeText('');
+      setUploadState({ status: 'idle' });
+    }
+  }
+
+  async function runGenerationWorker(jobId: string): Promise<GenerationSuccess> {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const workerResponse = await fetch('/api/practice-sets/generate-worker', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ jobId }),
+      });
+
+      const workerPayload = await parseApiResponse(workerResponse);
+
+      if (workerResponse.ok && workerPayload?.status === 'succeeded') {
+        return {
+          jobId,
+          practiceSetId: String(workerPayload.practiceSetId),
+          summary: workerPayload.summary ?? { abcdCount: 15, openEndedCount: 5 },
+        };
+      }
+
+      if (workerResponse.ok && workerPayload?.status === 'running') {
+        await sleep(1500);
+        continue;
+      }
+
+      throw new Error(workerPayload?.message ?? 'Generation failed. Please try again.');
+    }
+
+    throw new Error('Generation is taking longer than expected. Try again in a moment.');
   }
 
   return (
@@ -221,15 +274,24 @@ export default function GeneratePracticeFlow({
         </div>
       )}
 
+      {generationError && (
+        <div
+          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-700 dark:text-red-300"
+          role="alert"
+        >
+          {generationError}
+        </div>
+      )}
+
       {isGenerating ? (
         <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--brand)]">
             <span>In progress</span>
           </div>
-          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">Preparing generation</h2>
+          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">Generating your practice set</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-            This Phase 1 shell is validating the loading experience before the server pipeline is
-            wired in Phase 2.
+            PrepAhead is parsing any uploaded CV context, generating questions, and validating the
+            exact 20-question contract before saving the result.
           </p>
 
           <ol className="mt-6 space-y-3">
@@ -267,38 +329,90 @@ export default function GeneratePracticeFlow({
             })}
           </ol>
         </div>
-      ) : generationComplete ? (
+      ) : generationSuccess ? (
         <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-300">
-            <span>Phase 1 shell ready</span>
+            <span>Generation saved</span>
           </div>
-          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">Interaction flow verified</h2>
+          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">Practice set created successfully</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-            The browser now swaps into a staged loading state and blocks duplicate submission. The
-            real parse and generation endpoints arrive in Phase 2.
+            The exact-20 payload was validated and saved through the durable generation job path.
+            The overview redirect arrives in Phase 3.
           </p>
+          <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
+            <p>
+              <span className="font-semibold text-[var(--text)]">Practice set id:</span>{' '}
+              {generationSuccess.practiceSetId}
+            </p>
+            <p className="mt-2">
+              <span className="font-semibold text-[var(--text)]">Question mix:</span>{' '}
+              {generationSuccess.summary.abcdCount} abcd / {generationSuccess.summary.openEndedCount}{' '}
+              open-ended
+            </p>
+          </div>
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={resetFlow}
+              onClick={() => resetDraft()}
               className="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm"
             >
-              Start another draft
+              Start another generation
             </button>
           </div>
         </div>
       ) : (
         <form
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
 
             if (submitDisabled) {
               return;
             }
 
-            setGenerationComplete(false);
+            setGenerationError(null);
+            setGenerationSuccess(null);
             setStageIndex(0);
             setIsGenerating(true);
+
+            const idempotencyKey = idempotencyKeyRef.current ?? crypto.randomUUID();
+            idempotencyKeyRef.current = idempotencyKey;
+
+            try {
+              const generateResponse = await fetch('/api/practice-sets/generate', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  jobDescription,
+                  resumeText,
+                  idempotencyKey,
+                }),
+              });
+
+              const generatePayload = await parseApiResponse(generateResponse);
+
+              if (
+                !generateResponse.ok ||
+                !generatePayload?.ok ||
+                typeof generatePayload.jobId !== 'string'
+              ) {
+                throw new Error(
+                  generatePayload?.message ?? 'Could not start generation. Please try again.',
+                );
+              }
+
+              const result = await runGenerationWorker(generatePayload.jobId);
+              setGenerationSuccess(result);
+              idempotencyKeyRef.current = null;
+            } catch (error) {
+              setGenerationError(
+                error instanceof Error ? error.message : 'Generation failed. Please try again.',
+              );
+            } finally {
+              setIsGenerating(false);
+            }
           }}
           className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8"
         >
@@ -356,9 +470,21 @@ export default function GeneratePracticeFlow({
               )}
 
               {uploadState.status === 'ready' && (
-                <p className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm leading-6 text-green-700 dark:text-green-300">
-                  {uploadState.fileName}: {uploadState.message}
-                </p>
+                <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm leading-6 text-green-700 dark:text-green-300">
+                  <p>
+                    {uploadState.fileName}: {uploadState.message}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResumeText('');
+                      setUploadState({ status: 'idle' });
+                    }}
+                    className="mt-3 inline-flex text-sm font-semibold text-green-700 underline underline-offset-2 dark:text-green-300"
+                  >
+                    Remove CV and continue with JD only
+                  </button>
+                </div>
               )}
 
               {uploadState.status === 'error' && (
