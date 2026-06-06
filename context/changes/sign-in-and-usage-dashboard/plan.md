@@ -387,15 +387,15 @@ End-to-end smoke and update change metadata.
 
 #### Automated
 
-- [x] 3.1 `npm run build` — exit 0
-- [x] 3.2 `npm run astro -- check` — exit 0
+- [x] 3.1 `npm run build` — exit 0 — 9e3f26e
+- [x] 3.2 `npm run astro -- check` — exit 0 — 9e3f26e
 
 #### Manual
 
-- [x] 3.3 Signed-in FREE user sees correct plan and remaining counts
-- [x] 3.4 At-limit FREE user sees upgrade link to `/#plans`
-- [x] 3.5 Mobile layout readable
-- [x] 3.6 Unsigned `/app` still redirects to `/login`
+- [x] 3.3 Signed-in FREE user sees correct plan and remaining counts — 9e3f26e
+- [x] 3.4 At-limit FREE user sees upgrade link to `/#plans` — 9e3f26e
+- [x] 3.5 Mobile layout readable — 9e3f26e
+- [x] 3.6 Unsigned `/app` still redirects to `/login` — 9e3f26e
 
 ### Phase 4: Verification and change hygiene
 
