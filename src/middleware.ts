@@ -62,6 +62,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
       mergeHeaders(redirect.headers, authResponseHeaders);
       return redirect;
     }
+
+    if (pathname.startsWith('/app')) {
+      const redirect = context.redirect('/login?error=session');
+      mergeHeaders(redirect.headers, authResponseHeaders);
+      return redirect;
+    }
   }
 
   const response = await next();

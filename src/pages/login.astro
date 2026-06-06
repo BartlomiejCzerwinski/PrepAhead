@@ -12,6 +12,7 @@ const errorCode = Astro.url.searchParams.get('error');
 
 const errorMessages: Record<string, string> = {
   configuration: 'Sign-in is not configured yet. Check environment variables.',
+  session: 'Your session could not be verified. Please sign in again.',
   sign_in_failed: 'Could not start sign-in. Please try again.',
   provider_denied: 'Sign-in was cancelled or denied.',
   missing_code: 'Sign-in did not complete. Please try again.',
