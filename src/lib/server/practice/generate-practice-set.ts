@@ -8,6 +8,7 @@ import {
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4.1-mini';
+const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 
 type GeneratePracticeSetParams = {
   jobDescription: string;
@@ -24,6 +25,7 @@ type GeneratePracticeSetSuccess = {
 type GeneratePracticeSetFailureCode =
   | 'configuration'
   | 'provider_error'
+  | 'provider_timeout'
   | 'malformed_output';
 
 type GeneratePracticeSetFailure = {
@@ -121,10 +123,13 @@ export async function generatePracticeSet(
   }
 
   let response: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPENAI_REQUEST_TIMEOUT_MS);
 
   try {
     response = await fetch(OPENAI_API_URL, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
@@ -136,12 +141,22 @@ export async function generatePracticeSet(
         messages: buildMessages(params),
       }),
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return {
+        ok: false,
+        code: 'provider_timeout',
+        message: 'Generation took too long. Please try again.',
+      };
+    }
+
     return {
       ok: false,
       code: 'provider_error',
       message: 'The generation provider could not be reached. Please try again.',
     };
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!response.ok) {
