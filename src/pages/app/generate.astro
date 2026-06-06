@@ -1,0 +1,44 @@
+---
+import GeneratePracticeFlow from '../../components/app/GeneratePracticeFlow';
+import AppLayout from '../../components/app/AppLayout.astro';
+import { getUsageSummary } from '../../lib/plan';
+import { createSupabaseServerClient } from '../../lib/supabase/server';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const display =
+  user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
+
+const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+const usageResult = await getUsageSummary(supabase, user.id);
+
+const initialRecoveryState = { status: 'idle' } as const;
+const latestReadySetId = null;
+---
+
+<AppLayout
+  title="Generate practice set"
+  description="Paste a job description, optionally add a PDF CV, and start a PrepAhead generation flow."
+  userEmail={display}
+>
+  <GeneratePracticeFlow
+    client:only="react"
+    usageSummary={usageResult.ok ? usageResult.data : null}
+    usageError={!usageResult.ok}
+    initialRecoveryState={initialRecoveryState}
+    latestReadySetId={latestReadySetId}
+  >
+    <div
+      slot="fallback"
+      class="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 text-sm leading-6 text-[var(--text-muted)] shadow-sm dark:shadow-none sm:p-8"
+    >
+      Loading the generation form...
+    </div>
+  </GeneratePracticeFlow>
+</AppLayout>

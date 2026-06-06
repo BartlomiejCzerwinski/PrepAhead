@@ -483,16 +483,16 @@ Capture implementation verification, tighten operational notes, and leave the ch
 
 #### Automated
 
-- [ ] 1.1 `npm run build` — exit 0
-- [ ] 1.2 `npm run astro -- check` — exit 0
-- [ ] 1.3 New `/app/generate` route type-checks and does not regress `/app`
+- [x] 1.1 `npm run build` — exit 0
+- [x] 1.2 `npm run astro -- check` — exit 0
+- [x] 1.3 New `/app/generate` route type-checks and does not regress `/app`
 
 #### Manual
 
-- [ ] 1.4 Signed-in user can navigate from `/app` to `/app/generate`
-- [ ] 1.5 Generation form accepts JD text and an optional PDF upload
-- [ ] 1.6 Submit cannot be triggered a second time while parsing or generating
-- [ ] 1.7 JD-only submission path remains available when CV is skipped
+- [x] 1.4 Signed-in user can navigate from `/app` to `/app/generate`
+- [x] 1.5 Generation form accepts JD text and an optional PDF upload
+- [x] 1.6 Submit cannot be triggered a second time while parsing or generating
+- [x] 1.7 JD-only submission path remains available when CV is skipped
 
 ### Phase 2: Server generation pipeline
 
