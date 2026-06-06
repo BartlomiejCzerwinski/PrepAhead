@@ -3,7 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-05
+updated: 2026-06-06
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -34,12 +34,12 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 | F-01 | server-api-foundation | (foundation) run server endpoints on Vercel for AI, auth callbacks, and billing | — | NFR (generation responsiveness), Access Control | done |
 | F-02 | supabase-data-schema | (foundation) persist users, plans, usage, practice sets, and theme preference | — | NFR (data isolation), Access Control | done |
 | F-03 | supabase-oauth-auth | (foundation) sign in via Google OAuth; sessions protect practice routes | F-01, F-02 | FR-001, Access Control | done |
-| S-01 | sign-in-and-usage-dashboard | sign in and see FREE plan with remaining generations and Check calls | F-01, F-02, F-03 | FR-001, FR-012, US-02 | ready |
+| S-01 | sign-in-and-usage-dashboard | sign in and see FREE plan with remaining generations and Check calls | F-01, F-02, F-03 | FR-001, FR-012, US-02 | done |
 | S-02 | jd-gated-generation | paste a JD (and optional CV), request generation, and receive a ~20-question set within limits | S-01 | FR-002, FR-003, FR-004, FR-014, FR-015, US-01 | blocked |
 | S-03 | abcd-practice-and-summary | answer ABCD items with immediate feedback and see an end-of-set score summary | S-02 | FR-005, FR-006, FR-007, FR-009, US-01 | proposed |
 | S-04 | open-ended-check-flow | submit open-ended answers and receive Check feedback within Check limits | S-03 | FR-017, FR-018, FR-019, US-01, US-03 | proposed |
 | S-05 | stripe-pro-subscription | subscribe to PRO and operate under PRO fair-use generation and Check rules | S-01 | FR-013, FR-016, FR-020, FR-021, US-02 | blocked |
-| S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | proposed |
+| S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | ready |
 | S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | proposed |
 | S-08 | public-blog-and-seo | browse the blog index, read all launch post formats, use CTAs to practice, and be indexed via SEO basics | — | FR-024–FR-032, US-05 | done |
 | S-09 | practice-set-history | view and reopen past generated practice sets | S-03 | FR-008, US-01 | proposed |
@@ -50,21 +50,21 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme | Chain | Note |
 |---|---|---|---|
-| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | Foundations done; **S-01** usage dashboard is the next gate on the practice stream. |
+| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | Foundations and **S-01** done; **S-02** is the next gate on the practice stream (blocked on CV format). |
 | B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **S-02** is the north star; completes **US-01** with **S-03**–**S-04**. |
 | C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
 | D | Blog & SEO | `S-08` | **S-08** shipped 2026-06-04; parallel track complete. |
-| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** parallel with Stream B after **S-01**; **S-07** after **S-02**; **S-09** nice-to-have after **S-03**. |
+| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** ready (parallel with Stream B); **S-07** after **S-02**; **S-09** nice-to-have after **S-03**. |
 
 ## Baseline
 
-What's already in place in the codebase as of `2026-06-05` (foundations **F-01**–**F-03** and slice **S-08** shipped).
+What's already in place in the codebase as of `2026-06-06` (foundations **F-01**–**F-03** and slices **S-01**, **S-08** shipped).
 Foundations below assume these are present and do NOT re-scaffold them.
 
-- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog shipped (`/blog`, 3 launch posts, `src/components/blog/`); quiz interactivity via vanilla `quiz-practice-client.ts` (no React islands yet); shadcn not installed (planned per `tech-stack.md`)
-- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth sign-in/callback/sign-out); server env helpers; AI/billing routes not yet built
-- **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets, RLS, usage RPCs); GitHub → `prod` deploy; Supabase SSR clients in app code
-- **Auth:** partial — Google OAuth via Supabase (`@supabase/ssr`), middleware gates `/app/*`, `/login`; usage dashboard and practice UI not yet built
+- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog shipped (`/blog`, 3 launch posts, `src/components/blog/`); signed-in usage dashboard at `/app` (`src/components/app/`); quiz interactivity via vanilla `quiz-practice-client.ts` (no React islands yet); shadcn not installed (planned per `tech-stack.md`)
+- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth sign-in/callback/sign-out); server env helpers; plan/usage read (`src/lib/plan/`); auth redirect hardening (`src/lib/server/auth-redirect.ts`); AI/billing routes not yet built
+- **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets, RLS, usage RPCs including `get_current_usage_summary()`); GitHub → `prod` deploy; Supabase SSR clients in app code
+- **Auth:** partial — Google OAuth via Supabase (`@supabase/ssr`), middleware gates `/app/*`, `/login`; usage dashboard live; practice generation UI not yet built
 - **Deploy / infra:** partial — Vercel adapter + `context/deployment/deploy-plan.md`; no `.github/workflows/` in repo
 - **Observability:** absent — no app logging, error tracking, or analytics in code
 
@@ -121,7 +121,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Thin dashboard is enough for speed — avoids building practice UI before identity and quotas exist.
-- **Status:** ready
+- **Status:** done
 
 ### S-02: JD-gated generation
 
@@ -187,7 +187,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Default theme on first visit (light, dark, or system)? — Owner: product. Block: no.
 - **Risk:** Blog and landing need theme tokens early if shipped in parallel with **S-08**.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-07: Delete practice data
 
@@ -233,12 +233,12 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-01 | server-api-foundation | Enable Astro server routes on Vercel | — | Shipped 2026-05-28 (`impl_reviewed`) |
 | F-02 | supabase-data-schema | Add Supabase schema for users, plans, and practice data | — | Shipped 2026-05-30 (`impl_reviewed`); prod via GitHub → `prod` |
 | F-03 | supabase-oauth-auth | Wire Google OAuth and protected practice routes | — | Shipped 2026-05-30 (`implemented`); OAuth verified on Preview |
-| S-01 | sign-in-and-usage-dashboard | Sign-in with usage dashboard (FREE plan) | yes | F-03 complete; `/app` is stub until this slice |
-| S-02 | jd-gated-generation | JD paste + gated AI generation (~20 questions) | no | Blocked: CV input format (OQ 1) |
+| S-01 | sign-in-and-usage-dashboard | Sign-in with usage dashboard (FREE plan) | — | Shipped 2026-06-06 (`impl_reviewed`); Preview smoke verified |
+| S-02 | jd-gated-generation | JD paste + gated AI generation (~20 questions) | no | Blocked: CV input format (OQ 1); S-01 complete |
 | S-03 | abcd-practice-and-summary | ABCD practice loop + score summary | no | After S-02 |
 | S-04 | open-ended-check-flow | Open-ended answers + Check feedback | no | After S-03 |
 | S-05 | stripe-pro-subscription | Stripe PRO checkout + fair-use limits | no | Blocked: PRO price + subscription lifecycle (OQ 2–3) |
-| S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | no | After S-01 |
+| S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | yes | S-01 complete; parallel with Stream B |
 | S-07 | delete-practice-data | Delete practice set / personal data | no | After S-02 |
 | S-08 | public-blog-and-seo | Blog index, 3 post formats, SEO, CTA | — | Shipped 2026-06-04 (`impl_reviewed`); preview smoke items remain in verification.md |
 | S-09 | practice-set-history | Practice set history (nice-to-have) | no | After S-03 |
@@ -270,4 +270,5 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **F-01** `server-api-foundation` — Astro server on Vercel, health API, env helpers (2026-05-28).
 - **F-02** `supabase-data-schema` — Postgres schema, RLS, migrations workflow, usage RPCs; deployed to prod (2026-05-30).
 - **F-03** `supabase-oauth-auth` — Google OAuth, SSR session cookies, `/api/auth/*`, middleware on `/app/*`, `/login` (2026-05-30; verified working 2026-06-04).
+- **S-01** `sign-in-and-usage-dashboard` — Usage dashboard at `/app` (plan tier, remaining generations/Checks, period reset); `get_current_usage_summary()` RPC; auth redirect hardening (F1/F2); upgrade banner at limit (2026-06-06; `impl_reviewed`).
 - **S-08** `public-blog-and-seo` — Blog index, 3 launch posts, open-ended + interactive-quiz formats, SEO metadata, sitemap, robots.txt, CTAs to `/app` (2026-06-04; `impl_reviewed`).
