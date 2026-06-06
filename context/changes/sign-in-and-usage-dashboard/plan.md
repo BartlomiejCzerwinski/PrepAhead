@@ -401,11 +401,11 @@ End-to-end smoke and update change metadata.
 
 #### Automated
 
-- [x] 4.1 `npm run build` — exit 0
-- [x] 4.2 `npm run astro -- check` — exit 0
+- [x] 4.1 `npm run build` — exit 0 — b7945a6
+- [x] 4.2 `npm run astro -- check` — exit 0 — b7945a6
 
 #### Manual
 
-- [x] 4.3 Preview sign-in → dashboard smoke
-- [x] 4.4 RLS two-account isolation check
-- [x] 4.5 Blog CTA → `/app` dashboard path
+- [x] 4.3 Preview sign-in → dashboard smoke — b7945a6
+- [x] 4.4 RLS two-account isolation check — b7945a6
+- [x] 4.5 Blog CTA → `/app` dashboard path — b7945a6
