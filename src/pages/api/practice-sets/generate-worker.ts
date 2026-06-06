@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { summarizePracticeSet } from '../../../lib/practice/contracts';
 
 export const prerender = false;
+const STALE_RUNNING_MS = 90_000;
 
 type GenerateWorkerRequestBody = {
   jobId?: unknown;
@@ -57,18 +58,86 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   }
 
-  const { data: claimedJob, error: claimError } = await supabase
+  const { data: existingJob, error: existingJobError } = await supabase
     .from('generation_jobs')
-    .update({
-      status: 'running',
-      claimed_at: new Date().toISOString(),
-      started_at: new Date().toISOString(),
-      failure_code: null,
-      failure_message: null,
-    })
+    .select('id, practice_set_id, status, failure_code, failure_message, started_at')
     .eq('id', jobId)
     .eq('user_id', user.id)
-    .eq('status', 'queued')
+    .maybeSingle();
+
+  if (existingJobError || !existingJob) {
+    return jsonResponse(
+      { ok: false, error: 'job_not_found', message: 'Generation job not found.' },
+      { status: 404, headers: responseHeaders },
+    );
+  }
+
+  if (existingJob.status === 'succeeded') {
+    return jsonResponse(
+      {
+        ok: true,
+        jobId: existingJob.id,
+        practiceSetId: existingJob.practice_set_id,
+        status: existingJob.status,
+      },
+      { status: 200, headers: responseHeaders },
+    );
+  }
+
+  if (existingJob.status === 'failed') {
+    return jsonResponse(
+      {
+        ok: false,
+        error: existingJob.failure_code ?? 'generation_failed',
+        message: existingJob.failure_message ?? 'Generation failed.',
+        jobId: existingJob.id,
+        practiceSetId: existingJob.practice_set_id,
+        status: existingJob.status,
+      },
+      { status: 422, headers: responseHeaders },
+    );
+  }
+
+  const startedAt =
+    typeof existingJob.started_at === 'string' ? new Date(existingJob.started_at) : null;
+  const isStaleRunning =
+    existingJob.status === 'running' &&
+    startedAt instanceof Date &&
+    !Number.isNaN(startedAt.valueOf()) &&
+    Date.now() - startedAt.valueOf() > STALE_RUNNING_MS;
+
+  if (existingJob.status === 'running' && !isStaleRunning) {
+    return jsonResponse(
+      {
+        ok: true,
+        jobId: existingJob.id,
+        practiceSetId: existingJob.practice_set_id,
+        status: existingJob.status,
+      },
+      { status: 200, headers: responseHeaders },
+    );
+  }
+
+  const claimPayload = {
+    status: 'running',
+    claimed_at: new Date().toISOString(),
+    started_at: new Date().toISOString(),
+    failure_code: null,
+    failure_message: null,
+  };
+
+  let claimQuery = supabase
+    .from('generation_jobs')
+    .update(claimPayload)
+    .eq('id', jobId)
+    .eq('user_id', user.id)
+    .eq('status', existingJob.status);
+
+  if (existingJob.status === 'running' && typeof existingJob.started_at === 'string') {
+    claimQuery = claimQuery.eq('started_at', existingJob.started_at);
+  }
+
+  const { data: claimedJob, error: claimError } = await claimQuery
     .select('id, practice_set_id')
     .maybeSingle();
 
@@ -80,40 +149,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   if (!claimedJob) {
-    const { data: existingJob, error: existingJobError } = await supabase
-      .from('generation_jobs')
-      .select('id, practice_set_id, status, failure_code, failure_message')
-      .eq('id', jobId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (existingJobError || !existingJob) {
-      return jsonResponse(
-        { ok: false, error: 'job_not_found', message: 'Generation job not found.' },
-        { status: 404, headers: responseHeaders },
-      );
-    }
-
-    if (existingJob.status === 'failed') {
-      return jsonResponse(
-        {
-          ok: false,
-          error: existingJob.failure_code ?? 'generation_failed',
-          message: existingJob.failure_message ?? 'Generation failed.',
-          jobId: existingJob.id,
-          practiceSetId: existingJob.practice_set_id,
-          status: existingJob.status,
-        },
-        { status: 422, headers: responseHeaders },
-      );
-    }
-
     return jsonResponse(
       {
         ok: true,
         jobId: existingJob.id,
         practiceSetId: existingJob.practice_set_id,
-        status: existingJob.status,
+        status: 'running',
       },
       { status: 200, headers: responseHeaders },
     );
@@ -178,11 +219,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       p_job_id: claimedJob.id,
       p_title: generationResult.title,
       p_cv_text: practiceSet.cv_text,
-      p_content: generationResult.content,
+      p_content: JSON.parse(JSON.stringify(generationResult.content)),
     },
   );
 
   if (finalizeError) {
+    const failureDetail = finalizeError.message?.trim() || 'unknown finalize error';
+
     await supabase.rpc('mark_generation_job_failed', {
       p_job_id: claimedJob.id,
       p_failure_code: 'finalization_failed',
@@ -193,7 +236,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       {
         ok: false,
         error: 'finalization_failed',
-        message: 'The generated set could not be saved.',
+        message: import.meta.env.DEV
+          ? `The generated set could not be saved (${failureDetail}).`
+          : 'The generated set could not be saved.',
+        rpcCode: finalizeError.code ?? null,
+        detail: import.meta.env.DEV ? failureDetail : undefined,
       },
       { status: 500, headers: responseHeaders },
     );

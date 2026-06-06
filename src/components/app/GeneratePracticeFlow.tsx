@@ -178,31 +178,41 @@ export default function GeneratePracticeFlow({
 
   async function runGenerationWorker(jobId: string): Promise<GenerationSuccess> {
     for (let attempt = 0; attempt < 40; attempt += 1) {
-      const workerResponse = await fetch('/api/practice-sets/generate-worker', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ jobId }),
-      });
+      try {
+        const workerResponse = await fetch('/api/practice-sets/generate-worker', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ jobId }),
+        });
 
-      const workerPayload = await parseApiResponse(workerResponse);
+        const workerPayload = await parseApiResponse(workerResponse);
 
-      if (workerResponse.ok && workerPayload?.status === 'succeeded') {
-        return {
-          jobId,
-          practiceSetId: String(workerPayload.practiceSetId),
-          summary: workerPayload.summary ?? { abcdCount: 15, openEndedCount: 5 },
-        };
-      }
+        if (workerResponse.ok && workerPayload?.status === 'succeeded') {
+          return {
+            jobId,
+            practiceSetId: String(workerPayload.practiceSetId),
+            summary: workerPayload.summary ?? { abcdCount: 15, openEndedCount: 5 },
+          };
+        }
 
-      if (workerResponse.ok && workerPayload?.status === 'running') {
+        if (workerResponse.ok && workerPayload?.status === 'running') {
+          await sleep(1500);
+          continue;
+        }
+
+        if (workerResponse.status >= 500 || workerResponse.status === 504) {
+          await sleep(2500);
+          continue;
+        }
+
+        throw new Error(workerPayload?.message ?? 'Generation failed. Please try again.');
+      } catch {
         await sleep(1500);
         continue;
       }
-
-      throw new Error(workerPayload?.message ?? 'Generation failed. Please try again.');
     }
 
     throw new Error('Generation is taking longer than expected. Try again in a moment.');
