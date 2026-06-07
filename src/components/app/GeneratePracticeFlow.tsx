@@ -69,6 +69,7 @@ export default function GeneratePracticeFlow({
   usageSummary,
   usageError = false,
   initialRecoveryState,
+  latestReadySetId,
 }: Props) {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -344,6 +345,21 @@ export default function GeneratePracticeFlow({
               Upgrade to PRO
             </a>
           )}
+        </div>
+      )}
+
+      {latestReadySetId && (
+        <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm leading-6 text-green-800 dark:text-green-300">
+          <p>
+            Your latest practice set is ready.{' '}
+            <a
+              href={`/app/sets/${latestReadySetId}`}
+              className="font-semibold text-green-800 underline underline-offset-2 dark:text-green-300"
+            >
+              View overview
+            </a>{' '}
+            or start a new generation below.
+          </p>
         </div>
       )}
 
