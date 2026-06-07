@@ -480,9 +480,9 @@ Capture verification outcomes and leave the change ready for `/10x-implement` re
 
 #### Automated
 
-- [x] 5.1 `npm run build` — exit 0
-- [x] 5.2 `npm run astro -- check` — exit 0
+- [x] 5.1 `npm run build` — exit 0 — 6e2e499
+- [x] 5.2 `npm run astro -- check` — exit 0 — 6e2e499
 
 #### Manual
 
-- [x] 5.3 Full S-03 path verified; S-02 generation regression smoke passes
+- [x] 5.3 Full S-03 path verified; S-02 generation regression smoke passes — 6e2e499
