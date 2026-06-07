@@ -530,11 +530,11 @@ Capture implementation verification, tighten operational notes, and leave the ch
 
 #### Automated
 
-- [x] 4.1 `npm run build` — exit 0
-- [x] 4.2 `npm run astro -- check` — exit 0
+- [x] 4.1 `npm run build` — exit 0 — 2ed9b26
+- [x] 4.2 `npm run astro -- check` — exit 0 — 2ed9b26
 
 #### Manual
 
-- [x] 4.3 Happy path works from dashboard entry to generated-set overview
-- [x] 4.4 Malformed generation leaves quota unchanged
-- [x] 4.5 Leave-and-return recovery produces one final set without duplicate increments
+- [x] 4.3 Happy path works from dashboard entry to generated-set overview — 2ed9b26
+- [x] 4.4 Malformed generation leaves quota unchanged — 2ed9b26
+- [x] 4.5 Leave-and-return recovery produces one final set without duplicate increments — 2ed9b26
