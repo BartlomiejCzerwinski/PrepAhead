@@ -44,6 +44,15 @@ async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+class GenerationStillRunningError extends Error {
+  constructor() {
+    super(
+      'Generation is still running in the background. Return to /app/generate to recover the result.',
+    );
+    this.name = 'GenerationStillRunningError';
+  }
+}
+
 async function parseApiResponse(response: Response): Promise<any> {
   try {
     return await response.json();
@@ -181,7 +190,7 @@ export default function GeneratePracticeFlow({
       await sleep(1500);
     }
 
-    throw new Error('Generation is taking longer than expected. Return here to recover the job.');
+    throw new GenerationStillRunningError();
   }
 
   async function startTrackedGeneration(jobId: string, practiceSetId: string): Promise<void> {
@@ -196,11 +205,15 @@ export default function GeneratePracticeFlow({
       idempotencyKeyRef.current = null;
       redirectToOverview(practiceSetId);
     } catch (error) {
-      setGenerationError(
-        error instanceof Error ? error.message : 'Generation failed. Please try again.',
-      );
-      setActiveJobId(null);
-      setActivePracticeSetId(null);
+      if (error instanceof GenerationStillRunningError) {
+        setGenerationError(error.message);
+      } else {
+        setGenerationError(
+          error instanceof Error ? error.message : 'Generation failed. Please try again.',
+        );
+        setActiveJobId(null);
+        setActivePracticeSetId(null);
+      }
     } finally {
       setIsGenerating(false);
     }

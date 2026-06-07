@@ -536,5 +536,5 @@ Capture implementation verification, tighten operational notes, and leave the ch
 #### Manual
 
 - [x] 4.3 Happy path works from dashboard entry to generated-set overview — 2ed9b26
-- [x] 4.4 Malformed generation leaves quota unchanged — 2ed9b26
+- [ ] 4.4 Malformed generation leaves quota unchanged
 - [x] 4.5 Leave-and-return recovery produces one final set without duplicate increments — 2ed9b26

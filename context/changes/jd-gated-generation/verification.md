@@ -26,7 +26,11 @@ Use a Vercel Preview or production deployment with Supabase env vars, `generatio
 - [x] Valid PDF upload returns parsed resume text for the hidden generation flow
 - [ ] PDF parse failure paths (non-PDF, empty extraction, oversize) — not re-verified in final pass
 - [ ] FREE user at generation limit blocked before provider call with upgrade path — not re-verified in final pass
-- [ ] Malformed provider output fails without incrementing generation usage — not re-verified in final pass (`simulateMalformed` dev hook exists)
+- [ ] Malformed provider output fails without incrementing generation usage — deferred; `simulateMalformed` dev hook exists (plan 4.4 left unchecked pending explicit run)
+
+## Operational notes
+
+- Generation worker runs inline in a Vercel function (60 s budget). Stale `running` jobs are reclaimable after ~65 s; client polling may time out first—return to `/app/generate` to recover.
 
 ## Database / migrations
 
