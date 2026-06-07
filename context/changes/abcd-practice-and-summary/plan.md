@@ -448,9 +448,9 @@ Capture verification outcomes and leave the change ready for `/10x-implement` re
 
 #### Manual
 
-- [ ] 2.3 Valid answer persists and returns feedback
-- [ ] 2.4 Duplicate answer rejected; invalid option rejected
-- [ ] 2.5 After 15 answers, `status` is `completed`
+- [x] 2.3 Valid answer persists and returns feedback
+- [x] 2.4 Duplicate answer rejected; invalid option rejected
+- [x] 2.5 After 15 answers, `status` is `completed`
 
 ### Phase 3: Practice route and React island
 
@@ -468,21 +468,21 @@ Capture verification outcomes and leave the change ready for `/10x-implement` re
 
 #### Automated
 
-- [x] 4.1 `npm run build` — exit 0
-- [x] 4.2 `npm run astro -- check` — exit 0
+- [x] 4.1 `npm run build` — exit 0 — 475a607
+- [x] 4.2 `npm run astro -- check` — exit 0 — 475a607
 
 #### Manual
 
-- [x] 4.3 Overview CTAs match fresh/partial/complete states
-- [x] 4.4 Summary shows ABCD score, disclaimer, and open-ended stub
+- [x] 4.3 Overview CTAs match fresh/partial/complete states — 475a607
+- [x] 4.4 Summary shows ABCD score, disclaimer, and open-ended stub — 475a607
 
 ### Phase 5: Verification and change hygiene
 
 #### Automated
 
-- [ ] 5.1 `npm run build` — exit 0
-- [ ] 5.2 `npm run astro -- check` — exit 0
+- [x] 5.1 `npm run build` — exit 0
+- [x] 5.2 `npm run astro -- check` — exit 0
 
 #### Manual
 
-- [ ] 5.3 Full S-03 path verified; S-02 generation regression smoke passes
+- [x] 5.3 Full S-03 path verified; S-02 generation regression smoke passes
