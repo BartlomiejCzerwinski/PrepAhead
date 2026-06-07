@@ -3,7 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-06
+updated: 2026-06-07
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -23,9 +23,9 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 
 ## North star
 
-**S-02: Generate a JD-grounded practice set** — Proves the core hypothesis that pasted JD (+ optional CV) yields a ~20-question mixed set within plan limits.
+**S-02: Generate a JD-grounded practice set** — **Shipped 2026-06-07** (`jd-gated-generation`, `impl_reviewed`). Proves pasted JD (+ optional PDF CV) yields an exact 20-question mixed set within plan limits, with durable job recovery and a read-only overview at `/app/sets/[id]`.
 
-> **North star** here means the smallest end-to-end slice whose delivery would prove the product works — placed as early as prerequisites allow because later slices only matter if generation is real. Full **US-01** (generate and complete a set) also requires **S-03** (ABCD loop) and **S-04** (Check); those follow immediately after **S-02**.
+> **North star (delivered):** Generation is real end-to-end on production. Full **US-01** (generate *and complete* a set) still requires **S-03** (ABCD answer loop + score summary) and **S-04** (Check) — **S-03** is the next gate on the practice stream.
 
 ## At a glance
 
@@ -35,12 +35,12 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 | F-02 | supabase-data-schema | (foundation) persist users, plans, usage, practice sets, and theme preference | — | NFR (data isolation), Access Control | done |
 | F-03 | supabase-oauth-auth | (foundation) sign in via Google OAuth; sessions protect practice routes | F-01, F-02 | FR-001, Access Control | done |
 | S-01 | sign-in-and-usage-dashboard | sign in and see FREE plan with remaining generations and Check calls | F-01, F-02, F-03 | FR-001, FR-012, US-02 | done |
-| S-02 | jd-gated-generation | paste a JD (and optional CV), request generation, and receive a ~20-question set within limits | S-01 | FR-002, FR-003, FR-004, FR-014, FR-015, US-01 | blocked |
-| S-03 | abcd-practice-and-summary | answer ABCD items with immediate feedback and see an end-of-set score summary | S-02 | FR-005, FR-006, FR-007, FR-009, US-01 | proposed |
+| S-02 | jd-gated-generation | paste a JD (and optional PDF CV), request generation, and receive a ~20-question set within limits | S-01 | FR-002, FR-003, FR-004, FR-014, FR-015, US-01 | done |
+| S-03 | abcd-practice-and-summary | answer ABCD items with immediate feedback and see an end-of-set score summary | S-02 | FR-005, FR-006, FR-007, FR-009, US-01 | ready |
 | S-04 | open-ended-check-flow | submit open-ended answers and receive Check feedback within Check limits | S-03 | FR-017, FR-018, FR-019, US-01, US-03 | proposed |
 | S-05 | stripe-pro-subscription | subscribe to PRO and operate under PRO fair-use generation and Check rules | S-01 | FR-013, FR-016, FR-020, FR-021, US-02 | blocked |
 | S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | ready |
-| S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | proposed |
+| S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | ready |
 | S-08 | public-blog-and-seo | browse the blog index, read all launch post formats, use CTAs to practice, and be indexed via SEO basics | — | FR-024–FR-032, US-05 | done |
 | S-09 | practice-set-history | view and reopen past generated practice sets | S-03 | FR-008, US-01 | proposed |
 
@@ -50,22 +50,22 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme | Chain | Note |
 |---|---|---|---|
-| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | Foundations and **S-01** done; **S-02** is the next gate on the practice stream (blocked on CV format). |
-| B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **S-02** is the north star; completes **US-01** with **S-03**–**S-04**. |
+| A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | Foundations and **S-01** done. |
+| B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **S-02** shipped; **S-03** is next to complete **US-01** with **S-04**. |
 | C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
 | D | Blog & SEO | `S-08` | **S-08** shipped 2026-06-04; parallel track complete. |
-| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** ready (parallel with Stream B); **S-07** after **S-02**; **S-09** nice-to-have after **S-03**. |
+| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** and **S-07** ready (parallel with Stream B); **S-09** nice-to-have after **S-03**. |
 
 ## Baseline
 
-What's already in place in the codebase as of `2026-06-06` (foundations **F-01**–**F-03** and slices **S-01**, **S-08** shipped).
+What's already in place in the codebase as of `2026-06-07` (foundations **F-01**–**F-03** and slices **S-01**, **S-02**, **S-08** shipped).
 Foundations below assume these are present and do NOT re-scaffold them.
 
-- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog shipped (`/blog`, 3 launch posts, `src/components/blog/`); signed-in usage dashboard at `/app` (`src/components/app/`); quiz interactivity via vanilla `quiz-practice-client.ts` (no React islands yet); shadcn not installed (planned per `tech-stack.md`)
-- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth sign-in/callback/sign-out); server env helpers; plan/usage read (`src/lib/plan/`); auth redirect hardening (`src/lib/server/auth-redirect.ts`); AI/billing routes not yet built
-- **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets, RLS, usage RPCs including `get_current_usage_summary()`); GitHub → `prod` deploy; Supabase SSR clients in app code
-- **Auth:** partial — Google OAuth via Supabase (`@supabase/ssr`), middleware gates `/app/*`, `/login`; usage dashboard live; practice generation UI not yet built
-- **Deploy / infra:** partial — Vercel adapter + `context/deployment/deploy-plan.md`; no `.github/workflows/` in repo
+- **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog shipped (`/blog`, launch posts, `src/components/blog/`); signed-in shell at `/app` with usage dashboard; **React island** for generation flow (`GeneratePracticeFlow.tsx` at `/app/generate`); read-only set overview at `/app/sets/[id]`; blog quiz interactivity via vanilla `quiz-practice-client.ts`; shadcn not installed (planned per `tech-stack.md`)
+- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth, resume PDF parse, practice-set generate/worker/status); OpenAI generation server-side (`generate-practice-set.ts`); plan/usage read (`src/lib/plan/`); auth redirect hardening; **Stripe/billing routes not yet built**
+- **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets, **generation_jobs**, finalize RPCs, RLS, usage increment/read RPCs); GitHub → `prod` deploy; Supabase SSR clients in app code
+- **Auth:** partial — Google OAuth via Supabase (`@supabase/ssr`), middleware gates `/app/*`, `/login`; usage dashboard and generation routes enforce per-user auth at API boundaries
+- **Deploy / infra:** partial — Vercel adapter + `context/deployment/deploy-plan.md`; `OPENAI_API_KEY` required for generation; no `.github/workflows/` in repo
 - **Observability:** absent — no app logging, error tracking, or analytics in code
 
 ## Foundations
@@ -125,16 +125,16 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-02: JD-gated generation
 
-- **Outcome:** user can paste a job description and optional CV text, request generation, and receive a ~20-question mixed set or a clear failure within plan limits.
+- **Outcome:** user can paste a job description, optionally upload a **PDF CV** (parsed server-side into hidden resume text), request generation, and receive an exact **20-question** mixed set (15 ABCD + 5 open-ended) or a clear failure within plan limits; successful runs land on a read-only overview. Answer loop and Check remain **S-03** / **S-04**.
 - **Change ID:** jd-gated-generation
-- **PRD refs:** FR-002, FR-003, FR-004, FR-014, FR-015, US-01
+- **PRD refs:** FR-002, FR-003, FR-004, FR-014, FR-015, US-01 (generation portion only)
 - **Prerequisites:** S-01
 - **Parallel with:** —
 - **Blockers:** —
-- **Unknowns:**
-  - CV input for v1 — paste-only vs file upload (PDF/DOCX)? — Owner: product. Block: yes.
-- **Risk:** North star slice — AI cost and latency land here; blocked until CV format decision avoids rework.
-- **Status:** blocked
+- **Unknowns:** —
+- **Risk:** Generation runs inline in Vercel functions (~60 s budget); durable `generation_jobs` + client/server worker nudge + recovery on `/app/generate` mitigate leave-page cases. Edge verification gaps (malformed no-charge, FREE limit block) documented in `context/changes/jd-gated-generation/verification.md`.
+- **Status:** done
+- **Shipped:** 2026-06-07 (`impl_reviewed`). Routes: `/app/generate`, `/app/sets/[id]`; APIs: parse, generate, generate-worker, status; migrations: `generation_jobs`, `finalize_generation_job`.
 
 ### S-03: ABCD practice and score summary
 
@@ -147,7 +147,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - How open-ended/Check results appear in the end-of-set summary — Owner: product. Block: no.
 - **Risk:** Completes the fast feedback loop of **US-01** before Check complexity.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-04: Open-ended Check flow
 
@@ -198,8 +198,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-04, S-05
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** Minimum trust signal for sensitive JD/CV — small slice, safe to defer slightly after generation exists.
-- **Status:** proposed
+- **Risk:** Minimum trust signal for sensitive JD/CV — small slice; generation exists, soft-delete path partially present on failed job cleanup.
+- **Status:** ready
 
 ### S-08: Public blog and SEO
 
@@ -234,18 +234,18 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-02 | supabase-data-schema | Add Supabase schema for users, plans, and practice data | — | Shipped 2026-05-30 (`impl_reviewed`); prod via GitHub → `prod` |
 | F-03 | supabase-oauth-auth | Wire Google OAuth and protected practice routes | — | Shipped 2026-05-30 (`implemented`); OAuth verified on Preview |
 | S-01 | sign-in-and-usage-dashboard | Sign-in with usage dashboard (FREE plan) | — | Shipped 2026-06-06 (`impl_reviewed`); Preview smoke verified |
-| S-02 | jd-gated-generation | JD paste + gated AI generation (~20 questions) | no | Blocked: CV input format (OQ 1); S-01 complete |
-| S-03 | abcd-practice-and-summary | ABCD practice loop + score summary | no | After S-02 |
+| S-02 | jd-gated-generation | JD paste + PDF CV + gated AI generation (exact 20 questions) | — | Shipped 2026-06-07 (`impl_reviewed`); see `verification.md` |
+| S-03 | abcd-practice-and-summary | ABCD practice loop + score summary | yes | S-02 complete; next on Stream B |
 | S-04 | open-ended-check-flow | Open-ended answers + Check feedback | no | After S-03 |
 | S-05 | stripe-pro-subscription | Stripe PRO checkout + fair-use limits | no | Blocked: PRO price + subscription lifecycle (OQ 2–3) |
 | S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | yes | S-01 complete; parallel with Stream B |
-| S-07 | delete-practice-data | Delete practice set / personal data | no | After S-02 |
+| S-07 | delete-practice-data | Delete practice set / personal data | yes | S-02 complete; parallel with S-03 |
 | S-08 | public-blog-and-seo | Blog index, 3 post formats, SEO, CTA | — | Shipped 2026-06-04 (`impl_reviewed`); preview smoke items remain in verification.md |
 | S-09 | practice-set-history | Practice set history (nice-to-have) | no | After S-03 |
 
 ## Open Roadmap Questions
 
-1. **CV upload format** — Paste-only vs file upload (PDF/DOCX parsing) for v1. Owner: product. Block: S-02.
+1. ~~**CV upload format**~~ — Resolved 2026-06-07: **PDF upload only** for S-02 (server parse → hidden `resumeText`); no DOCX, no OCR, no editable parsed text in UI. Owner: product. Block: none.
 2. **PRO price** — Monthly subscription amount and whether to offer annual billing later. Owner: product. Block: S-05.
 3. **Subscription lifecycle** — Cancel/downgrade to FREE, failed payment, and grace-period rules before launch. Owner: product. Block: S-05.
 4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations/month. Owner: product. Block: roadmap-wide (no).
@@ -272,3 +272,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **F-03** `supabase-oauth-auth` — Google OAuth, SSR session cookies, `/api/auth/*`, middleware on `/app/*`, `/login` (2026-05-30; verified working 2026-06-04).
 - **S-01** `sign-in-and-usage-dashboard` — Usage dashboard at `/app` (plan tier, remaining generations/Checks, period reset); `get_current_usage_summary()` RPC; auth redirect hardening (F1/F2); upgrade banner at limit (2026-06-06; `impl_reviewed`).
 - **S-08** `public-blog-and-seo` — Blog index, 3 launch posts, open-ended + interactive-quiz formats, SEO metadata, sitemap, robots.txt, CTAs to `/app` (2026-06-04; `impl_reviewed`).
+- **S-02** `jd-gated-generation` — `/app/generate` (JD + optional PDF), durable `generation_jobs`, OpenAI exact-20 contract, usage increment on finalize, recovery + status polling, read-only `/app/sets/[id]` overview (2026-06-07; `impl_reviewed`). Commits: `62f5a2a`, `2dd2478`, `514f48d`, `4013e1c`, `2ed9b26`.
