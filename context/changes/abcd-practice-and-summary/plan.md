@@ -456,25 +456,25 @@ Capture verification outcomes and leave the change ready for `/10x-implement` re
 
 #### Automated
 
-- [x] 3.1 `npm run build` — exit 0
-- [x] 3.2 `npm run astro -- check` — exit 0
+- [x] 3.1 `npm run build` — exit 0 — d9aaefc
+- [x] 3.2 `npm run astro -- check` — exit 0 — d9aaefc
 
 #### Manual
 
-- [x] 3.3 Sequential answer flow with immediate feedback works
-- [x] 3.4 Refresh mid-set resumes correctly
+- [x] 3.3 Sequential answer flow with immediate feedback works — d9aaefc
+- [x] 3.4 Refresh mid-set resumes correctly — d9aaefc
 
 ### Phase 4: Overview integration and score summary
 
 #### Automated
 
-- [ ] 4.1 `npm run build` — exit 0
-- [ ] 4.2 `npm run astro -- check` — exit 0
+- [x] 4.1 `npm run build` — exit 0
+- [x] 4.2 `npm run astro -- check` — exit 0
 
 #### Manual
 
-- [ ] 4.3 Overview CTAs match fresh/partial/complete states
-- [ ] 4.4 Summary shows ABCD score, disclaimer, and open-ended stub
+- [x] 4.3 Overview CTAs match fresh/partial/complete states
+- [x] 4.4 Summary shows ABCD score, disclaimer, and open-ended stub
 
 ### Phase 5: Verification and change hygiene
 

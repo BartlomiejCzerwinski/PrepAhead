@@ -1,10 +1,11 @@
 ---
 import AppLayout from '../../../components/app/AppLayout.astro';
 import {
-  normalizePracticeSetContent,
+  getAbcdProgress,
+  parsePracticeSetWithProgress,
   PracticeSetContractError,
   summarizePracticeSet,
-  type PracticeQuestion,
+  type PracticeQuestionWithProgress,
 } from '../../../lib/practice/contracts';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
@@ -24,6 +25,8 @@ if (!practiceSetId) {
 
 const display =
   user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
+
+const practiceUrl = `/app/sets/${practiceSetId}/practice`;
 
 const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
 
@@ -46,14 +49,16 @@ const { data: generationJob } = await supabase
   .eq('user_id', user.id)
   .maybeSingle();
 
-let questions: PracticeQuestion[] = [];
+let questions: PracticeQuestionWithProgress[] = [];
 let summary = { abcdCount: 0, openEndedCount: 0 };
 let contentReady = false;
+let abcdProgress = { answeredCount: 0, total: 15 as const, currentIndex: 0, isComplete: false };
 
 try {
-  const normalizedContent = normalizePracticeSetContent(practiceSet.content);
-  questions = normalizedContent.questions;
-  summary = summarizePracticeSet(normalizedContent);
+  const content = parsePracticeSetWithProgress(practiceSet.content);
+  questions = content.questions;
+  summary = summarizePracticeSet(content);
+  abcdProgress = getAbcdProgress(content);
   contentReady = true;
 } catch (error) {
   if (!(error instanceof PracticeSetContractError)) {
@@ -62,9 +67,48 @@ try {
 }
 
 const generationStatus = generationJob?.status ?? 'unknown';
+const generationSucceeded = generationStatus === 'succeeded' && contentReady;
 const abcdQuestions = questions.filter((question) => question.type === 'abcd');
 const openEndedQuestions = questions.filter((question) => question.type === 'open_ended');
 const createdAtLabel = new Date(practiceSet.created_at).toLocaleString();
+
+const practiceStatusLabel =
+  practiceSet.status === 'completed' || abcdProgress.isComplete
+    ? 'completed'
+    : 'in_progress';
+
+type PracticeCta = {
+  href: string;
+  label: string;
+  hint?: string;
+  primary: boolean;
+};
+
+let practiceCta: PracticeCta | null = null;
+
+if (generationSucceeded) {
+  if (abcdProgress.isComplete) {
+    practiceCta = {
+      href: practiceUrl,
+      label: 'View score summary',
+      hint: `${abcdProgress.answeredCount} / ${abcdProgress.total} multiple-choice answered`,
+      primary: true,
+    };
+  } else if (abcdProgress.answeredCount > 0) {
+    practiceCta = {
+      href: practiceUrl,
+      label: 'Continue practice',
+      hint: `${abcdProgress.answeredCount} / ${abcdProgress.total} multiple-choice answered`,
+      primary: true,
+    };
+  } else {
+    practiceCta = {
+      href: practiceUrl,
+      label: 'Start practice',
+      primary: true,
+    };
+  }
+}
 ---
 
 <AppLayout
@@ -101,12 +145,42 @@ const createdAtLabel = new Date(practiceSet.created_at).toLocaleString();
         }
       </p>
       {contentReady && (
-        <p class="mt-2 text-[var(--text-muted)]">
-          {summary.abcdCount} multiple-choice and {summary.openEndedCount} open-ended questions.
-          Practice progress stays <span class="font-semibold text-[var(--text)]">{practiceSet.status}</span> until the answer loop ships in a later slice.
-        </p>
+        <>
+          <p class="mt-2 text-[var(--text-muted)]">
+            {summary.abcdCount} multiple-choice and {summary.openEndedCount} open-ended questions.
+          </p>
+          <p class="mt-2 text-[var(--text-muted)]">
+            Practice status:
+            <span class="font-semibold text-[var(--text)]"> {practiceStatusLabel}</span>
+            {' '}({abcdProgress.answeredCount} / {abcdProgress.total} multiple-choice answered)
+          </p>
+        </>
       )}
     </div>
+
+    {practiceCta && (
+      <div class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-5 shadow-sm dark:shadow-none sm:px-6">
+        <p class="text-sm font-semibold text-[var(--text)]">Multiple-choice practice</p>
+        {practiceCta.hint ? (
+          <p class="mt-1 text-sm text-[var(--text-muted)]">{practiceCta.hint}</p>
+        ) : (
+          <p class="mt-1 text-sm text-[var(--text-muted)]">
+            Answer 15 questions with immediate feedback and a practice drill score.
+          </p>
+        )}
+        <div class="mt-4">
+          <a
+            href={practiceCta.href}
+            class:list={[
+              'inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold no-underline shadow-sm',
+              practiceCta.primary ? 'btn-primary' : '',
+            ]}
+          >
+            {practiceCta.label}
+          </a>
+        </div>
+      </div>
+    )}
 
     {!contentReady ? (
       <div class="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
@@ -121,7 +195,7 @@ const createdAtLabel = new Date(practiceSet.created_at).toLocaleString();
         <section class="space-y-4">
           <div class="space-y-1">
             <h2 class="text-lg font-semibold text-[var(--text)]">Multiple choice ({abcdQuestions.length})</h2>
-            <p class="text-sm text-[var(--text-muted)]">Read-only preview. Answering and scoring arrive in a later slice.</p>
+            <p class="text-sm text-[var(--text-muted)]">Read-only preview. Use Start or Continue practice above to answer with feedback.</p>
           </div>
           <ol class="space-y-4">
             {abcdQuestions.map((question, index) => (

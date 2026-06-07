@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import type { ClientAbcdQuestion } from '../../lib/practice/client-payload';
+import PracticeSummary from './PracticeSummary';
 
 type PracticeProgress = {
   answeredCount: number;
@@ -190,31 +191,7 @@ export default function PracticeFlow({
 
   if (showSummary && summary) {
     return (
-      <section className="space-y-6">
-        <div className="space-y-2">
-          <a
-            href={overviewUrl}
-            className="inline-flex items-center text-sm font-medium text-[var(--brand)] no-underline hover:underline"
-          >
-            Back to overview
-          </a>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">
-            {title}
-          </h1>
-        </div>
-
-        <div className="practice-summary-panel rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-6 shadow-sm dark:shadow-none sm:px-8 sm:py-8">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            Practice drill score
-          </p>
-          <p className="mt-3 text-3xl font-bold text-[var(--text)]">
-            {summary.correct} / {summary.total} correct ({summary.percent}%)
-          </p>
-          <p className="mt-4 text-sm leading-6 text-[var(--text-muted)]">
-            This score reflects multiple-choice practice only — not overall interview readiness.
-          </p>
-        </div>
-      </section>
+      <PracticeSummary title={title} abcdScore={summary} overviewUrl={overviewUrl} />
     );
   }
 
