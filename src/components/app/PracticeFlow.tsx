@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import type { ClientAbcdQuestion } from '../../lib/practice/client-payload';
 import PracticeSummary from './PracticeSummary';
@@ -97,6 +97,7 @@ export default function PracticeFlow({
   const [revealCorrectByQuestionId, setRevealCorrectByQuestionId] = useState<
     Record<string, string>
   >({});
+  const submittingRef = useRef(false);
 
   const showSummary = summary !== null || progress.isComplete;
 
@@ -110,16 +111,18 @@ export default function PracticeFlow({
   );
 
   async function submitAnswer(selectedOptionId: string): Promise<void> {
-    if (!currentQuestion || isCurrentAnswered || isSaving) {
+    if (!currentQuestion || isCurrentAnswered || isSaving || submittingRef.current) {
       return;
     }
 
+    submittingRef.current = true;
     setIsSaving(true);
     setSaveError(null);
 
     try {
       const response = await fetch(`/api/practice-sets/${practiceSetId}/answer`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           questionId: currentQuestion.id,
@@ -175,6 +178,7 @@ export default function PracticeFlow({
     } catch {
       setSaveError('Could not save your answer. Check your connection and try again.');
     } finally {
+      submittingRef.current = false;
       setIsSaving(false);
     }
   }

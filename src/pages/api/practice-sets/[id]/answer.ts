@@ -225,7 +225,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   const progress = getAbcdProgress(updatedContent);
   const newStatus = progress.isComplete ? 'completed' : 'in_progress';
 
-  const { error: updateError } = await supabase
+  const { data: updatedRows, error: updateError } = await supabase
     .from('practice_sets')
     .update({
       content: updatedContent,
@@ -233,9 +233,10 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     })
     .eq('id', practiceSetId)
     .eq('user_id', user.id)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
+    .select('id');
 
-  if (updateError) {
+  if (updateError || !updatedRows?.length) {
     return jsonResponse(
       {
         ok: false,
