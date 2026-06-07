@@ -1,9 +1,9 @@
 ---
 id: jd-gated-generation
 title: JD-gated generation
-status: implementing
+status: impl_reviewed
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-07
 roadmap: S-02
 prd_refs:
   - FR-002

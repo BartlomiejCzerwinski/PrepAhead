@@ -504,8 +504,8 @@ Capture implementation verification, tighten operational notes, and leave the ch
 
 #### Manual
 
-- [ ] 2.4 Valid PDF upload returns parsed resume text for generation
-- [ ] 2.5 Successful generation creates one persisted exact-20 practice set
+- [x] 2.4 Valid PDF upload returns parsed resume text for generation
+- [x] 2.5 Successful generation creates one persisted exact-20 practice set
 - [ ] 2.6 Malformed provider output fails without incrementing generation usage
 - [ ] 2.7 FREE user at limit is blocked before generation begins
 - [ ] 2.8 One queued job reaches one terminal state without duplicate finalization
@@ -515,26 +515,26 @@ Capture implementation verification, tighten operational notes, and leave the ch
 
 #### Automated
 
-- [ ] 3.1 `npm run build` — exit 0
-- [ ] 3.2 `npm run astro -- check` — exit 0
-- [ ] 3.3 Dynamic `/app/sets/[id]` route builds and type-checks cleanly
+- [x] 3.1 `npm run build` — exit 0 — 4013e1c
+- [x] 3.2 `npm run astro -- check` — exit 0 — 4013e1c
+- [x] 3.3 Dynamic `/app/sets/[id]` route builds and type-checks cleanly — 4013e1c
 
 #### Manual
 
-- [ ] 3.4 Staged loading screen appears during generation
-- [ ] 3.5 Leaving the page warns when possible and does not create duplicate usage
-- [ ] 3.6 Returning to `/app/generate` recovers the in-flight or newly completed generation
-- [ ] 3.7 Generated-set overview shows the exact 20 generated questions in read-only form
+- [x] 3.4 Staged loading screen appears during generation — 4013e1c
+- [x] 3.5 Leaving the page warns when possible and does not create duplicate usage — 4013e1c
+- [x] 3.6 Returning to `/app/generate` recovers the in-flight or newly completed generation — 4013e1c
+- [x] 3.7 Generated-set overview shows the exact 20 generated questions in read-only form — 4013e1c
 
 ### Phase 4: Verification and change hygiene
 
 #### Automated
 
-- [ ] 4.1 `npm run build` — exit 0
-- [ ] 4.2 `npm run astro -- check` — exit 0
+- [x] 4.1 `npm run build` — exit 0 — 2ed9b26
+- [x] 4.2 `npm run astro -- check` — exit 0 — 2ed9b26
 
 #### Manual
 
-- [ ] 4.3 Happy path works from dashboard entry to generated-set overview
+- [x] 4.3 Happy path works from dashboard entry to generated-set overview — 2ed9b26
 - [ ] 4.4 Malformed generation leaves quota unchanged
-- [ ] 4.5 Leave-and-return recovery produces one final set without duplicate increments
+- [x] 4.5 Leave-and-return recovery produces one final set without duplicate increments — 2ed9b26

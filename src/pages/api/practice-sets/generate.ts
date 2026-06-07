@@ -7,6 +7,9 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
 export const prerender = false;
 
+const MAX_JOB_DESCRIPTION_CHARS = 32_768;
+const MAX_RESUME_TEXT_CHARS = 64_000;
+
 type GenerateRequestBody = {
   jobDescription?: unknown;
   resumeText?: unknown;
@@ -16,6 +19,22 @@ type GenerateRequestBody = {
 function mergeHeaders(target: Headers, source: Headers): void {
   source.forEach((value, key) => {
     target.set(key, value);
+  });
+}
+
+function nudgeGenerationWorker(request: Request, jobId: string): void {
+  const workerUrl = new URL('/api/practice-sets/generate-worker', request.url);
+  const cookie = request.headers.get('cookie');
+
+  void fetch(workerUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(cookie ? { cookie } : {}),
+    },
+    body: JSON.stringify({ jobId }),
+  }).catch(() => {
+    // Client polling remains the recovery path if the background nudge fails.
   });
 }
 
@@ -68,6 +87,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         ok: false,
         error: 'missing_job_description',
         message: 'Paste a job description before starting generation.',
+      },
+      { status: 400, headers: responseHeaders },
+    );
+  }
+
+  if (jobDescription.length > MAX_JOB_DESCRIPTION_CHARS) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'job_description_too_long',
+        message: 'The job description is too long. Shorten it and try again.',
+      },
+      { status: 400, headers: responseHeaders },
+    );
+  }
+
+  if (resumeText && resumeText.length > MAX_RESUME_TEXT_CHARS) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'resume_text_too_long',
+        message: 'The resume text is too long. Upload a shorter PDF and try again.',
       },
       { status: 400, headers: responseHeaders },
     );
@@ -174,6 +215,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       { status: 500, headers: responseHeaders },
     );
   }
+
+  nudgeGenerationWorker(request, generationJob.id);
 
   return jsonResponse(
     {

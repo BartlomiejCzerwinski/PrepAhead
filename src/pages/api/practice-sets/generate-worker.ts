@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { summarizePracticeSet } from '../../../lib/practice/contracts';
 
 export const prerender = false;
-const STALE_RUNNING_MS = 90_000;
+const STALE_RUNNING_MS = 65_000;
 
 type GenerateWorkerRequestBody = {
   jobId?: unknown;
