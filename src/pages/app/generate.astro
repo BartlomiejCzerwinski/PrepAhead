@@ -6,6 +6,9 @@ import { createSupabaseServerClient } from '../../lib/supabase/server';
 
 export const prerender = false;
 
+const RECENT_SUCCEEDED_MS = 60 * 60 * 1000;
+const RECENT_FAILED_MS = 24 * 60 * 60 * 1000;
+
 const user = Astro.locals.user;
 
 if (!user) {
@@ -18,8 +21,53 @@ const display =
 const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
 const usageResult = await getUsageSummary(supabase, user.id);
 
-const initialRecoveryState = { status: 'idle' } as const;
-const latestReadySetId = null;
+const { data: latestJob } = await supabase
+  .from('generation_jobs')
+  .select('id, practice_set_id, status, failure_message, finished_at, created_at')
+  .eq('user_id', user.id)
+  .order('created_at', { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+let initialRecoveryState: {
+  status: 'idle' | 'running' | 'failed' | 'ready';
+  message?: string;
+  jobId?: string;
+  practiceSetId?: string;
+} = { status: 'idle' };
+
+if (latestJob) {
+  const finishedAt =
+    typeof latestJob.finished_at === 'string' ? new Date(latestJob.finished_at) : null;
+  const createdAt =
+    typeof latestJob.created_at === 'string' ? new Date(latestJob.created_at) : null;
+  const finishedRecently =
+    finishedAt instanceof Date &&
+    !Number.isNaN(finishedAt.valueOf()) &&
+    Date.now() - finishedAt.valueOf() <= RECENT_SUCCEEDED_MS;
+  const failedRecently =
+    createdAt instanceof Date &&
+    !Number.isNaN(createdAt.valueOf()) &&
+    Date.now() - createdAt.valueOf() <= RECENT_FAILED_MS;
+
+  if (latestJob.status === 'queued' || latestJob.status === 'running') {
+    initialRecoveryState = {
+      status: 'running',
+      jobId: latestJob.id,
+      practiceSetId: latestJob.practice_set_id,
+      message: 'Recovering your in-flight generation.',
+    };
+  } else if (latestJob.status === 'failed' && failedRecently) {
+    initialRecoveryState = {
+      status: 'failed',
+      jobId: latestJob.id,
+      practiceSetId: latestJob.practice_set_id,
+      message: latestJob.failure_message ?? 'Generation failed. You can start a new request.',
+    };
+  } else if (latestJob.status === 'succeeded' && finishedRecently) {
+    return Astro.redirect(`/app/sets/${latestJob.practice_set_id}`);
+  }
+}
 ---
 
 <AppLayout
@@ -32,7 +80,6 @@ const latestReadySetId = null;
     usageSummary={usageResult.ok ? usageResult.data : null}
     usageError={!usageResult.ok}
     initialRecoveryState={initialRecoveryState}
-    latestReadySetId={latestReadySetId}
   >
     <div
       slot="fallback"

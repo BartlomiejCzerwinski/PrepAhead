@@ -504,8 +504,8 @@ Capture implementation verification, tighten operational notes, and leave the ch
 
 #### Manual
 
-- [ ] 2.4 Valid PDF upload returns parsed resume text for generation
-- [ ] 2.5 Successful generation creates one persisted exact-20 practice set
+- [x] 2.4 Valid PDF upload returns parsed resume text for generation
+- [x] 2.5 Successful generation creates one persisted exact-20 practice set
 - [ ] 2.6 Malformed provider output fails without incrementing generation usage
 - [ ] 2.7 FREE user at limit is blocked before generation begins
 - [ ] 2.8 One queued job reaches one terminal state without duplicate finalization
@@ -515,16 +515,16 @@ Capture implementation verification, tighten operational notes, and leave the ch
 
 #### Automated
 
-- [ ] 3.1 `npm run build` — exit 0
-- [ ] 3.2 `npm run astro -- check` — exit 0
-- [ ] 3.3 Dynamic `/app/sets/[id]` route builds and type-checks cleanly
+- [x] 3.1 `npm run build` — exit 0
+- [x] 3.2 `npm run astro -- check` — exit 0
+- [x] 3.3 Dynamic `/app/sets/[id]` route builds and type-checks cleanly
 
 #### Manual
 
-- [ ] 3.4 Staged loading screen appears during generation
-- [ ] 3.5 Leaving the page warns when possible and does not create duplicate usage
-- [ ] 3.6 Returning to `/app/generate` recovers the in-flight or newly completed generation
-- [ ] 3.7 Generated-set overview shows the exact 20 generated questions in read-only form
+- [x] 3.4 Staged loading screen appears during generation
+- [x] 3.5 Leaving the page warns when possible and does not create duplicate usage
+- [x] 3.6 Returning to `/app/generate` recovers the in-flight or newly completed generation
+- [x] 3.7 Generated-set overview shows the exact 20 generated questions in read-only form
 
 ### Phase 4: Verification and change hygiene
 

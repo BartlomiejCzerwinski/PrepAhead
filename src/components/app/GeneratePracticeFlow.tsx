@@ -11,6 +11,8 @@ import type { UsageSummary } from '../../lib/plan';
 type RecoveryState = {
   status: 'idle' | 'running' | 'failed' | 'ready';
   message?: string;
+  jobId?: string;
+  practiceSetId?: string;
 };
 
 type Props = {
@@ -33,13 +35,9 @@ const GENERATION_STAGES = [
   'Validating and saving the practice set',
 ] as const;
 
-type GenerationSuccess = {
-  jobId: string;
-  practiceSetId: string;
-  summary: {
-    abcdCount: number;
-    openEndedCount: number;
-  };
+type GenerationSummary = {
+  abcdCount: number;
+  openEndedCount: number;
 };
 
 async function sleep(ms: number): Promise<void> {
@@ -54,11 +52,14 @@ async function parseApiResponse(response: Response): Promise<any> {
   }
 }
 
+function redirectToOverview(practiceSetId: string): void {
+  window.location.assign(`/app/sets/${practiceSetId}`);
+}
+
 export default function GeneratePracticeFlow({
   usageSummary,
   usageError = false,
   initialRecoveryState,
-  latestReadySetId,
 }: Props) {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -67,11 +68,14 @@ export default function GeneratePracticeFlow({
   const [stageIndex, setStageIndex] = useState(0);
   const stageTimerRef = useRef<number | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [generationSuccess, setGenerationSuccess] = useState<GenerationSuccess | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [activePracticeSetId, setActivePracticeSetId] = useState<string | null>(null);
   const idempotencyKeyRef = useRef<string | null>(null);
+  const recoveryStartedRef = useRef(false);
 
   const isAtGenerationLimit = usageSummary?.isAtGenerationLimit ?? false;
   const showUpgradePath = usageSummary?.planTier === 'FREE' && isAtGenerationLimit;
+  const hasRecoverableJob = isGenerating || Boolean(activeJobId);
   const submitDisabled =
     usageError ||
     !usageSummary ||
@@ -112,6 +116,121 @@ export default function GeneratePracticeFlow({
       }
     };
   }, [isGenerating, stageIndex]);
+
+  useEffect(() => {
+    if (!hasRecoverableJob) {
+      return undefined;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasRecoverableJob]);
+
+  async function nudgeGenerationWorker(jobId: string): Promise<void> {
+    try {
+      await fetch('/api/practice-sets/generate-worker', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ jobId }),
+      });
+    } catch {
+      // Recovery continues through status polling even if the worker request is interrupted.
+    }
+  }
+
+  async function pollGenerationUntilTerminal(
+    jobId: string,
+    practiceSetId: string,
+  ): Promise<GenerationSummary> {
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      if (attempt % 3 === 0) {
+        await nudgeGenerationWorker(jobId);
+      }
+
+      const statusResponse = await fetch(`/api/practice-sets/${practiceSetId}/status`, {
+        method: 'GET',
+        credentials: 'same-origin',
+      });
+      const statusPayload = await parseApiResponse(statusResponse);
+
+      if (statusResponse.ok && statusPayload?.status === 'succeeded') {
+        return statusPayload.summary ?? { abcdCount: 15, openEndedCount: 5 };
+      }
+
+      if (statusPayload?.status === 'failed') {
+        throw new Error(statusPayload?.message ?? 'Generation failed. Please try again.');
+      }
+
+      if (statusResponse.status >= 500 || statusResponse.status === 504) {
+        await sleep(2500);
+        continue;
+      }
+
+      if (!statusResponse.ok && statusResponse.status !== 422) {
+        throw new Error(statusPayload?.message ?? 'Could not load generation status.');
+      }
+
+      await sleep(1500);
+    }
+
+    throw new Error('Generation is taking longer than expected. Return here to recover the job.');
+  }
+
+  async function startTrackedGeneration(jobId: string, practiceSetId: string): Promise<void> {
+    setGenerationError(null);
+    setStageIndex(0);
+    setIsGenerating(true);
+    setActiveJobId(jobId);
+    setActivePracticeSetId(practiceSetId);
+
+    try {
+      await pollGenerationUntilTerminal(jobId, practiceSetId);
+      idempotencyKeyRef.current = null;
+      redirectToOverview(practiceSetId);
+    } catch (error) {
+      setGenerationError(
+        error instanceof Error ? error.message : 'Generation failed. Please try again.',
+      );
+      setActiveJobId(null);
+      setActivePracticeSetId(null);
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  useEffect(() => {
+    if (recoveryStartedRef.current || !initialRecoveryState) {
+      return;
+    }
+
+    if (initialRecoveryState.status === 'failed') {
+      recoveryStartedRef.current = true;
+      setGenerationError(
+        initialRecoveryState.message ?? 'Generation failed. You can start a new request.',
+      );
+      return;
+    }
+
+    if (
+      initialRecoveryState.status === 'running' &&
+      initialRecoveryState.jobId &&
+      initialRecoveryState.practiceSetId
+    ) {
+      recoveryStartedRef.current = true;
+      void startTrackedGeneration(
+        initialRecoveryState.jobId,
+        initialRecoveryState.practiceSetId,
+      );
+    }
+  }, [initialRecoveryState]);
 
   async function handlePdfChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -160,62 +279,6 @@ export default function GeneratePracticeFlow({
     } finally {
       event.target.value = '';
     }
-  }
-
-  function resetDraft(keepInputs = false) {
-    setIsGenerating(false);
-    setStageIndex(0);
-    setGenerationError(null);
-    setGenerationSuccess(null);
-    idempotencyKeyRef.current = null;
-
-    if (!keepInputs) {
-      setJobDescription('');
-      setResumeText('');
-      setUploadState({ status: 'idle' });
-    }
-  }
-
-  async function runGenerationWorker(jobId: string): Promise<GenerationSuccess> {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      try {
-        const workerResponse = await fetch('/api/practice-sets/generate-worker', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ jobId }),
-        });
-
-        const workerPayload = await parseApiResponse(workerResponse);
-
-        if (workerResponse.ok && workerPayload?.status === 'succeeded') {
-          return {
-            jobId,
-            practiceSetId: String(workerPayload.practiceSetId),
-            summary: workerPayload.summary ?? { abcdCount: 15, openEndedCount: 5 },
-          };
-        }
-
-        if (workerResponse.ok && workerPayload?.status === 'running') {
-          await sleep(1500);
-          continue;
-        }
-
-        if (workerResponse.status >= 500 || workerResponse.status === 504) {
-          await sleep(2500);
-          continue;
-        }
-
-        throw new Error(workerPayload?.message ?? 'Generation failed. Please try again.');
-      } catch {
-        await sleep(1500);
-        continue;
-      }
-    }
-
-    throw new Error('Generation is taking longer than expected. Try again in a moment.');
   }
 
   return (
@@ -271,16 +334,14 @@ export default function GeneratePracticeFlow({
         </div>
       )}
 
-      {initialRecoveryState && initialRecoveryState.status !== 'idle' && (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm leading-6 text-[var(--text-muted)]">
-          Recovery state: {initialRecoveryState.status}
-          {initialRecoveryState.message ? ` - ${initialRecoveryState.message}` : ''}
-        </div>
-      )}
-
-      {latestReadySetId && (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm leading-6 text-[var(--text-muted)]">
-          Latest completed set is ready. The overview handoff will connect in a later phase.
+      {hasRecoverableJob && (
+        <div
+          className="rounded-xl border border-brand-500/20 bg-[var(--brand-soft)] px-4 py-3 text-sm leading-6 text-[var(--text)]"
+          role="status"
+        >
+          Generation is running in the background. You can leave this page and return to
+          <span className="font-semibold"> /app/generate </span>
+          to recover the result. Closing the tab may show a browser warning while the job is active.
         </div>
       )}
 
@@ -303,6 +364,12 @@ export default function GeneratePracticeFlow({
             PrepAhead is parsing any uploaded CV context, generating questions, and validating the
             exact 20-question contract before saving the result.
           </p>
+          {activePracticeSetId && (
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              Recoverable job linked to practice set{' '}
+              <span className="font-semibold text-[var(--text)]">{activePracticeSetId}</span>.
+            </p>
+          )}
 
           <ol className="mt-6 space-y-3">
             {GENERATION_STAGES.map((stage, index) => {
@@ -339,37 +406,6 @@ export default function GeneratePracticeFlow({
             })}
           </ol>
         </div>
-      ) : generationSuccess ? (
-        <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-300">
-            <span>Generation saved</span>
-          </div>
-          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">Practice set created successfully</h2>
-          <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-            The exact-20 payload was validated and saved through the durable generation job path.
-            The overview redirect arrives in Phase 3.
-          </p>
-          <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
-            <p>
-              <span className="font-semibold text-[var(--text)]">Practice set id:</span>{' '}
-              {generationSuccess.practiceSetId}
-            </p>
-            <p className="mt-2">
-              <span className="font-semibold text-[var(--text)]">Question mix:</span>{' '}
-              {generationSuccess.summary.abcdCount} abcd / {generationSuccess.summary.openEndedCount}{' '}
-              open-ended
-            </p>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => resetDraft()}
-              className="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm"
-            >
-              Start another generation
-            </button>
-          </div>
-        </div>
       ) : (
         <form
           onSubmit={async (event) => {
@@ -378,11 +414,6 @@ export default function GeneratePracticeFlow({
             if (submitDisabled) {
               return;
             }
-
-            setGenerationError(null);
-            setGenerationSuccess(null);
-            setStageIndex(0);
-            setIsGenerating(true);
 
             const idempotencyKey = idempotencyKeyRef.current ?? crypto.randomUUID();
             idempotencyKeyRef.current = idempotencyKey;
@@ -406,22 +437,25 @@ export default function GeneratePracticeFlow({
               if (
                 !generateResponse.ok ||
                 !generatePayload?.ok ||
-                typeof generatePayload.jobId !== 'string'
+                typeof generatePayload.jobId !== 'string' ||
+                typeof generatePayload.practiceSetId !== 'string'
               ) {
                 throw new Error(
                   generatePayload?.message ?? 'Could not start generation. Please try again.',
                 );
               }
 
-              const result = await runGenerationWorker(generatePayload.jobId);
-              setGenerationSuccess(result);
-              idempotencyKeyRef.current = null;
+              await startTrackedGeneration(
+                generatePayload.jobId,
+                generatePayload.practiceSetId,
+              );
             } catch (error) {
               setGenerationError(
                 error instanceof Error ? error.message : 'Generation failed. Please try again.',
               );
-            } finally {
               setIsGenerating(false);
+              setActiveJobId(null);
+              setActivePracticeSetId(null);
             }
           }}
           className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8"

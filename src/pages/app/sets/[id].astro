@@ -1,0 +1,177 @@
+---
+import AppLayout from '../../../components/app/AppLayout.astro';
+import {
+  normalizePracticeSetContent,
+  PracticeSetContractError,
+  summarizePracticeSet,
+  type PracticeQuestion,
+} from '../../../lib/practice/contracts';
+import { createSupabaseServerClient } from '../../../lib/supabase/server';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const practiceSetId = typeof Astro.params.id === 'string' ? Astro.params.id.trim() : '';
+
+if (!practiceSetId) {
+  return Astro.redirect('/app');
+}
+
+const display =
+  user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
+
+const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+
+const { data: practiceSet, error: practiceSetError } = await supabase
+  .from('practice_sets')
+  .select('id, title, status, content, created_at, cv_text')
+  .eq('id', practiceSetId)
+  .eq('user_id', user.id)
+  .is('deleted_at', null)
+  .maybeSingle();
+
+if (practiceSetError || !practiceSet) {
+  return Astro.redirect('/app');
+}
+
+const { data: generationJob } = await supabase
+  .from('generation_jobs')
+  .select('status, failure_message, finished_at')
+  .eq('practice_set_id', practiceSetId)
+  .eq('user_id', user.id)
+  .maybeSingle();
+
+let questions: PracticeQuestion[] = [];
+let summary = { abcdCount: 0, openEndedCount: 0 };
+let contentReady = false;
+
+try {
+  const normalizedContent = normalizePracticeSetContent(practiceSet.content);
+  questions = normalizedContent.questions;
+  summary = summarizePracticeSet(normalizedContent);
+  contentReady = true;
+} catch (error) {
+  if (!(error instanceof PracticeSetContractError)) {
+    throw error;
+  }
+}
+
+const generationStatus = generationJob?.status ?? 'unknown';
+const abcdQuestions = questions.filter((question) => question.type === 'abcd');
+const openEndedQuestions = questions.filter((question) => question.type === 'open_ended');
+const createdAtLabel = new Date(practiceSet.created_at).toLocaleString();
+---
+
+<AppLayout
+  title={practiceSet.title}
+  description="Read-only overview of your generated PrepAhead practice set."
+  userEmail={display}
+>
+  <section class="space-y-6">
+    <div class="space-y-2">
+      <a
+        href="/app"
+        class="inline-flex items-center text-sm font-medium text-[var(--brand)] no-underline hover:underline"
+      >
+        Back to dashboard
+      </a>
+      <h1 class="text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">
+        {practiceSet.title}
+      </h1>
+      <p class="text-sm leading-6 text-[var(--text-muted)]">
+        Generated {createdAtLabel}
+        {practiceSet.cv_text ? ' with optional CV context.' : ' from the job description only.'}
+      </p>
+    </div>
+
+    <div class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4 text-sm leading-6 text-[var(--text)]">
+      <p class="font-semibold">Generation status</p>
+      <p class="mt-2 text-[var(--text-muted)]">
+        {
+          generationStatus === 'succeeded' && contentReady
+            ? 'This practice set was generated and validated successfully.'
+            : generationStatus === 'failed'
+              ? generationJob?.failure_message ?? 'Generation did not complete successfully.'
+              : 'This practice set is still being prepared. Return to generation to recover the in-flight job.'
+        }
+      </p>
+      {contentReady && (
+        <p class="mt-2 text-[var(--text-muted)]">
+          {summary.abcdCount} multiple-choice and {summary.openEndedCount} open-ended questions.
+          Practice progress stays <span class="font-semibold text-[var(--text)]">{practiceSet.status}</span> until the answer loop ships in a later slice.
+        </p>
+      )}
+    </div>
+
+    {!contentReady ? (
+      <div class="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
+        <p class="text-sm leading-6 text-[var(--text-muted)]">
+          The full 20-question overview is not ready yet. If you just started generation, open
+          <a href="/app/generate" class="font-semibold text-[var(--brand)] no-underline hover:underline">Generate</a>
+          to recover the in-flight request.
+        </p>
+      </div>
+    ) : (
+      <div class="space-y-8">
+        <section class="space-y-4">
+          <div class="space-y-1">
+            <h2 class="text-lg font-semibold text-[var(--text)]">Multiple choice ({abcdQuestions.length})</h2>
+            <p class="text-sm text-[var(--text-muted)]">Read-only preview. Answering and scoring arrive in a later slice.</p>
+          </div>
+          <ol class="space-y-4">
+            {abcdQuestions.map((question, index) => (
+              <li class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+                <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  Question {index + 1}
+                </p>
+                <p class="mt-2 text-sm font-semibold text-[var(--text)]">{question.prompt}</p>
+                <ul class="mt-4 space-y-2">
+                  {question.options.map((option) => (
+                    <li class="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-muted)]">
+                      <span class="font-semibold text-[var(--text)]">{option.id}.</span> {option.text}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section class="space-y-4">
+          <div class="space-y-1">
+            <h2 class="text-lg font-semibold text-[var(--text)]">Open-ended ({openEndedQuestions.length})</h2>
+            <p class="text-sm text-[var(--text-muted)]">Guidance is shown for orientation only. Check feedback is out of scope here.</p>
+          </div>
+          <ol class="space-y-4">
+            {openEndedQuestions.map((question, index) => (
+              <li class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+                <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  Question {abcdQuestions.length + index + 1}
+                </p>
+                <p class="mt-2 text-sm font-semibold text-[var(--text)]">{question.prompt}</p>
+                <p class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3 text-sm leading-6 text-[var(--text-muted)]">
+                  <span class="font-semibold text-[var(--text)]">Strong answer should cover:</span>{' '}
+                  {question.guidance}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <div class="flex flex-wrap gap-3">
+          <a
+            href="/app/generate"
+            class="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+          >
+            Generate another set
+          </a>
+        </div>
+      </div>
+    )}
+  </section>
+</AppLayout>
