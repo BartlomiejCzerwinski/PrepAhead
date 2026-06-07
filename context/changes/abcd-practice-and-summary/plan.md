@@ -431,13 +431,13 @@ Capture verification outcomes and leave the change ready for `/10x-implement` re
 
 #### Automated
 
-- [ ] 1.1 `npm run build` — exit 0
-- [ ] 1.2 `npm run astro -- check` — exit 0
+- [x] 1.1 `npm run build` — exit 0
+- [x] 1.2 `npm run astro -- check` — exit 0
 
 #### Manual
 
-- [ ] 1.3 Generation path still validates content without answer fields
-- [ ] 1.4 Content with answer fields parses successfully
+- [x] 1.3 Generation path still validates content without answer fields
+- [x] 1.4 Content with answer fields parses successfully
 
 ### Phase 2: Answer persistence API
 

@@ -1,7 +1,7 @@
 ---
 id: abcd-practice-and-summary
 title: ABCD practice and score summary
-status: plan_reviewed
+status: implementing
 created: 2026-06-07
 updated: 2026-06-07
 roadmap: S-03
