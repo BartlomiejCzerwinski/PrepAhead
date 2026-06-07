@@ -1,0 +1,105 @@
+---
+import PracticeFlow from '../../../../components/app/PracticeFlow';
+import AppLayout from '../../../../components/app/AppLayout.astro';
+import { projectClientAbcdQuestions } from '../../../../lib/practice/client-payload';
+import {
+  getAbcdProgress,
+  getAbcdQuestions,
+  parsePracticeSetWithProgress,
+  PracticeSetContractError,
+  scoreAbcdPractice,
+} from '../../../../lib/practice/contracts';
+import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const practiceSetId = typeof Astro.params.id === 'string' ? Astro.params.id.trim() : '';
+
+if (!practiceSetId) {
+  return Astro.redirect('/app');
+}
+
+const display =
+  user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
+
+const overviewUrl = `/app/sets/${practiceSetId}`;
+
+const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+
+const { data: practiceSet, error: practiceSetError } = await supabase
+  .from('practice_sets')
+  .select('id, title, status, content')
+  .eq('id', practiceSetId)
+  .eq('user_id', user.id)
+  .is('deleted_at', null)
+  .maybeSingle();
+
+if (practiceSetError || !practiceSet) {
+  return Astro.redirect('/app');
+}
+
+const { data: generationJob } = await supabase
+  .from('generation_jobs')
+  .select('status')
+  .eq('practice_set_id', practiceSetId)
+  .eq('user_id', user.id)
+  .maybeSingle();
+
+if (generationJob?.status !== 'succeeded' || !practiceSet.content) {
+  return Astro.redirect(overviewUrl);
+}
+
+let contentReady = false;
+let clientQuestions: ReturnType<typeof projectClientAbcdQuestions> = [];
+let progress = { answeredCount: 0, total: 15 as const, currentIndex: 0, isComplete: false };
+let summary: { correct: number; total: 15; percent: number } | null = null;
+
+try {
+  const content = parsePracticeSetWithProgress(practiceSet.content);
+  const abcdQuestions = getAbcdQuestions(content);
+  clientQuestions = projectClientAbcdQuestions(abcdQuestions);
+  progress = getAbcdProgress(content);
+  contentReady = true;
+
+  if (progress.isComplete || practiceSet.status === 'completed') {
+    summary = scoreAbcdPractice(content);
+  }
+} catch (error) {
+  if (!(error instanceof PracticeSetContractError)) {
+    throw error;
+  }
+}
+
+if (!contentReady) {
+  return Astro.redirect(overviewUrl);
+}
+---
+
+<AppLayout
+  title={`Practice: ${practiceSet.title}`}
+  description="Answer multiple-choice interview questions with immediate feedback."
+  userEmail={display}
+>
+  <PracticeFlow
+    client:only="react"
+    practiceSetId={practiceSetId}
+    title={practiceSet.title}
+    overviewUrl={overviewUrl}
+    initialQuestions={clientQuestions}
+    initialProgress={progress}
+    initialSummary={summary}
+  >
+    <div
+      slot="fallback"
+      class="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 text-sm leading-6 text-[var(--text-muted)] shadow-sm dark:shadow-none sm:p-8"
+    >
+      Loading practice...
+    </div>
+  </PracticeFlow>
+</AppLayout>

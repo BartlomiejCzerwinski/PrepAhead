@@ -443,8 +443,8 @@ Capture verification outcomes and leave the change ready for `/10x-implement` re
 
 #### Automated
 
-- [x] 2.1 `npm run build` — exit 0
-- [x] 2.2 `npm run astro -- check` — exit 0
+- [x] 2.1 `npm run build` — exit 0 — fa98c6a
+- [x] 2.2 `npm run astro -- check` — exit 0 — fa98c6a
 
 #### Manual
 
@@ -456,13 +456,13 @@ Capture verification outcomes and leave the change ready for `/10x-implement` re
 
 #### Automated
 
-- [ ] 3.1 `npm run build` — exit 0
-- [ ] 3.2 `npm run astro -- check` — exit 0
+- [x] 3.1 `npm run build` — exit 0
+- [x] 3.2 `npm run astro -- check` — exit 0
 
 #### Manual
 
-- [ ] 3.3 Sequential answer flow with immediate feedback works
-- [ ] 3.4 Refresh mid-set resumes correctly
+- [x] 3.3 Sequential answer flow with immediate feedback works
+- [x] 3.4 Refresh mid-set resumes correctly
 
 ### Phase 4: Overview integration and score summary
 

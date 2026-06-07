@@ -250,6 +250,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     ok: true,
     isCorrect,
     explanation: targetQuestion.explanation,
+    correctOptionId: targetQuestion.correctOptionId,
     progress: {
       answeredCount: progress.answeredCount,
       total: progress.total,

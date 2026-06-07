@@ -207,6 +207,10 @@ body {
 	background: rgba(34, 197, 94, 0.08);
 }
 
+.practice-summary-panel {
+	animation: quiz-score-in 0.35s ease-out;
+}
+
 .quiz-score-panel:not(.hidden) {
 	animation: quiz-score-in 0.35s ease-out;
 }
