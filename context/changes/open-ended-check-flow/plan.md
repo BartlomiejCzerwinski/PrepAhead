@@ -37,6 +37,7 @@ After this plan is complete:
 - F-02 plan (`context/changes/supabase-data-schema/plan.md:81`) documented `answerText`, `checkFeedback`, `checkedAt` on open-ended questions — S-04 implements against S-02 naming (`type: 'open_ended'`, not F-02's `kind`).
 - `increment_check_usage()` has no SQL cap enforcement (unlike generation finalize) — app must pre-flight `isAtCheckLimit` before calling OpenAI.
 - S-03 impl-review accepted JSONB LWW for concurrent tabs — same applies to save/check merges.
+- `increment_check_usage()` has no SQL cap (unlike generation finalize) — concurrent Check POSTs can theoretically exceed plan limits if both pass pre-flight; accepted v1 risk (app pre-flight + UI disable).
 - `generate-practice-set.ts` grounding rule ("Never mention experience unless present in inputs") must carry into Check prompts.
 
 ## What We're NOT Doing
@@ -66,7 +67,7 @@ Flow:
 
 ## Critical Implementation Details
 
-**Check usage increment ordering:** Call OpenAI first; only call `increment_check_usage()` after feedback is validated and persisted. If DB update fails after increment, user is over-counted — mirror S-03 row-count verification on update; return 500 without increment if pre-increment validation fails.
+**Check usage increment ordering:** OpenAI → merge feedback into content → `.update()` with `.select('id')` row-count verification → `increment_check_usage()` only after update succeeds. If update fails, return 500 without incrementing (user not charged). If increment fails after a successful update, user keeps feedback but may be under-counted — log error and still return success with feedback (rare edge case; acceptable for v1).
 
 **Completion transition:** When the 5th open-ended Check succeeds, evaluate `getAbcdProgress().isComplete && getOpenEndedProgress().isCheckedComplete` before setting `status = completed`. Update `answer.ts` so ABCD completion sets `in_progress` (not `completed`) under the new rule — unless open-ended is already fully checked.
 
@@ -129,13 +130,23 @@ Extend the practice content contract for open-ended progress fields, add scoring
 
 **Contract**: Change `FreePlanLimits.checkLimit` from `1` to `5`. Update any hardcoded test fixtures or dashboard copy that reference "1 Check" for FREE if present.
 
+#### 5. PRD plan rules sync
+
+**File**: `context/foundation/prd.md`
+
+**Intent**: Keep product docs aligned with the FREE checkLimit change — avoid code/doc drift at merge.
+
+**Contract**:
+
+- Update plan rules: FREE Check calls **1 → 5** per usage period (`prd.md` plan rules section and FREE limits bullet).
+- Add brief note in PRD Open Questions or changelog that S-04 expanded FREE Check allowance to match per-set open-ended count (5 questions).
+
 ### Success Criteria:
 
 #### Automated Verification:
 
 - Type checking passes: `npm run build`
 - Astro check passes: `npm run astro -- check`
-- Linting passes if configured in project scripts
 
 #### Manual Verification:
 
@@ -196,12 +207,11 @@ Add OpenAI Check module and two authenticated API routes: save draft answers and
 - `POST` body: `{ questionId: string, answerText: string }` (accept answer text in body so Check can validate min length server-side; merge same text as save).
 - Pre-flight: `getUsageSummary()` → if `isAtCheckLimit`, return 403 `{ error: 'check_limit_reached', checkRemaining: 0, ... }` with upgrade hint (FR-018).
 - Reject if already checked (409 `already_checked`), empty/whitespace-only, or under min length (~20 chars server-side).
-- Load `job_description` + `cv_text` from `practice_sets` for AI context (select columns already exist from S-02).
+- Load `job_description_text` + `cv_text` from `practice_sets` for AI context (columns from S-02 migration — not `job_description`).
 - Call `runOpenEndedCheck()`; on AI failure return 502/503 without incrementing usage.
-- On success: `supabase.rpc('increment_check_usage')` then merge `answerText`, `checkFeedback`, `checkedAt` into question object.
-- Set `openEndedCurrentIndex` to next unchecked question index.
-- If `isPracticeSetFullyComplete(content)` → `status = 'completed'`, else `in_progress`.
-- Update with `.select('id')` row-count verification (S-03 impl-review pattern).
+- On AI success: merge `answerText`, `checkFeedback`, `checkedAt` into question object; set `openEndedCurrentIndex` to next unchecked index; set `status` via `isPracticeSetFullyComplete(content)`.
+- `.update({ content, status })` with `.select('id')` row-count verification (S-03 impl-review pattern); on zero rows return 500 without incrementing.
+- Only after update succeeds: `supabase.rpc('increment_check_usage')`. If RPC fails after update, return feedback to client anyway (under-count edge case per Critical Details).
 - Return `{ ok: true, feedback, progress, checkRemaining, summary? }`. Include full summary when set newly completes.
 - Never log answer text or JD/CV.
 
@@ -215,6 +225,17 @@ Add OpenAI Check module and two authenticated API routes: save draft answers and
 
 - Replace `newStatus = progress.isComplete ? 'completed' : 'in_progress'` with logic using `isPracticeSetFullyComplete(updatedContent)` — ABCD complete alone yields `in_progress` unless open-ended already fully checked.
 - When ABCD completes, return real open-ended summary via `summarizeOpenEndedPractice()` instead of stub (if stub still referenced).
+
+#### 5. Overview status label (early fix)
+
+**File**: `src/pages/app/sets/[id].astro`
+
+**Intent**: Avoid misleading "completed" label after Phase 2 changes completion semantics — do not wait for Phase 4.
+
+**Contract**:
+
+- Replace `practiceStatusLabel` logic (`status === 'completed' || abcdProgress.isComplete`) with full-set rule: show `completed` only when `practiceSet.status === 'completed'` (DB authority) or when `isPracticeSetFullyComplete(content)` is true; otherwise `in_progress`.
+- Add open-ended progress counts to status line if helpers exist after Phase 1 (minimal: `X/5 checked`).
 
 ### Success Criteria:
 
@@ -255,7 +276,7 @@ Build the interactive open-ended practice route and React island with save, Chec
 - Mirror auth/ownership guards from `practice.astro`.
 - Redirect to overview if generation not succeeded or content invalid.
 - Load usage summary via `getUsageSummary()` for `checkRemaining`, `isAtCheckLimit`, `planTier`.
-- Pass to island: `practiceSetId`, `title`, `overviewUrl`, `initialQuestions`, `initialProgress`, `initialUsage`, optional `initialSummary` if fully complete.
+- Pass to island: `practiceSetId`, `title`, `overviewUrl`, `initialQuestions`, `initialProgress`, `initialUsage`, `initialAbcdScore` + `initialOpenEndedSummary` when fully complete (for inline `PracticeSummary`).
 
 #### 2. OpenEndedFlow React island
 
@@ -272,7 +293,8 @@ Build the interactive open-ended practice route and React island with save, Chec
 - On Check success: display feedback, lock textarea (read-only), advance **Next** to following question.
 - `submittingRef` mutex on Check (S-03 impl-review lesson) — prevent double Check POST.
 - Progress label: `Question X of 5`, checked/attempted counts.
-- On all 5 checked (and ABCD complete if detectable client-side), show link to overview/summary or inline completion message.
+- When all 5 open-ended are checked but ABCD incomplete: show completion message for open-ended portion with link to `/practice`.
+- When `isPracticeSetFullyComplete` (all 15 ABCD + all 5 checked): render `PracticeSummary` inline with ABCD score + real open-ended attempted/checked counts — mirror `PracticeFlow` end-of-ABCD behavior; do not rely on overview navigation alone.
 - When ABCD incomplete, show non-blocking hint linking to `/practice`.
 
 #### 3. Styles

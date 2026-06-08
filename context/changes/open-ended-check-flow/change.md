@@ -1,7 +1,7 @@
 ---
 id: open-ended-check-flow
 title: Open-ended Check flow
-status: planned
+status: plan_reviewed
 created: 2026-06-08
 updated: 2026-06-08
 roadmap: S-04
