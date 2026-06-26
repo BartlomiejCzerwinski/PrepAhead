@@ -3,7 +3,7 @@ export type PlanTier = 'FREE' | 'PRO';
 export type FreePlanLimits = {
   tier: 'FREE';
   generationLimit: 1;
-  checkLimit: 1;
+  checkLimit: 5;
 };
 
 export type ProPlanLimits = {
@@ -28,6 +28,6 @@ export function getPlanLimits(tier: PlanTier): PlanLimits {
   return {
     tier: 'FREE',
     generationLimit: 1,
-    checkLimit: 1,
+    checkLimit: 5,
   };
 }

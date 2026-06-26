@@ -456,8 +456,8 @@ Wire overview CTAs, update read-only open-ended preview, replace summary stub, a
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npm run build`
-- [ ] 1.2 Astro check passes: `npm run astro -- check`
+- [x] 1.1 Type checking passes: `npm run build`
+- [x] 1.2 Astro check passes: `npm run astro -- check`
 
 #### Manual
 

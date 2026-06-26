@@ -48,6 +48,13 @@ const openEndedQuestionSchema = z.object({
   guidance: z.string().min(1),
 });
 
+const openEndedQuestionWithProgressSchema = openEndedQuestionSchema.extend({
+  answerText: z.string().min(1).optional(),
+  checkFeedback: z.string().min(1).optional(),
+  checkedAt: z.string().min(1).optional(),
+  savedAt: z.string().min(1).optional(),
+});
+
 export const practiceQuestionSchema = z.discriminatedUnion('type', [
   abcdQuestionSchema,
   openEndedQuestionSchema,
@@ -55,7 +62,7 @@ export const practiceQuestionSchema = z.discriminatedUnion('type', [
 
 export const practiceQuestionWithProgressSchema = z.discriminatedUnion('type', [
   abcdQuestionWithProgressSchema,
-  openEndedQuestionSchema,
+  openEndedQuestionWithProgressSchema,
 ]);
 
 function validateQuestionCounts(
@@ -97,6 +104,7 @@ export const practiceSetContentWithProgressSchema = z
     version: z.literal(1),
     generatedAt: z.string().min(1),
     currentQuestionIndex: z.number().int().min(0).max(14).optional(),
+    openEndedCurrentIndex: z.number().int().min(0).max(4).optional(),
     questions: z.array(practiceQuestionWithProgressSchema).length(20),
   })
   .superRefine(validateQuestionCounts);
@@ -106,6 +114,10 @@ export type PracticeSetContent = z.infer<typeof practiceSetContentSchema>;
 export type AbcdQuestion = Extract<PracticeQuestion, { type: 'abcd' }>;
 export type PracticeQuestionWithProgress = z.infer<typeof practiceQuestionWithProgressSchema>;
 export type AbcdQuestionWithProgress = Extract<PracticeQuestionWithProgress, { type: 'abcd' }>;
+export type OpenEndedQuestionWithProgress = Extract<
+  PracticeQuestionWithProgress,
+  { type: 'open_ended' }
+>;
 export type PracticeSetContentWithProgress = z.infer<typeof practiceSetContentWithProgressSchema>;
 
 export class PracticeSetContractError extends Error {
@@ -231,7 +243,24 @@ function normalizeQuestionWithProgress(
     throw new PracticeSetContractError(`Question ${index + 1} has an invalid type.`);
   }
 
-  return openEndedQuestionSchema.parse({
+  const answerText =
+    typeof question.answerText === 'string' && question.answerText.trim().length > 0
+      ? normalizeWhitespace(question.answerText)
+      : undefined;
+  const checkFeedback =
+    typeof question.checkFeedback === 'string' && question.checkFeedback.trim().length > 0
+      ? normalizeWhitespace(question.checkFeedback)
+      : undefined;
+  const checkedAt =
+    typeof question.checkedAt === 'string' && question.checkedAt.trim().length > 0
+      ? question.checkedAt.trim()
+      : undefined;
+  const savedAt =
+    typeof question.savedAt === 'string' && question.savedAt.trim().length > 0
+      ? question.savedAt.trim()
+      : undefined;
+
+  return openEndedQuestionWithProgressSchema.parse({
     id:
       typeof question.id === 'string' && question.id.trim().length > 0
         ? question.id.trim()
@@ -239,6 +268,10 @@ function normalizeQuestionWithProgress(
     type: 'open_ended',
     prompt: normalizeWhitespace(String(question.prompt ?? '')),
     guidance: normalizeWhitespace(String(question.guidance ?? question.referenceAnswer ?? '')),
+    answerText,
+    checkFeedback,
+    checkedAt,
+    savedAt,
   });
 }
 
@@ -267,6 +300,7 @@ export function parsePracticeSetWithProgress(raw: unknown): PracticeSetContentWi
   const candidate = raw as Record<string, unknown>;
   const rawQuestions = Array.isArray(candidate.questions) ? candidate.questions : [];
   const rawCurrentQuestionIndex = candidate.currentQuestionIndex;
+  const rawOpenEndedCurrentIndex = candidate.openEndedCurrentIndex;
 
   const normalized = {
     version: 1 as const,
@@ -280,6 +314,13 @@ export function parsePracticeSetWithProgress(raw: unknown): PracticeSetContentWi
       rawCurrentQuestionIndex >= 0 &&
       rawCurrentQuestionIndex <= 14
         ? rawCurrentQuestionIndex
+        : undefined,
+    openEndedCurrentIndex:
+      typeof rawOpenEndedCurrentIndex === 'number' &&
+      Number.isInteger(rawOpenEndedCurrentIndex) &&
+      rawOpenEndedCurrentIndex >= 0 &&
+      rawOpenEndedCurrentIndex <= 4
+        ? rawOpenEndedCurrentIndex
         : undefined,
     questions: rawQuestions.map((question, index) => normalizeQuestionWithProgress(question, index)),
   };
@@ -325,3 +366,12 @@ export {
 } from './score-abcd';
 
 export type { AbcdProgress, AbcdScore, OpenEndedSummaryStub } from './score-abcd';
+
+export {
+  getOpenEndedProgress,
+  getOpenEndedQuestions,
+  isPracticeSetFullyComplete,
+  summarizeOpenEndedPractice,
+} from './score-open-ended';
+
+export type { OpenEndedProgress, OpenEndedSummary } from './score-open-ended';
