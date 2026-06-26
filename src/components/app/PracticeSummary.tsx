@@ -1,5 +1,3 @@
-import { buildOpenEndedSummaryStub } from '../../lib/practice/score-abcd';
-
 type AbcdScore = {
   correct: number;
   total: 15;
@@ -18,7 +16,7 @@ type Props = {
   overviewUrl: string;
   generateUrl?: string;
   showBackLink?: boolean;
-  openEndedSummary?: OpenEndedSummary;
+  openEndedSummary: OpenEndedSummary;
   openEndedUrl?: string;
 };
 
@@ -31,8 +29,6 @@ export default function PracticeSummary({
   openEndedSummary,
   openEndedUrl,
 }: Props) {
-  const openEndedStub = buildOpenEndedSummaryStub();
-
   return (
     <section className="space-y-6">
       {showBackLink ? (
@@ -62,18 +58,11 @@ export default function PracticeSummary({
 
         <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
           <p className="font-semibold text-[var(--text)]">Open-ended questions</p>
-          {openEndedSummary ? (
-            <p className="mt-2">
-              {openEndedSummary.attempted} / {openEndedSummary.total} attempted —{' '}
-              {openEndedSummary.checked} / {openEndedSummary.total} checked. Open-ended answers get
-              critical feedback, not a pass/fail grade.
-            </p>
-          ) : (
-            <p className="mt-2">
-              {openEndedStub.attempted} / {openEndedStub.total} attempted — {openEndedStub.label}.
-              Check feedback for open-ended answers ships in a later update.
-            </p>
-          )}
+          <p className="mt-2">
+            {openEndedSummary.attempted} / {openEndedSummary.total} attempted —{' '}
+            {openEndedSummary.checked} / {openEndedSummary.total} checked. Open-ended answers get
+            critical feedback, not a pass/fail grade.
+          </p>
         </div>
       </div>
 

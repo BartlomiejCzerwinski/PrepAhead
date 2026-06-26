@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import { getUsageSummary } from '../../../../lib/plan';
+import { MAX_ANSWER_CHARS, MIN_ANSWER_CHARS } from '../../../../lib/practice/answer-limits';
 import {
   getOpenEndedProgress,
   getOpenEndedQuestions,
@@ -16,9 +17,6 @@ import { jsonResponse } from '../../../../lib/server/response';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const prerender = false;
-
-const MIN_ANSWER_CHARS = 20;
-const MAX_ANSWER_CHARS = 8_000;
 
 function mergeHeaders(target: Headers, source: Headers): void {
   source.forEach((value, key) => {
@@ -267,10 +265,63 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
   const checkedAt = new Date().toISOString();
 
+  // Re-read the current content before merging. The OpenAI call above takes
+  // several seconds, during which the user may have saved a draft on another
+  // question in a different tab. Merging into the original (stale) snapshot
+  // would clobber that draft, so re-fetch and merge into the latest content.
+  const { data: freshSet, error: freshError } = await supabase
+    .from('practice_sets')
+    .select('content, status')
+    .eq('id', practiceSetId)
+    .eq('user_id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (freshError || !freshSet?.content) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'update_failed',
+        message: 'Could not save your Check feedback. Please try again.',
+      },
+      { status: 500, headers: responseHeaders },
+    );
+  }
+
+  let freshContent: PracticeSetContentWithProgress;
+  try {
+    freshContent = parsePracticeSetWithProgress(freshSet.content);
+  } catch (error) {
+    if (error instanceof PracticeSetContractError) {
+      return jsonResponse(
+        { ok: false, error: 'invalid_content', message: 'Practice set content is invalid.' },
+        { status: 422, headers: responseHeaders },
+      );
+    }
+
+    throw error;
+  }
+
+  // A concurrent Check on the same question may have landed during the AI call.
+  // Bail before persisting (and before charging usage) if so.
+  const freshTarget = getOpenEndedQuestions(freshContent).find(
+    (question) => question.id === questionId,
+  );
+  if (freshTarget?.checkedAt !== undefined) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'already_checked',
+        message: 'This answer has already been checked.',
+      },
+      { status: 409, headers: responseHeaders },
+    );
+  }
+
   let updatedContent: PracticeSetContentWithProgress;
   try {
     updatedContent = parsePracticeSetWithProgress(
-      mergeCheckIntoContent(content, questionId, answerText, checkResult.feedback, checkedAt),
+      mergeCheckIntoContent(freshContent, questionId, answerText, checkResult.feedback, checkedAt),
     );
   } catch (error) {
     if (error instanceof PracticeSetContractError) {
@@ -284,7 +335,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   }
 
   const newStatus =
-    isPracticeSetFullyComplete(updatedContent) || practiceSet.status === 'completed'
+    isPracticeSetFullyComplete(updatedContent) || freshSet.status === 'completed'
       ? 'completed'
       : 'in_progress';
 

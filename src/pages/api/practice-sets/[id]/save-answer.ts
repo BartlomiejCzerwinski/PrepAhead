@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 
+import { MAX_ANSWER_CHARS } from '../../../../lib/practice/answer-limits';
 import {
   getOpenEndedProgress,
   getOpenEndedQuestions,
@@ -11,8 +12,6 @@ import { jsonResponse } from '../../../../lib/server/response';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const prerender = false;
-
-const MAX_ANSWER_CHARS = 8_000;
 
 function mergeHeaders(target: Headers, source: Headers): void {
   source.forEach((value, key) => {

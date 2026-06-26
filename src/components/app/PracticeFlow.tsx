@@ -213,7 +213,7 @@ export default function PracticeFlow({
         title={title}
         abcdScore={summary}
         overviewUrl={overviewUrl}
-        openEndedSummary={openEndedSummary ?? undefined}
+        openEndedSummary={openEndedSummary ?? { attempted: 0, checked: 0, total: 5 }}
         openEndedUrl={openEndedUrl}
       />
     );

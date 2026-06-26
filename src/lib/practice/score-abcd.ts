@@ -13,12 +13,6 @@ export type AbcdScore = {
   percent: number;
 };
 
-export type OpenEndedSummaryStub = {
-  attempted: 0;
-  total: 5;
-  label: 'Not attempted';
-};
-
 export function getAbcdQuestions(content: PracticeSetContentWithProgress) {
   return content.questions.filter((question) => question.type === 'abcd');
 }
@@ -62,8 +56,4 @@ export function scoreAbcdPractice(content: PracticeSetContentWithProgress): Abcd
 
   const percent = Math.round((correct / 15) * 100);
   return { correct, total: 15, percent };
-}
-
-export function buildOpenEndedSummaryStub(): OpenEndedSummaryStub {
-  return { attempted: 0, total: 5, label: 'Not attempted' };
 }

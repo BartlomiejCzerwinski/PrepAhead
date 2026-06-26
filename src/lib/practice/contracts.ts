@@ -359,13 +359,12 @@ export function derivePracticeSetTitle(jobDescription: string): string {
 }
 
 export {
-  buildOpenEndedSummaryStub,
   getAbcdProgress,
   getAbcdQuestions,
   scoreAbcdPractice,
 } from './score-abcd';
 
-export type { AbcdProgress, AbcdScore, OpenEndedSummaryStub } from './score-abcd';
+export type { AbcdProgress, AbcdScore } from './score-abcd';
 
 export {
   getOpenEndedProgress,

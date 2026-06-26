@@ -1,7 +1,7 @@
 ---
 id: open-ended-check-flow
 title: Open-ended Check flow
-status: implemented
+status: impl_reviewed
 created: 2026-06-08
 updated: 2026-06-26
 roadmap: S-04

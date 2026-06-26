@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { MIN_ANSWER_CHARS } from '../../lib/practice/answer-limits';
 import type { ClientOpenEndedQuestion } from '../../lib/practice/client-payload';
 import PracticeSummary from './PracticeSummary';
-
-const MIN_ANSWER_CHARS = 20;
 
 type OpenEndedProgress = {
   attemptedCount: number;
@@ -184,6 +183,7 @@ export default function OpenEndedFlow({
       return;
     }
 
+    submittingRef.current = true;
     setIsSaving(true);
     setActionError(null);
     setSaveNotice(null);
@@ -219,6 +219,7 @@ export default function OpenEndedFlow({
     } catch {
       setActionError('Could not save your draft. Check your connection and try again.');
     } finally {
+      submittingRef.current = false;
       setIsSaving(false);
     }
   }
