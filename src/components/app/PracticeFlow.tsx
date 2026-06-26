@@ -16,6 +16,12 @@ type AbcdScore = {
   percent: number;
 };
 
+type OpenEndedSummary = {
+  attempted: number;
+  checked: number;
+  total: 5;
+};
+
 type AnswerSuccessResponse = {
   ok: true;
   isCorrect: boolean;
@@ -29,7 +35,7 @@ type AnswerSuccessResponse = {
   };
   summary?: {
     abcd: AbcdScore;
-    openEnded: { attempted: 0; total: 5; label: 'Not attempted' };
+    openEnded: OpenEndedSummary;
   };
 };
 
@@ -46,6 +52,8 @@ type Props = {
   initialQuestions: ClientAbcdQuestion[];
   initialProgress: PracticeProgress;
   initialSummary: AbcdScore | null;
+  initialOpenEndedSummary: OpenEndedSummary | null;
+  openEndedUrl: string;
 };
 
 async function parseApiResponse(response: Response): Promise<unknown> {
@@ -87,11 +95,16 @@ export default function PracticeFlow({
   initialQuestions,
   initialProgress,
   initialSummary,
+  initialOpenEndedSummary,
+  openEndedUrl,
 }: Props) {
   const [questions, setQuestions] = useState(initialQuestions);
   const [progress, setProgress] = useState(initialProgress);
   const [currentIndex, setCurrentIndex] = useState(initialProgress.currentIndex);
   const [summary, setSummary] = useState<AbcdScore | null>(initialSummary);
+  const [openEndedSummary, setOpenEndedSummary] = useState<OpenEndedSummary | null>(
+    initialOpenEndedSummary,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [revealCorrectByQuestionId, setRevealCorrectByQuestionId] = useState<
@@ -174,6 +187,7 @@ export default function PracticeFlow({
 
       if (body.progress.isComplete && body.summary) {
         setSummary(body.summary.abcd);
+        setOpenEndedSummary(body.summary.openEnded);
       }
     } catch {
       setSaveError('Could not save your answer. Check your connection and try again.');
@@ -195,7 +209,13 @@ export default function PracticeFlow({
 
   if (showSummary && summary) {
     return (
-      <PracticeSummary title={title} abcdScore={summary} overviewUrl={overviewUrl} />
+      <PracticeSummary
+        title={title}
+        abcdScore={summary}
+        overviewUrl={overviewUrl}
+        openEndedSummary={openEndedSummary ?? undefined}
+        openEndedUrl={openEndedUrl}
+      />
     );
   }
 

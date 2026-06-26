@@ -6,12 +6,20 @@ type AbcdScore = {
   percent: number;
 };
 
+type OpenEndedSummary = {
+  attempted: number;
+  checked: number;
+  total: 5;
+};
+
 type Props = {
   title: string;
   abcdScore: AbcdScore;
   overviewUrl: string;
   generateUrl?: string;
   showBackLink?: boolean;
+  openEndedSummary?: OpenEndedSummary;
+  openEndedUrl?: string;
 };
 
 export default function PracticeSummary({
@@ -20,6 +28,8 @@ export default function PracticeSummary({
   overviewUrl,
   generateUrl = '/app/generate',
   showBackLink = true,
+  openEndedSummary,
+  openEndedUrl,
 }: Props) {
   const openEndedStub = buildOpenEndedSummaryStub();
 
@@ -52,10 +62,18 @@ export default function PracticeSummary({
 
         <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
           <p className="font-semibold text-[var(--text)]">Open-ended questions</p>
-          <p className="mt-2">
-            {openEndedStub.attempted} / {openEndedStub.total} attempted — {openEndedStub.label}.
-            Check feedback for open-ended answers ships in a later update.
-          </p>
+          {openEndedSummary ? (
+            <p className="mt-2">
+              {openEndedSummary.attempted} / {openEndedSummary.total} attempted —{' '}
+              {openEndedSummary.checked} / {openEndedSummary.total} checked. Open-ended answers get
+              critical feedback, not a pass/fail grade.
+            </p>
+          ) : (
+            <p className="mt-2">
+              {openEndedStub.attempted} / {openEndedStub.total} attempted — {openEndedStub.label}.
+              Check feedback for open-ended answers ships in a later update.
+            </p>
+          )}
         </div>
       </div>
 
@@ -66,9 +84,21 @@ export default function PracticeSummary({
         >
           Back to overview
         </a>
+        {openEndedUrl ? (
+          <a
+            href={openEndedUrl}
+            className="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+          >
+            Answer open-ended questions
+          </a>
+        ) : null}
         <a
           href={generateUrl}
-          className="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+          className={
+            openEndedUrl
+              ? 'inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)] no-underline transition hover:bg-[var(--surface-muted)]'
+              : 'btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline'
+          }
         >
           Generate another set
         </a>

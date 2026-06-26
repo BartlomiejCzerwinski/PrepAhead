@@ -467,8 +467,8 @@ Wire overview CTAs, update read-only open-ended preview, replace summary stub, a
 
 #### Automated
 
-- [ ] 2.1 Type checking passes: `npm run build`
-- [ ] 2.2 Astro check passes: `npm run astro -- check`
+- [x] 2.1 Type checking passes: `npm run build`
+- [x] 2.2 Astro check passes: `npm run astro -- check`
 
 #### Manual
 
@@ -478,8 +478,8 @@ Wire overview CTAs, update read-only open-ended preview, replace summary stub, a
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `npm run build`
-- [ ] 3.2 Astro check passes: `npm run astro -- check`
+- [x] 3.1 Type checking passes: `npm run build`
+- [x] 3.2 Astro check passes: `npm run astro -- check`
 
 #### Manual
 
@@ -489,9 +489,9 @@ Wire overview CTAs, update read-only open-ended preview, replace summary stub, a
 
 #### Automated
 
-- [ ] 4.1 Type checking passes: `npm run build`
-- [ ] 4.2 Astro check passes: `npm run astro -- check`
+- [ ] 4.1 Type checking passes: `npm run build` (deferred — dev server running; run after stopping dev to avoid Vite cache corruption)
+- [x] 4.2 Astro check passes: `npm run astro -- check`
 
 #### Manual
 
-- [ ] 4.3 Overview CTAs, summary counts, full completion status, no regressions verified
+- [x] 4.3 Overview CTAs, summary counts, full completion status, no regressions verified

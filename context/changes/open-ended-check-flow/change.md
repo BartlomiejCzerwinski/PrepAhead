@@ -1,9 +1,9 @@
 ---
 id: open-ended-check-flow
 title: Open-ended Check flow
-status: plan_reviewed
+status: implemented
 created: 2026-06-08
-updated: 2026-06-08
+updated: 2026-06-26
 roadmap: S-04
 prd_refs:
   - FR-005

@@ -1,13 +1,10 @@
 import type { APIRoute } from 'astro';
 
 import {
-  getAbcdProgress,
-  getAbcdQuestions,
-  isPracticeSetFullyComplete,
+  getOpenEndedProgress,
+  getOpenEndedQuestions,
   parsePracticeSetWithProgress,
   PracticeSetContractError,
-  scoreAbcdPractice,
-  summarizeOpenEndedPractice,
   type PracticeSetContentWithProgress,
 } from '../../../../lib/practice/contracts';
 import { jsonResponse } from '../../../../lib/server/response';
@@ -15,45 +12,38 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const prerender = false;
 
+const MAX_ANSWER_CHARS = 8_000;
+
 function mergeHeaders(target: Headers, source: Headers): void {
   source.forEach((value, key) => {
     target.set(key, value);
   });
 }
 
-type AnswerRequestBody = {
+type SaveAnswerRequestBody = {
   questionId?: unknown;
-  selectedOptionId?: unknown;
+  answerText?: unknown;
 };
 
-function mergeAnswerIntoContent(
+function mergeDraftIntoContent(
   content: PracticeSetContentWithProgress,
   questionId: string,
-  selectedOptionId: string,
-  answeredAt: string,
+  answerText: string,
+  savedAt: string,
 ): PracticeSetContentWithProgress {
   const updatedQuestions = content.questions.map((question) => {
-    if (question.type !== 'abcd' || question.id !== questionId) {
+    if (question.type !== 'open_ended' || question.id !== questionId) {
       return question;
     }
 
     return {
       ...question,
-      selectedOptionId,
-      answeredAt,
+      answerText,
+      savedAt,
     };
   });
 
-  const interimContent: PracticeSetContentWithProgress = {
-    ...content,
-    questions: updatedQuestions,
-  };
-  const progress = getAbcdProgress(interimContent);
-
-  return {
-    ...interimContent,
-    currentQuestionIndex: progress.currentIndex,
-  };
+  return { ...content, questions: updatedQuestions };
 }
 
 export const POST: APIRoute = async ({ params, request, cookies }) => {
@@ -72,7 +62,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       {
         ok: false,
         error: 'unauthorized',
-        message: 'You must be signed in to submit an answer.',
+        message: 'You must be signed in to save an answer.',
       },
       { status: 401, headers: responseHeaders },
     );
@@ -87,9 +77,9 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     );
   }
 
-  let body: AnswerRequestBody;
+  let body: SaveAnswerRequestBody;
   try {
-    body = (await request.json()) as AnswerRequestBody;
+    body = (await request.json()) as SaveAnswerRequestBody;
   } catch {
     return jsonResponse(
       { ok: false, error: 'invalid_json', message: 'Request body must be valid JSON.' },
@@ -98,15 +88,25 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   }
 
   const questionId = typeof body.questionId === 'string' ? body.questionId.trim() : '';
-  const selectedOptionId =
-    typeof body.selectedOptionId === 'string' ? body.selectedOptionId.trim() : '';
+  const answerText = typeof body.answerText === 'string' ? body.answerText.trim() : '';
 
-  if (!questionId || !selectedOptionId) {
+  if (!questionId || answerText.length === 0) {
     return jsonResponse(
       {
         ok: false,
         error: 'invalid_request',
-        message: 'questionId and selectedOptionId are required.',
+        message: 'questionId and a non-empty answerText are required.',
+      },
+      { status: 400, headers: responseHeaders },
+    );
+  }
+
+  if (answerText.length > MAX_ANSWER_CHARS) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'answer_too_long',
+        message: 'Your answer is too long. Please shorten it and try again.',
       },
       { status: 400, headers: responseHeaders },
     );
@@ -159,18 +159,18 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     throw error;
   }
 
-  const abcdQuestions = getAbcdQuestions(content);
-  const targetQuestion = abcdQuestions.find((question) => question.id === questionId);
+  const openEndedQuestions = getOpenEndedQuestions(content);
+  const targetQuestion = openEndedQuestions.find((question) => question.id === questionId);
 
   if (!targetQuestion) {
     const matchingQuestion = content.questions.find((question) => question.id === questionId);
 
-    if (matchingQuestion?.type === 'open_ended') {
+    if (matchingQuestion && matchingQuestion.type !== 'open_ended') {
       return jsonResponse(
         {
           ok: false,
-          error: 'not_abcd',
-          message: 'Only multiple-choice questions can be answered here.',
+          error: 'not_open_ended',
+          message: 'Only open-ended questions can be saved here.',
         },
         { status: 400, headers: responseHeaders },
       );
@@ -182,35 +182,23 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     );
   }
 
-  if (targetQuestion.selectedOptionId !== undefined) {
+  if (targetQuestion.checkedAt !== undefined) {
     return jsonResponse(
       {
         ok: false,
-        error: 'already_answered',
-        message: 'This question has already been answered.',
+        error: 'already_checked',
+        message: 'This answer has already been checked and can no longer be edited.',
       },
       { status: 409, headers: responseHeaders },
     );
   }
 
-  if (!targetQuestion.options.some((option) => option.id === selectedOptionId)) {
-    return jsonResponse(
-      {
-        ok: false,
-        error: 'invalid_option',
-        message: 'Selected option is not valid for this question.',
-      },
-      { status: 400, headers: responseHeaders },
-    );
-  }
-
-  const isCorrect = selectedOptionId === targetQuestion.correctOptionId;
-  const answeredAt = new Date().toISOString();
+  const savedAt = new Date().toISOString();
 
   let updatedContent: PracticeSetContentWithProgress;
   try {
     updatedContent = parsePracticeSetWithProgress(
-      mergeAnswerIntoContent(content, questionId, selectedOptionId, answeredAt),
+      mergeDraftIntoContent(content, questionId, answerText, savedAt),
     );
   } catch (error) {
     if (error instanceof PracticeSetContractError) {
@@ -223,21 +211,9 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     throw error;
   }
 
-  const progress = getAbcdProgress(updatedContent);
-  // ABCD completion alone no longer marks the set completed (S-04): full completion
-  // requires all open-ended answers checked too. Never downgrade an already-completed
-  // (grandfathered S-03) set.
-  const newStatus =
-    isPracticeSetFullyComplete(updatedContent) || practiceSet.status === 'completed'
-      ? 'completed'
-      : 'in_progress';
-
   const { data: updatedRows, error: updateError } = await supabase
     .from('practice_sets')
-    .update({
-      content: updatedContent,
-      status: newStatus,
-    })
+    .update({ content: updatedContent })
     .eq('id', practiceSetId)
     .eq('user_id', user.id)
     .is('deleted_at', null)
@@ -254,25 +230,19 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     );
   }
 
-  const responseBody: Record<string, unknown> = {
-    ok: true,
-    isCorrect,
-    explanation: targetQuestion.explanation,
-    correctOptionId: targetQuestion.correctOptionId,
-    progress: {
-      answeredCount: progress.answeredCount,
-      total: progress.total,
-      currentQuestionIndex: progress.currentIndex,
-      isComplete: progress.isComplete,
+  const progress = getOpenEndedProgress(updatedContent);
+
+  return jsonResponse(
+    {
+      ok: true,
+      progress: {
+        attemptedCount: progress.attemptedCount,
+        checkedCount: progress.checkedCount,
+        total: progress.total,
+        currentIndex: progress.currentIndex,
+        isCheckedComplete: progress.isCheckedComplete,
+      },
     },
-  };
-
-  if (progress.isComplete) {
-    responseBody.summary = {
-      abcd: scoreAbcdPractice(updatedContent),
-      openEnded: summarizeOpenEndedPractice(updatedContent),
-    };
-  }
-
-  return jsonResponse(responseBody, { status: 200, headers: responseHeaders });
+    { status: 200, headers: responseHeaders },
+  );
 };

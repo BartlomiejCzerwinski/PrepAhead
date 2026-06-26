@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
 
+import { getUsageSummary } from '../../../../lib/plan';
 import {
-  getAbcdProgress,
-  getAbcdQuestions,
+  getOpenEndedProgress,
+  getOpenEndedQuestions,
   isPracticeSetFullyComplete,
   parsePracticeSetWithProgress,
   PracticeSetContractError,
@@ -10,10 +11,14 @@ import {
   summarizeOpenEndedPractice,
   type PracticeSetContentWithProgress,
 } from '../../../../lib/practice/contracts';
+import { runOpenEndedCheck } from '../../../../lib/server/practice/run-open-ended-check';
 import { jsonResponse } from '../../../../lib/server/response';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const prerender = false;
+
+const MIN_ANSWER_CHARS = 20;
+const MAX_ANSWER_CHARS = 8_000;
 
 function mergeHeaders(target: Headers, source: Headers): void {
   source.forEach((value, key) => {
@@ -21,26 +26,29 @@ function mergeHeaders(target: Headers, source: Headers): void {
   });
 }
 
-type AnswerRequestBody = {
+type CheckRequestBody = {
   questionId?: unknown;
-  selectedOptionId?: unknown;
+  answerText?: unknown;
 };
 
-function mergeAnswerIntoContent(
+function mergeCheckIntoContent(
   content: PracticeSetContentWithProgress,
   questionId: string,
-  selectedOptionId: string,
-  answeredAt: string,
+  answerText: string,
+  checkFeedback: string,
+  checkedAt: string,
 ): PracticeSetContentWithProgress {
   const updatedQuestions = content.questions.map((question) => {
-    if (question.type !== 'abcd' || question.id !== questionId) {
+    if (question.type !== 'open_ended' || question.id !== questionId) {
       return question;
     }
 
     return {
       ...question,
-      selectedOptionId,
-      answeredAt,
+      answerText,
+      checkFeedback,
+      checkedAt,
+      savedAt: question.savedAt ?? checkedAt,
     };
   });
 
@@ -48,12 +56,9 @@ function mergeAnswerIntoContent(
     ...content,
     questions: updatedQuestions,
   };
-  const progress = getAbcdProgress(interimContent);
+  const progress = getOpenEndedProgress(interimContent);
 
-  return {
-    ...interimContent,
-    currentQuestionIndex: progress.currentIndex,
-  };
+  return { ...interimContent, openEndedCurrentIndex: progress.currentIndex };
 }
 
 export const POST: APIRoute = async ({ params, request, cookies }) => {
@@ -72,7 +77,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       {
         ok: false,
         error: 'unauthorized',
-        message: 'You must be signed in to submit an answer.',
+        message: 'You must be signed in to check an answer.',
       },
       { status: 401, headers: responseHeaders },
     );
@@ -87,9 +92,9 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     );
   }
 
-  let body: AnswerRequestBody;
+  let body: CheckRequestBody;
   try {
-    body = (await request.json()) as AnswerRequestBody;
+    body = (await request.json()) as CheckRequestBody;
   } catch {
     return jsonResponse(
       { ok: false, error: 'invalid_json', message: 'Request body must be valid JSON.' },
@@ -98,15 +103,36 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   }
 
   const questionId = typeof body.questionId === 'string' ? body.questionId.trim() : '';
-  const selectedOptionId =
-    typeof body.selectedOptionId === 'string' ? body.selectedOptionId.trim() : '';
+  const answerText = typeof body.answerText === 'string' ? body.answerText.trim() : '';
 
-  if (!questionId || !selectedOptionId) {
+  if (!questionId || answerText.length === 0) {
     return jsonResponse(
       {
         ok: false,
         error: 'invalid_request',
-        message: 'questionId and selectedOptionId are required.',
+        message: 'questionId and a non-empty answerText are required.',
+      },
+      { status: 400, headers: responseHeaders },
+    );
+  }
+
+  if (answerText.length < MIN_ANSWER_CHARS) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'answer_too_short',
+        message: `Write at least ${MIN_ANSWER_CHARS} characters before requesting Check.`,
+      },
+      { status: 400, headers: responseHeaders },
+    );
+  }
+
+  if (answerText.length > MAX_ANSWER_CHARS) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'answer_too_long',
+        message: 'Your answer is too long. Please shorten it and try again.',
       },
       { status: 400, headers: responseHeaders },
     );
@@ -114,7 +140,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
   const { data: practiceSet, error: practiceSetError } = await supabase
     .from('practice_sets')
-    .select('id, content, status')
+    .select('id, content, status, job_description_text, cv_text')
     .eq('id', practiceSetId)
     .eq('user_id', user.id)
     .is('deleted_at', null)
@@ -139,7 +165,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       {
         ok: false,
         error: 'content_not_ready',
-        message: 'Practice set content is not ready for answering.',
+        message: 'Practice set content is not ready for checking.',
       },
       { status: 422, headers: responseHeaders },
     );
@@ -159,18 +185,18 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     throw error;
   }
 
-  const abcdQuestions = getAbcdQuestions(content);
-  const targetQuestion = abcdQuestions.find((question) => question.id === questionId);
+  const openEndedQuestions = getOpenEndedQuestions(content);
+  const targetQuestion = openEndedQuestions.find((question) => question.id === questionId);
 
   if (!targetQuestion) {
     const matchingQuestion = content.questions.find((question) => question.id === questionId);
 
-    if (matchingQuestion?.type === 'open_ended') {
+    if (matchingQuestion && matchingQuestion.type !== 'open_ended') {
       return jsonResponse(
         {
           ok: false,
-          error: 'not_abcd',
-          message: 'Only multiple-choice questions can be answered here.',
+          error: 'not_open_ended',
+          message: 'Only open-ended questions can be checked here.',
         },
         { status: 400, headers: responseHeaders },
       );
@@ -182,40 +208,74 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     );
   }
 
-  if (targetQuestion.selectedOptionId !== undefined) {
+  if (targetQuestion.checkedAt !== undefined) {
     return jsonResponse(
       {
         ok: false,
-        error: 'already_answered',
-        message: 'This question has already been answered.',
+        error: 'already_checked',
+        message: 'This answer has already been checked.',
       },
       { status: 409, headers: responseHeaders },
     );
   }
 
-  if (!targetQuestion.options.some((option) => option.id === selectedOptionId)) {
+  const usageSummary = await getUsageSummary(supabase, user.id);
+  if (!usageSummary.ok) {
     return jsonResponse(
       {
         ok: false,
-        error: 'invalid_option',
-        message: 'Selected option is not valid for this question.',
+        error: 'usage_unavailable',
+        message: 'Could not load your current usage. Please refresh and try again.',
       },
-      { status: 400, headers: responseHeaders },
+      { status: 503, headers: responseHeaders },
     );
   }
 
-  const isCorrect = selectedOptionId === targetQuestion.correctOptionId;
-  const answeredAt = new Date().toISOString();
+  if (usageSummary.data.isAtCheckLimit) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'check_limit_reached',
+        message:
+          usageSummary.data.planTier === 'FREE'
+            ? 'You have used all your FREE plan Check calls for this period.'
+            : 'You have reached your Check limit for this period.',
+        checkRemaining: 0,
+        upgradeUrl: usageSummary.data.planTier === 'FREE' ? '/#plans' : null,
+      },
+      { status: 403, headers: responseHeaders },
+    );
+  }
+
+  const checkResult = await runOpenEndedCheck({
+    questionPrompt: targetQuestion.prompt,
+    guidance: targetQuestion.guidance,
+    answerText,
+    jobDescription: practiceSet.job_description_text,
+    cvText: practiceSet.cv_text,
+  });
+
+  if (!checkResult.ok) {
+    return jsonResponse(
+      { ok: false, error: checkResult.code, message: checkResult.message },
+      {
+        status: checkResult.code === 'configuration' ? 500 : 502,
+        headers: responseHeaders,
+      },
+    );
+  }
+
+  const checkedAt = new Date().toISOString();
 
   let updatedContent: PracticeSetContentWithProgress;
   try {
     updatedContent = parsePracticeSetWithProgress(
-      mergeAnswerIntoContent(content, questionId, selectedOptionId, answeredAt),
+      mergeCheckIntoContent(content, questionId, answerText, checkResult.feedback, checkedAt),
     );
   } catch (error) {
     if (error instanceof PracticeSetContractError) {
       return jsonResponse(
-        { ok: false, error: 'invalid_content', message: 'Could not merge answer into content.' },
+        { ok: false, error: 'invalid_content', message: 'Could not merge feedback into content.' },
         { status: 422, headers: responseHeaders },
       );
     }
@@ -223,10 +283,6 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     throw error;
   }
 
-  const progress = getAbcdProgress(updatedContent);
-  // ABCD completion alone no longer marks the set completed (S-04): full completion
-  // requires all open-ended answers checked too. Never downgrade an already-completed
-  // (grandfathered S-03) set.
   const newStatus =
     isPracticeSetFullyComplete(updatedContent) || practiceSet.status === 'completed'
       ? 'completed'
@@ -234,10 +290,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
   const { data: updatedRows, error: updateError } = await supabase
     .from('practice_sets')
-    .update({
-      content: updatedContent,
-      status: newStatus,
-    })
+    .update({ content: updatedContent, status: newStatus })
     .eq('id', practiceSetId)
     .eq('user_id', user.id)
     .is('deleted_at', null)
@@ -248,26 +301,42 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
       {
         ok: false,
         error: 'update_failed',
-        message: 'Could not save your answer. Please try again.',
+        message: 'Could not save your Check feedback. Please try again.',
       },
       { status: 500, headers: responseHeaders },
     );
   }
 
+  // Persist succeeded — only now consume a Check call. If this RPC fails, the
+  // user keeps their feedback but is under-counted (accepted v1 edge case).
+  const { error: incrementError } = await supabase.rpc('increment_check_usage');
+  if (incrementError) {
+    console.error('increment_check_usage failed after Check persisted', {
+      practiceSetId,
+      code: incrementError.code,
+    });
+  }
+
+  const progress = getOpenEndedProgress(updatedContent);
+  const checkRemaining = incrementError
+    ? usageSummary.data.checkRemaining
+    : Math.max(0, usageSummary.data.checkRemaining - 1);
+
   const responseBody: Record<string, unknown> = {
     ok: true,
-    isCorrect,
-    explanation: targetQuestion.explanation,
-    correctOptionId: targetQuestion.correctOptionId,
+    feedback: checkResult.feedback,
+    checkedAt,
+    checkRemaining,
     progress: {
-      answeredCount: progress.answeredCount,
+      attemptedCount: progress.attemptedCount,
+      checkedCount: progress.checkedCount,
       total: progress.total,
-      currentQuestionIndex: progress.currentIndex,
-      isComplete: progress.isComplete,
+      currentIndex: progress.currentIndex,
+      isCheckedComplete: progress.isCheckedComplete,
     },
   };
 
-  if (progress.isComplete) {
+  if (isPracticeSetFullyComplete(updatedContent)) {
     responseBody.summary = {
       abcd: scoreAbcdPractice(updatedContent),
       openEnded: summarizeOpenEndedPractice(updatedContent),

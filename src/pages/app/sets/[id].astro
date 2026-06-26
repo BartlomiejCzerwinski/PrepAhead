@@ -2,9 +2,12 @@
 import AppLayout from '../../../components/app/AppLayout.astro';
 import {
   getAbcdProgress,
+  getOpenEndedProgress,
+  isPracticeSetFullyComplete,
   parsePracticeSetWithProgress,
   PracticeSetContractError,
   summarizePracticeSet,
+  type OpenEndedProgress,
   type PracticeQuestionWithProgress,
 } from '../../../lib/practice/contracts';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
@@ -27,6 +30,7 @@ const display =
   user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
 
 const practiceUrl = `/app/sets/${practiceSetId}/practice`;
+const openEndedUrl = `/app/sets/${practiceSetId}/open-ended`;
 
 const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
 
@@ -53,12 +57,22 @@ let questions: PracticeQuestionWithProgress[] = [];
 let summary = { abcdCount: 0, openEndedCount: 0 };
 let contentReady = false;
 let abcdProgress = { answeredCount: 0, total: 15 as const, currentIndex: 0, isComplete: false };
+let openEndedProgress: OpenEndedProgress = {
+  attemptedCount: 0,
+  checkedCount: 0,
+  total: 5,
+  currentIndex: 0,
+  isCheckedComplete: false,
+};
+let fullyComplete = false;
 
 try {
   const content = parsePracticeSetWithProgress(practiceSet.content);
   questions = content.questions;
   summary = summarizePracticeSet(content);
   abcdProgress = getAbcdProgress(content);
+  openEndedProgress = getOpenEndedProgress(content);
+  fullyComplete = isPracticeSetFullyComplete(content);
   contentReady = true;
 } catch (error) {
   if (!(error instanceof PracticeSetContractError)) {
@@ -73,9 +87,7 @@ const openEndedQuestions = questions.filter((question) => question.type === 'ope
 const createdAtLabel = new Date(practiceSet.created_at).toLocaleString();
 
 const practiceStatusLabel =
-  practiceSet.status === 'completed' || abcdProgress.isComplete
-    ? 'completed'
-    : 'in_progress';
+  practiceSet.status === 'completed' || fullyComplete ? 'completed' : 'in_progress';
 
 type PracticeCta = {
   href: string;
@@ -105,6 +117,34 @@ if (generationSucceeded) {
     practiceCta = {
       href: practiceUrl,
       label: 'Start practice',
+      primary: true,
+    };
+  }
+}
+
+let openEndedCta: PracticeCta | null = null;
+
+if (generationSucceeded) {
+  const openEndedHint = `${openEndedProgress.attemptedCount} / ${openEndedProgress.total} attempted, ${openEndedProgress.checkedCount} / ${openEndedProgress.total} checked`;
+
+  if (openEndedProgress.isCheckedComplete) {
+    openEndedCta = {
+      href: openEndedUrl,
+      label: 'Review open-ended',
+      hint: openEndedHint,
+      primary: false,
+    };
+  } else if (openEndedProgress.attemptedCount > 0 || openEndedProgress.checkedCount > 0) {
+    openEndedCta = {
+      href: openEndedUrl,
+      label: 'Continue open-ended',
+      hint: openEndedHint,
+      primary: true,
+    };
+  } else {
+    openEndedCta = {
+      href: openEndedUrl,
+      label: 'Answer open-ended',
       primary: true,
     };
   }
@@ -152,7 +192,8 @@ if (generationSucceeded) {
           <p class="mt-2 text-[var(--text-muted)]">
             Practice status:
             <span class="font-semibold text-[var(--text)]"> {practiceStatusLabel}</span>
-            {' '}({abcdProgress.answeredCount} / {abcdProgress.total} multiple-choice answered)
+            {' '}({abcdProgress.answeredCount} / {abcdProgress.total} multiple-choice answered,
+            {' '}{openEndedProgress.checkedCount} / {openEndedProgress.total} open-ended checked)
           </p>
         </>
       )}
@@ -177,6 +218,30 @@ if (generationSucceeded) {
             ]}
           >
             {practiceCta.label}
+          </a>
+        </div>
+      </div>
+    )}
+
+    {openEndedCta && (
+      <div class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-5 shadow-sm dark:shadow-none sm:px-6">
+        <p class="text-sm font-semibold text-[var(--text)]">Open-ended practice</p>
+        {openEndedCta.hint ? (
+          <p class="mt-1 text-sm text-[var(--text-muted)]">{openEndedCta.hint}</p>
+        ) : (
+          <p class="mt-1 text-sm text-[var(--text-muted)]">
+            Answer 5 open-ended questions and get critical Check feedback on each.
+          </p>
+        )}
+        <div class="mt-4">
+          <a
+            href={openEndedCta.href}
+            class:list={[
+              'inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold no-underline shadow-sm',
+              openEndedCta.primary ? 'btn-primary' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition hover:bg-[var(--surface-muted)]',
+            ]}
+          >
+            {openEndedCta.label}
           </a>
         </div>
       </div>
@@ -219,19 +284,36 @@ if (generationSucceeded) {
         <section class="space-y-4">
           <div class="space-y-1">
             <h2 class="text-lg font-semibold text-[var(--text)]">Open-ended ({openEndedQuestions.length})</h2>
-            <p class="text-sm text-[var(--text-muted)]">Guidance is shown for orientation only. Check feedback is out of scope here.</p>
+            <p class="text-sm text-[var(--text-muted)]">
+              Answer these and run Check from
+              <a href={openEndedUrl} class="font-medium text-[var(--brand)] no-underline hover:underline"> open-ended practice</a>.
+              Saved answers and Check feedback appear here once you complete them.
+            </p>
           </div>
           <ol class="space-y-4">
             {openEndedQuestions.map((question, index) => (
               <li class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
                 <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Question {abcdQuestions.length + index + 1}
+                  {question.type === 'open_ended' && question.checkedAt ? ' · Checked' : ''}
                 </p>
                 <p class="mt-2 text-sm font-semibold text-[var(--text)]">{question.prompt}</p>
                 <p class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3 text-sm leading-6 text-[var(--text-muted)]">
                   <span class="font-semibold text-[var(--text)]">Strong answer should cover:</span>{' '}
                   {question.guidance}
                 </p>
+                {question.type === 'open_ended' && question.answerText ? (
+                  <div class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-sm leading-6 text-[var(--text)]">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Your answer</p>
+                    <p class="mt-2 whitespace-pre-wrap">{question.answerText}</p>
+                  </div>
+                ) : null}
+                {question.type === 'open_ended' && question.checkFeedback ? (
+                  <div class="mt-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-3 text-sm leading-6 text-[var(--text-muted)]">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Check feedback</p>
+                    <p class="mt-2 whitespace-pre-wrap">{question.checkFeedback}</p>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ol>
