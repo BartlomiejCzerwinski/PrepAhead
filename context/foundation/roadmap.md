@@ -3,7 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-07
+updated: 2026-06-26
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -23,9 +23,9 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 
 ## North star
 
-**S-03: ABCD practice and score summary** — **Shipped 2026-06-07** (`abcd-practice-and-summary`, `impl_reviewed`). Signed-in users answer 15 ABCD questions with immediate feedback, resume in-progress sets, and see a practice-drill score summary; overview CTAs at `/app/sets/[id]`.
+**S-04: Open-ended Check flow** — **Shipped 2026-06-26** (`open-ended-check-flow`, `impl_reviewed`). Signed-in users save free-text answers, run critical AI Check on each of the 5 open-ended questions within plan limits, and a set completes only when all 15 ABCD are answered and all 5 open-ended are Checked. Builds on **S-03** (Shipped 2026-06-07, `abcd-practice-and-summary`).
 
-> **North star (delivered):** Generation and ABCD practice are real end-to-end. Full **US-01** (generate *and complete* a set including open-ended Check) still requires **S-04** (Check) — **S-04** is the next gate on the practice stream.
+> **North star (delivered):** Full **US-01** is now real end-to-end — generate a set, answer ABCD with immediate feedback, and submit open-ended answers for Check feedback through completion. The core practice stream (Stream B) is complete; remaining work is monetization (**S-05**) and account polish.
 
 ## At a glance
 
@@ -37,7 +37,7 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 | S-01 | sign-in-and-usage-dashboard | sign in and see FREE plan with remaining generations and Check calls | F-01, F-02, F-03 | FR-001, FR-012, US-02 | done |
 | S-02 | jd-gated-generation | paste a JD (and optional PDF CV), request generation, and receive a ~20-question set within limits | S-01 | FR-002, FR-003, FR-004, FR-014, FR-015, US-01 | done |
 | S-03 | abcd-practice-and-summary | answer ABCD items with immediate feedback and see an end-of-set score summary | S-02 | FR-005, FR-006, FR-007, FR-009, US-01 | done |
-| S-04 | open-ended-check-flow | submit open-ended answers and receive Check feedback within Check limits | S-03 | FR-017, FR-018, FR-019, US-01, US-03 | ready |
+| S-04 | open-ended-check-flow | submit open-ended answers and receive Check feedback within Check limits | S-03 | FR-017, FR-018, FR-019, US-01, US-03 | done |
 | S-05 | stripe-pro-subscription | subscribe to PRO and operate under PRO fair-use generation and Check rules | S-01 | FR-013, FR-016, FR-020, FR-021, US-02 | blocked |
 | S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | ready |
 | S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | ready |
@@ -51,7 +51,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | Stream | Theme | Chain | Note |
 |---|---|---|---|
 | A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | Foundations and **S-01** done. |
-| B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **S-02** and **S-03** shipped; **S-04** is next to complete **US-01**. |
+| B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **Complete** — **S-02**, **S-03**, and **S-04** shipped; **US-01** delivered end-to-end. |
 | C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
 | D | Blog & SEO | `S-08` | **S-08** shipped 2026-06-04; parallel track complete. |
 | E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** and **S-07** ready (parallel with Stream B); **S-09** nice-to-have after **S-03** (prerequisite met). |
@@ -159,7 +159,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Check quality is a trust gate — depends on server-side AI from F-01 and honest JD/CV grounding rules.
-- **Status:** ready
+- **Status:** done
+- **Shipped:** 2026-06-26 (`impl_reviewed`). Route: `/app/sets/[id]/open-ended`; APIs: `POST /api/practice-sets/[id]/save-answer`, `POST /api/practice-sets/[id]/check`; AI module `run-open-ended-check.ts` (`gpt-4.1-mini`); FREE Check limit raised 1→5; full-set completion requires 15 ABCD answered + 5 open-ended Checked (S-03 sets grandfathered). See `context/changes/open-ended-check-flow/reviews/impl-review.md`.
 
 ### S-05: Stripe PRO subscription
 
@@ -236,7 +237,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-01 | sign-in-and-usage-dashboard | Sign-in with usage dashboard (FREE plan) | — | Shipped 2026-06-06 (`impl_reviewed`); Preview smoke verified |
 | S-02 | jd-gated-generation | JD paste + PDF CV + gated AI generation (exact 20 questions) | — | Shipped 2026-06-07 (`impl_reviewed`); see `verification.md` |
 | S-03 | abcd-practice-and-summary | ABCD practice loop + score summary | — | Shipped 2026-06-07 (`impl_reviewed`); see `verification.md` |
-| S-04 | open-ended-check-flow | Open-ended answers + Check feedback | yes | S-03 complete; next on Stream B |
+| S-04 | open-ended-check-flow | Open-ended answers + Check feedback | — | Shipped 2026-06-26 (`impl_reviewed`); completes US-01 / Stream B |
 | S-05 | stripe-pro-subscription | Stripe PRO checkout + fair-use limits | no | Blocked: PRO price + subscription lifecycle (OQ 2–3) |
 | S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | yes | S-01 complete; parallel with Stream B |
 | S-07 | delete-practice-data | Delete practice set / personal data | yes | S-02 complete; parallel with Stream B |
@@ -249,7 +250,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 2. **PRO price** — Monthly subscription amount and whether to offer annual billing later. Owner: product. Block: S-05.
 3. **Subscription lifecycle** — Cancel/downgrade to FREE, failed payment, and grace-period rules before launch. Owner: product. Block: S-05.
 4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations/month. Owner: product. Block: roadmap-wide (no).
-5. ~~**Score summary for open-ended**~~ — Resolved 2026-06-07 for S-03 scope: ABCD-only score with `0/5 attempted` stub on summary; full Check aggregation deferred to **S-04**. Owner: product. Block: none (S-04).
+5. ~~**Score summary for open-ended**~~ — Resolved: S-03 shipped ABCD-only score with a `0/5 attempted` stub; **S-04** (2026-06-26) replaced the stub with real `X/5 attempted, Y/5 checked` counts (informational only, no pass/fail grade). Owner: product. Block: none.
 6. **MVP timeline vs scope** — Blog v1 plus core practice may exceed ~3 weeks after-hours; slip risk accepted 2026-05-26. Owner: builder. Block: roadmap-wide (no).
 7. **Default theme on first visit** — Light, dark, or match OS before explicit choice. Owner: product. Block: S-06 (no).
 8. ~~**Interactive quiz format**~~ — Resolved 2026-06-04: reusable Astro components + `quiz-practice-client.ts` (vanilla script, not React island). Owner: builder. Block: none.
@@ -274,3 +275,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-08** `public-blog-and-seo` — Blog index, 3 launch posts, open-ended + interactive-quiz formats, SEO metadata, sitemap, robots.txt, CTAs to `/app` (2026-06-04; `impl_reviewed`).
 - **S-02** `jd-gated-generation` — `/app/generate` (JD + optional PDF), durable `generation_jobs`, OpenAI exact-20 contract, usage increment on finalize, recovery + status polling, read-only `/app/sets/[id]` overview (2026-06-07; `impl_reviewed`). Commits: `62f5a2a`, `2dd2478`, `514f48d`, `4013e1c`, `2ed9b26`.
 - **S-03** `abcd-practice-and-summary` — ABCD practice loop at `/app/sets/[id]/practice`, server-graded answers in JSONB, resume (FR-009), overview CTAs, practice-drill score summary with open-ended stub (2026-06-07; `impl_reviewed`). Commits: `2c24318`, `fa98c6a`, `d9aaefc`, `475a607`, `6e2e499`, `abd0f30`.
+- **S-04** `open-ended-check-flow` — Open-ended practice at `/app/sets/[id]/open-ended`, draft save + critical AI Check (`save-answer`/`check` APIs, `run-open-ended-check.ts`), usage metering (FREE Check 1→5), real attempted/checked summary, and full-set completion semantics (15 ABCD + 5 Checked; S-03 sets grandfathered). Completes **US-01** end-to-end (2026-06-26; `impl_reviewed`). Commits: `1b693f7`, `bdabfe1` (+ impl-review fixes).
