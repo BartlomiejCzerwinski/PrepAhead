@@ -22,6 +22,21 @@ const canonicalUrl =
 <!doctype html>
 <html lang="en">
 	<head>
+		<script is:inline>
+			(function () {
+				try {
+					var m = document.cookie.match(/(?:^|;\s*)theme=(light|dark|system)/);
+					var pref = m ? m[1] : 'system';
+					var dark =
+						pref === 'dark' ||
+						(pref === 'system' &&
+							window.matchMedia('(prefers-color-scheme: dark)').matches);
+					var el = document.documentElement;
+					el.classList.toggle('dark', dark);
+					el.classList.toggle('light', !dark);
+				} catch (e) {}
+			})();
+		</script>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content={description} />
