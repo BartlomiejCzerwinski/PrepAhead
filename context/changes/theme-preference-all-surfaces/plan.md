@@ -279,30 +279,30 @@ No schema migration. `user_settings` rows for existing users already exist (`the
 
 #### Automated
 
-- [x] 2.1 Build passes: `npm run build`
-- [x] 2.2 Astro/type check passes: `npm run astro -- check`
-- [x] 2.3 Lint passes
+- [x] 2.1 Build passes: `npm run build` — 6bb89c0
+- [x] 2.2 Astro/type check passes: `npm run astro -- check` — 6bb89c0
+- [x] 2.3 Lint passes — 6bb89c0
 
 #### Manual
 
-- [x] 2.4 `POST /api/settings/theme` upserts the row when signed in; 400 on invalid; 401 when anonymous
-- [x] 2.5 Sign-out then sign-in restores the saved theme (callback cookie seed)
-- [x] 2.6 Sign-in on a second browser/device restores the account theme
-- [x] 2.7 Clearing only the `theme` cookie re-seeds it on the next `/app` load
+- [x] 2.4 `POST /api/settings/theme` upserts the row when signed in; 400 on invalid; 401 when anonymous — 6bb89c0
+- [x] 2.5 Sign-out then sign-in restores the saved theme (callback cookie seed) — 6bb89c0
+- [x] 2.6 Sign-in on a second browser/device restores the account theme — 6bb89c0
+- [x] 2.7 Clearing only the `theme` cookie re-seeds it on the next `/app` load — 6bb89c0
 
 ### Phase 3: Theme toggle on all surfaces
 
 #### Automated
 
-- [ ] 3.1 Build passes: `npm run build`
-- [ ] 3.2 Astro/type check passes: `npm run astro -- check`
-- [ ] 3.3 Lint passes
+- [x] 3.1 Build passes: `npm run build`
+- [x] 3.2 Astro/type check passes: `npm run astro -- check`
+- [x] 3.3 Lint passes
 
 #### Manual
 
-- [ ] 3.4 Toggle present and operable in marketing/blog header and `/app` header; instant update on each
-- [ ] 3.5 `System` follows the OS and updates live on OS theme change
-- [ ] 3.6 Anonymous choice persists across reloads with no breaking console errors (401 harmless)
-- [ ] 3.7 Signed-in toggle choice saves to the account and survives sign-out/sign-in and a second device
-- [ ] 3.8 Readability smoke-check passes in both modes across all surfaces
-- [ ] 3.9 No flash of the wrong theme on hard reload of any surface
+- [x] 3.4 Toggle present and operable in marketing/blog header and `/app` header; instant update on each
+- [x] 3.5 `System` follows the OS and updates live on OS theme change
+- [x] 3.6 Anonymous choice persists across reloads with no breaking console errors (401 harmless)
+- [x] 3.7 Signed-in toggle choice saves to the account and survives sign-out/sign-in and a second device
+- [x] 3.8 Readability smoke-check passes in both modes across all surfaces
+- [x] 3.9 No flash of the wrong theme on hard reload of any surface
