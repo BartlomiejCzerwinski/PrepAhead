@@ -4,16 +4,9 @@ import { OAUTH_NEXT_COOKIE, safeAuthRedirectPath } from '../../../lib/server/aut
 import { MissingEnvError } from '../../../lib/server/env';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { isTheme, THEME_COOKIE } from '../../../lib/theme/client';
+import { THEME_COOKIE_OPTIONS } from '../../../lib/theme/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AstroCookies } from 'astro';
-
-const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-
-const THEME_COOKIE_OPTIONS = {
-  path: '/',
-  maxAge: THEME_COOKIE_MAX_AGE,
-  sameSite: 'lax',
-} as const;
 
 /**
  * Reconcile the account theme preference with any anonymous cookie at sign-in,

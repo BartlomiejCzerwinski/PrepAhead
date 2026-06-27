@@ -4,12 +4,7 @@ import { MissingEnvError } from './lib/server/env';
 import { safeAuthRedirectPath } from './lib/server/auth-redirect';
 import { createSupabaseServerClient } from './lib/supabase/server';
 import { isTheme, THEME_COOKIE } from './lib/theme/client';
-
-const THEME_COOKIE_OPTIONS = {
-  path: '/',
-  maxAge: 60 * 60 * 24 * 365,
-  sameSite: 'lax',
-} as const;
+import { THEME_COOKIE_OPTIONS } from './lib/theme/server';
 
 function needsSessionRefresh(pathname: string): boolean {
   return (
@@ -69,14 +64,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // preference. Gated on the cookie being absent so steady-state requests
     // add no extra query.
     if (pathname.startsWith('/app') && user && !context.cookies.get(THEME_COOKIE)) {
-      const { data: settings } = await supabase
-        .from('user_settings')
-        .select('theme')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Best-effort: a failed theme read must never affect auth/redirect.
+      try {
+        const { data: settings } = await supabase
+          .from('user_settings')
+          .select('theme')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (isTheme(settings?.theme)) {
-        context.cookies.set(THEME_COOKIE, settings.theme, THEME_COOKIE_OPTIONS);
+        if (isTheme(settings?.theme)) {
+          context.cookies.set(THEME_COOKIE, settings.theme, THEME_COOKIE_OPTIONS);
+        }
+      } catch {
+        // Ignore — cookie stays absent and the client falls back to `system`.
       }
     }
   } catch (err) {

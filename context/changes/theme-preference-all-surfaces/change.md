@@ -1,7 +1,7 @@
 ---
 id: theme-preference-all-surfaces
 title: Theme preference on all surfaces
-status: implemented
+status: impl_reviewed
 created: 2026-06-27
 updated: 2026-06-27
 roadmap: S-06
