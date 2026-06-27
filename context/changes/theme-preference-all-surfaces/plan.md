@@ -294,15 +294,15 @@ No schema migration. `user_settings` rows for existing users already exist (`the
 
 #### Automated
 
-- [x] 3.1 Build passes: `npm run build`
-- [x] 3.2 Astro/type check passes: `npm run astro -- check`
-- [x] 3.3 Lint passes
+- [x] 3.1 Build passes: `npm run build` — d0b0b49
+- [x] 3.2 Astro/type check passes: `npm run astro -- check` — d0b0b49
+- [x] 3.3 Lint passes — d0b0b49
 
 #### Manual
 
-- [x] 3.4 Toggle present and operable in marketing/blog header and `/app` header; instant update on each
-- [x] 3.5 `System` follows the OS and updates live on OS theme change
-- [x] 3.6 Anonymous choice persists across reloads with no breaking console errors (401 harmless)
-- [x] 3.7 Signed-in toggle choice saves to the account and survives sign-out/sign-in and a second device
-- [x] 3.8 Readability smoke-check passes in both modes across all surfaces
-- [x] 3.9 No flash of the wrong theme on hard reload of any surface
+- [x] 3.4 Toggle present and operable in marketing/blog header and `/app` header; instant update on each — d0b0b49
+- [x] 3.5 `System` follows the OS and updates live on OS theme change — d0b0b49
+- [x] 3.6 Anonymous choice persists across reloads with no breaking console errors (401 harmless) — d0b0b49
+- [x] 3.7 Signed-in toggle choice saves to the account and survives sign-out/sign-in and a second device — d0b0b49
+- [x] 3.8 Readability smoke-check passes in both modes across all surfaces — d0b0b49
+- [x] 3.9 No flash of the wrong theme on hard reload of any surface — d0b0b49
