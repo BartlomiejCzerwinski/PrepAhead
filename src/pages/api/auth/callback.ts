@@ -3,6 +3,60 @@ import type { APIRoute } from 'astro';
 import { OAUTH_NEXT_COOKIE, safeAuthRedirectPath } from '../../../lib/server/auth-redirect';
 import { MissingEnvError } from '../../../lib/server/env';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { isTheme, THEME_COOKIE } from '../../../lib/theme/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { AstroCookies } from 'astro';
+
+const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+const THEME_COOKIE_OPTIONS = {
+  path: '/',
+  maxAge: THEME_COOKIE_MAX_AGE,
+  sameSite: 'lax',
+} as const;
+
+/**
+ * Reconcile the account theme preference with any anonymous cookie at sign-in,
+ * then seed the `theme` cookie so the next render restores the saved theme
+ * (covers cross-device restore, since a new device must sign in). Best-effort:
+ * never throws — a settings failure must not break the sign-in redirect.
+ */
+async function reconcileThemePreference(
+  supabase: SupabaseClient,
+  cookies: AstroCookies,
+): Promise<void> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return;
+    }
+
+    const { data: settings } = await supabase
+      .from('user_settings')
+      .select('theme')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const accountTheme = settings?.theme;
+
+    if (isTheme(accountTheme)) {
+      cookies.set(THEME_COOKIE, accountTheme, THEME_COOKIE_OPTIONS);
+      return;
+    }
+
+    const cookieTheme = cookies.get(THEME_COOKIE)?.value;
+    if (isTheme(cookieTheme)) {
+      await supabase
+        .from('user_settings')
+        .upsert({ user_id: user.id, theme: cookieTheme }, { onConflict: 'user_id' });
+    }
+  } catch {
+    // Best-effort: theme reconciliation must never block sign-in.
+  }
+}
 
 export const prerender = false;
 
@@ -33,6 +87,8 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
     if (error) {
       return redirectToLogin('exchange_failed');
     }
+
+    await reconcileThemePreference(supabase, cookies);
 
     const oauthNext = cookies.get(OAUTH_NEXT_COOKIE)?.value;
     cookies.delete(OAUTH_NEXT_COOKIE, { path: '/' });

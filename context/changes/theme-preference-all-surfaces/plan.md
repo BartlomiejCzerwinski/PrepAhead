@@ -279,16 +279,16 @@ No schema migration. `user_settings` rows for existing users already exist (`the
 
 #### Automated
 
-- [ ] 2.1 Build passes: `npm run build`
-- [ ] 2.2 Astro/type check passes: `npm run astro -- check`
-- [ ] 2.3 Lint passes
+- [x] 2.1 Build passes: `npm run build`
+- [x] 2.2 Astro/type check passes: `npm run astro -- check`
+- [x] 2.3 Lint passes
 
 #### Manual
 
-- [ ] 2.4 `POST /api/settings/theme` upserts the row when signed in; 400 on invalid; 401 when anonymous
-- [ ] 2.5 Sign-out then sign-in restores the saved theme (callback cookie seed)
-- [ ] 2.6 Sign-in on a second browser/device restores the account theme
-- [ ] 2.7 Clearing only the `theme` cookie re-seeds it on the next `/app` load
+- [x] 2.4 `POST /api/settings/theme` upserts the row when signed in; 400 on invalid; 401 when anonymous
+- [x] 2.5 Sign-out then sign-in restores the saved theme (callback cookie seed)
+- [x] 2.6 Sign-in on a second browser/device restores the account theme
+- [x] 2.7 Clearing only the `theme` cookie re-seeds it on the next `/app` load
 
 ### Phase 3: Theme toggle on all surfaces
 
