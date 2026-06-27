@@ -264,16 +264,16 @@ No schema migration. `user_settings` rows for existing users already exist (`the
 
 #### Automated
 
-- [x] 1.1 Build passes: `npm run build`
-- [x] 1.2 Astro/type check passes: `npm run astro -- check`
-- [x] 1.3 Lint passes
+- [x] 1.1 Build passes: `npm run build` — 7cfa638
+- [x] 1.2 Astro/type check passes: `npm run astro -- check` — 7cfa638
+- [x] 1.3 Lint passes — 7cfa638
 
 #### Manual
 
-- [x] 1.4 No-cookie site follows OS (system default) on landing, blog, `/app`
-- [x] 1.5 `theme=dark` cookie + hard reload shows dark with no flash on static (blog) and SSR (`/app`) pages
-- [x] 1.6 `theme=light` forces light over a dark OS
-- [x] 1.7 Existing `dark:` utilities still render correctly under the new variant
+- [x] 1.4 No-cookie site follows OS (system default) on landing, blog, `/app` — 7cfa638
+- [x] 1.5 `theme=dark` cookie + hard reload shows dark with no flash on static (blog) and SSR (`/app`) pages — 7cfa638
+- [x] 1.6 `theme=light` forces light over a dark OS — 7cfa638
+- [x] 1.7 Existing `dark:` utilities still render correctly under the new variant — 7cfa638
 
 ### Phase 2: Persistence & cross-device sync
 
