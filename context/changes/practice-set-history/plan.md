@@ -204,15 +204,15 @@ None — no schema change.
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `npm run astro -- check`
-- [x] 2.2 Tests pass: `npx vitest run`
-- [x] 2.3 Build passes: `npm run build`
+- [x] 2.1 Type checking passes: `npm run astro -- check` — 5a21a90
+- [x] 2.2 Tests pass: `npx vitest run` — 5a21a90
+- [x] 2.3 Build passes: `npm run build` — 5a21a90
 
 #### Manual
 
-- [x] 2.4 History list renders correctly (order, badges, progress/score) and cards open `/app/sets/[id]`
-- [x] 2.5 Completed vs in-progress rows display correctly (badge + score %)
-- [x] 2.6 Empty state shows with a working "Generate your first set" CTA to `/app/generate`
-- [x] 2.7 Dashboard "Your practice sets" link navigates to `/app/sets`
-- [x] 2.8 Signed-out `/app/sets` redirects to `/login`
-- [x] 2.9 List readable in both light and dark themes
+- [x] 2.4 History list renders correctly (order, badges, progress/score) and cards open `/app/sets/[id]` — 5a21a90
+- [x] 2.5 Completed vs in-progress rows display correctly (badge + score %) — 5a21a90
+- [x] 2.6 Empty state shows with a working "Generate your first set" CTA to `/app/generate` — 5a21a90
+- [x] 2.7 Dashboard "Your practice sets" link navigates to `/app/sets` — 5a21a90
+- [x] 2.8 Signed-out `/app/sets` redirects to `/login` — 5a21a90
+- [x] 2.9 List readable in both light and dark themes — 5a21a90
