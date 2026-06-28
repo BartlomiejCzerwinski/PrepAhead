@@ -3,7 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-26
+updated: 2026-06-28
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -25,7 +25,7 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 
 **S-04: Open-ended Check flow** — **Shipped 2026-06-26** (`open-ended-check-flow`, `impl_reviewed`). Signed-in users save free-text answers, run critical AI Check on each of the 5 open-ended questions within plan limits, and a set completes only when all 15 ABCD are answered and all 5 open-ended are Checked. Builds on **S-03** (Shipped 2026-06-07, `abcd-practice-and-summary`).
 
-> **North star (delivered):** Full **US-01** is now real end-to-end — generate a set, answer ABCD with immediate feedback, and submit open-ended answers for Check feedback through completion. The core practice stream (Stream B) is complete; remaining work is monetization (**S-05**) and account polish.
+> **North star (delivered):** Full **US-01** is now real end-to-end — generate a set, answer ABCD with immediate feedback, and submit open-ended answers for Check feedback through completion. The core practice stream (Stream B) is complete, and account polish (**S-06** theme, **S-07** delete) has shipped; remaining work is monetization (**S-05**, blocked on pricing decisions) and the nice-to-have **S-09** practice-set history.
 
 ## At a glance
 
@@ -39,8 +39,8 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 | S-03 | abcd-practice-and-summary | answer ABCD items with immediate feedback and see an end-of-set score summary | S-02 | FR-005, FR-006, FR-007, FR-009, US-01 | done |
 | S-04 | open-ended-check-flow | submit open-ended answers and receive Check feedback within Check limits | S-03 | FR-017, FR-018, FR-019, US-01, US-03 | done |
 | S-05 | stripe-pro-subscription | subscribe to PRO and operate under PRO fair-use generation and Check rules | S-01 | FR-013, FR-016, FR-020, FR-021, US-02 | blocked |
-| S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | ready |
-| S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | ready |
+| S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | done |
+| S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | done |
 | S-08 | public-blog-and-seo | browse the blog index, read all launch post formats, use CTAs to practice, and be indexed via SEO basics | — | FR-024–FR-032, US-05 | done |
 | S-09 | practice-set-history | view and reopen past generated practice sets | S-03 | FR-008, US-01 | proposed |
 
@@ -54,7 +54,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **Complete** — **S-02**, **S-03**, and **S-04** shipped; **US-01** delivered end-to-end. |
 | C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
 | D | Blog & SEO | `S-08` | **S-08** shipped 2026-06-04; parallel track complete. |
-| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** and **S-07** ready (parallel with Stream B); **S-09** nice-to-have after **S-03** (prerequisite met). |
+| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** and **S-07** shipped (parallel with Stream B); only **S-09** (nice-to-have, prerequisite **S-03** met) remains. |
 
 ## Baseline
 
@@ -188,7 +188,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Default theme on first visit (light, dark, or system)? — Owner: product. Block: no.
 - **Risk:** Blog and landing need theme tokens early if shipped in parallel with **S-08**.
-- **Status:** ready
+- **Status:** done
+- **Shipped:** 2026-06-27 (`impl_reviewed`). Light/Dark/System toggle across landing, blog, and signed-in surfaces with no-flash apply; preference persisted to the account and restored cross-device. See `context/changes/theme-preference-all-surfaces/reviews/impl-review.md`.
 
 ### S-07: Delete practice data
 
@@ -200,7 +201,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Minimum trust signal for sensitive JD/CV — small slice; generation exists, soft-delete path partially present on failed job cleanup.
-- **Status:** ready
+- **Status:** done
+- **Shipped:** 2026-06-28 (`impl_reviewed`). Ownership-scoped soft-delete via `POST /api/practice-sets/[id]/delete` (stamps `deleted_at`, no migration); confirm-then-delete React island (`DeletePracticeSetButton.tsx`) on the `/app/sets/[id]` overview; IDOR/auth integration tests. See `context/changes/delete-practice-data/reviews/impl-review.md`.
 
 ### S-08: Public blog and SEO
 
@@ -239,8 +241,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-03 | abcd-practice-and-summary | ABCD practice loop + score summary | — | Shipped 2026-06-07 (`impl_reviewed`); see `verification.md` |
 | S-04 | open-ended-check-flow | Open-ended answers + Check feedback | — | Shipped 2026-06-26 (`impl_reviewed`); completes US-01 / Stream B |
 | S-05 | stripe-pro-subscription | Stripe PRO checkout + fair-use limits | no | Blocked: PRO price + subscription lifecycle (OQ 2–3) |
-| S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | yes | S-01 complete; parallel with Stream B |
-| S-07 | delete-practice-data | Delete practice set / personal data | yes | S-02 complete; parallel with Stream B |
+| S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | — | Shipped 2026-06-27 (`impl_reviewed`) |
+| S-07 | delete-practice-data | Delete practice set / personal data | — | Shipped 2026-06-28 (`impl_reviewed`); see `reviews/impl-review.md` |
 | S-08 | public-blog-and-seo | Blog index, 3 post formats, SEO, CTA | — | Shipped 2026-06-04 (`impl_reviewed`); preview smoke items remain in verification.md |
 | S-09 | practice-set-history | Practice set history (nice-to-have) | yes | S-03 complete; nice-to-have |
 
@@ -252,7 +254,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations/month. Owner: product. Block: roadmap-wide (no).
 5. ~~**Score summary for open-ended**~~ — Resolved: S-03 shipped ABCD-only score with a `0/5 attempted` stub; **S-04** (2026-06-26) replaced the stub with real `X/5 attempted, Y/5 checked` counts (informational only, no pass/fail grade). Owner: product. Block: none.
 6. **MVP timeline vs scope** — Blog v1 plus core practice may exceed ~3 weeks after-hours; slip risk accepted 2026-05-26. Owner: builder. Block: roadmap-wide (no).
-7. **Default theme on first visit** — Light, dark, or match OS before explicit choice. Owner: product. Block: S-06 (no).
+7. ~~**Default theme on first visit**~~ — Resolved 2026-06-27 (S-06): ships a **System** option that matches OS before an explicit choice is made. Owner: product. Block: none.
 8. ~~**Interactive quiz format**~~ — Resolved 2026-06-04: reusable Astro components + `quiz-practice-client.ts` (vanilla script, not React island). Owner: builder. Block: none.
 9. **Structured data** — JSON-LD (Article, FAQ, Quiz) for rich search results — v1 or fast-follow. Owner: product. Block: S-08 (no).
 10. **Analytics** — Privacy-friendly blog → sign-in funnel measurement (tool TBD). Owner: product. Block: roadmap-wide (no).
@@ -276,3 +278,5 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-02** `jd-gated-generation` — `/app/generate` (JD + optional PDF), durable `generation_jobs`, OpenAI exact-20 contract, usage increment on finalize, recovery + status polling, read-only `/app/sets/[id]` overview (2026-06-07; `impl_reviewed`). Commits: `62f5a2a`, `2dd2478`, `514f48d`, `4013e1c`, `2ed9b26`.
 - **S-03** `abcd-practice-and-summary` — ABCD practice loop at `/app/sets/[id]/practice`, server-graded answers in JSONB, resume (FR-009), overview CTAs, practice-drill score summary with open-ended stub (2026-06-07; `impl_reviewed`). Commits: `2c24318`, `fa98c6a`, `d9aaefc`, `475a607`, `6e2e499`, `abd0f30`.
 - **S-04** `open-ended-check-flow` — Open-ended practice at `/app/sets/[id]/open-ended`, draft save + critical AI Check (`save-answer`/`check` APIs, `run-open-ended-check.ts`), usage metering (FREE Check 1→5), real attempted/checked summary, and full-set completion semantics (15 ABCD + 5 Checked; S-03 sets grandfathered). Completes **US-01** end-to-end (2026-06-26; `impl_reviewed`). Commits: `1b693f7`, `bdabfe1` (+ impl-review fixes).
+- **S-06** `theme-preference-all-surfaces` — Light/Dark/System toggle across landing, blog, and signed-in surfaces with no-flash apply; preference persisted to the account and restored across sessions and devices (FR-022, FR-023, US-04). (2026-06-27; `impl_reviewed`). Commits: `7cfa638`, `6bb89c0`, `d0b0b49`, `c4e0e72`, `03d3edf`.
+- **S-07** `delete-practice-data` — Ownership-scoped soft-delete (`POST /api/practice-sets/[id]/delete` stamps `deleted_at`, no migration), confirm-then-delete React island on `/app/sets/[id]`, and IDOR/auth integration tests; satisfies the FR-010 trust signal for sensitive JD/CV (2026-06-28; `impl_reviewed`).
