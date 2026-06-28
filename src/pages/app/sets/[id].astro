@@ -11,6 +11,7 @@ import {
   type PracticeQuestionWithProgress,
 } from '../../../lib/practice/contracts';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import DeletePracticeSetButton from '../../../components/app/DeletePracticeSetButton';
 
 export const prerender = false;
 
@@ -329,5 +330,13 @@ if (generationSucceeded) {
         </div>
       </div>
     )}
+
+    <div class="rounded-[1.75rem] border border-red-500/30 bg-[var(--surface-elevated)] px-5 py-5 sm:px-6">
+      <p class="text-sm font-semibold text-[var(--text)]">Delete practice set</p>
+      <p class="mt-1 mb-4 text-sm text-[var(--text-muted)]">
+        Remove this set from your account. You won’t be able to access it again.
+      </p>
+      <DeletePracticeSetButton practiceSetId={practiceSetId} client:load />
+    </div>
   </section>
 </AppLayout>
