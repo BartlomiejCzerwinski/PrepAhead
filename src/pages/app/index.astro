@@ -28,4 +28,14 @@ const usageResult = await getUsageSummary(supabase, user.id);
     summary={usageResult.ok ? usageResult.data : undefined}
     error={!usageResult.ok}
   />
+
+  <a
+    href="/app/sets"
+    class="mt-6 block rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4 no-underline shadow-sm transition hover:bg-[var(--surface-muted)] dark:shadow-none"
+  >
+    <p class="text-sm font-semibold text-[var(--brand)]">Your practice sets</p>
+    <p class="mt-1 text-sm text-[var(--text-muted)]">
+      View and reopen the practice sets you've already generated.
+    </p>
+  </a>
 </AppLayout>
