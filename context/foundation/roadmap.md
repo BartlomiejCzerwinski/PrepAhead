@@ -25,7 +25,7 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 
 **S-04: Open-ended Check flow** — **Shipped 2026-06-26** (`open-ended-check-flow`, `impl_reviewed`). Signed-in users save free-text answers, run critical AI Check on each of the 5 open-ended questions within plan limits, and a set completes only when all 15 ABCD are answered and all 5 open-ended are Checked. Builds on **S-03** (Shipped 2026-06-07, `abcd-practice-and-summary`).
 
-> **North star (delivered):** Full **US-01** is now real end-to-end — generate a set, answer ABCD with immediate feedback, and submit open-ended answers for Check feedback through completion. The core practice stream (Stream B) is complete, and account polish (**S-06** theme, **S-07** delete) has shipped; remaining work is monetization (**S-05**, blocked on pricing decisions) and the nice-to-have **S-09** practice-set history.
+> **North star (delivered):** Full **US-01** is now real end-to-end — generate a set, answer ABCD with immediate feedback, and submit open-ended answers for Check feedback through completion. The core practice stream (Stream B) is complete, and account polish (**S-06** theme, **S-07** delete, **S-09** practice-set history) has shipped; the only remaining work is monetization (**S-05**, blocked on pricing decisions).
 
 ## At a glance
 
@@ -42,7 +42,7 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 | S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | done |
 | S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | done |
 | S-08 | public-blog-and-seo | browse the blog index, read all launch post formats, use CTAs to practice, and be indexed via SEO basics | — | FR-024–FR-032, US-05 | done |
-| S-09 | practice-set-history | view and reopen past generated practice sets | S-03 | FR-008, US-01 | proposed |
+| S-09 | practice-set-history | view and reopen past generated practice sets | S-03 | FR-008, US-01 | done |
 
 ## Streams
 
@@ -54,7 +54,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **Complete** — **S-02**, **S-03**, and **S-04** shipped; **US-01** delivered end-to-end. |
 | C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
 | D | Blog & SEO | `S-08` | **S-08** shipped 2026-06-04; parallel track complete. |
-| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **S-06** and **S-07** shipped (parallel with Stream B); only **S-09** (nice-to-have, prerequisite **S-03** met) remains. |
+| E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **Complete** — **S-06**, **S-07**, and **S-09** all shipped (parallel with Stream B). |
 
 ## Baseline
 
@@ -227,7 +227,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Nice-to-have in PRD — sequenced last on the practice stream to protect speed-to-launch.
-- **Status:** proposed
+- **Status:** done
+- **Shipped:** 2026-06-28 (`implemented`; full impl-review APPROVED). SSR `/app/sets` history page lists a user's non-deleted sets newest-first (capped 50) with status badge and progress/score line, links to `/app/sets/[id]`, friendly empty-state CTA to `/app/generate`, and a dashboard entry link; user-scoped, soft-delete-aware reader (`src/lib/practice/history.ts`) with tolerant per-row mapper. No schema change. Commits: `b17c586`, `5a21a90`, `94377de`. See `context/changes/practice-set-history/reviews/` (plan-review) and the impl-review triage.
 
 ## Backlog Handoff
 
@@ -244,7 +245,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | — | Shipped 2026-06-27 (`impl_reviewed`) |
 | S-07 | delete-practice-data | Delete practice set / personal data | — | Shipped 2026-06-28 (`impl_reviewed`); see `reviews/impl-review.md` |
 | S-08 | public-blog-and-seo | Blog index, 3 post formats, SEO, CTA | — | Shipped 2026-06-04 (`impl_reviewed`); preview smoke items remain in verification.md |
-| S-09 | practice-set-history | Practice set history (nice-to-have) | yes | S-03 complete; nice-to-have |
+| S-09 | practice-set-history | Practice set history (nice-to-have) | — | Shipped 2026-06-28 (`implemented`; impl-review APPROVED) |
 
 ## Open Roadmap Questions
 
@@ -280,3 +281,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-04** `open-ended-check-flow` — Open-ended practice at `/app/sets/[id]/open-ended`, draft save + critical AI Check (`save-answer`/`check` APIs, `run-open-ended-check.ts`), usage metering (FREE Check 1→5), real attempted/checked summary, and full-set completion semantics (15 ABCD + 5 Checked; S-03 sets grandfathered). Completes **US-01** end-to-end (2026-06-26; `impl_reviewed`). Commits: `1b693f7`, `bdabfe1` (+ impl-review fixes).
 - **S-06** `theme-preference-all-surfaces` — Light/Dark/System toggle across landing, blog, and signed-in surfaces with no-flash apply; preference persisted to the account and restored across sessions and devices (FR-022, FR-023, US-04). (2026-06-27; `impl_reviewed`). Commits: `7cfa638`, `6bb89c0`, `d0b0b49`, `c4e0e72`, `03d3edf`.
 - **S-07** `delete-practice-data` — Ownership-scoped soft-delete (`POST /api/practice-sets/[id]/delete` stamps `deleted_at`, no migration), confirm-then-delete React island on `/app/sets/[id]`, and IDOR/auth integration tests; satisfies the FR-010 trust signal for sensitive JD/CV (2026-06-28; `impl_reviewed`).
+- **S-09** `practice-set-history` — SSR `/app/sets` history page listing a user's non-deleted sets newest-first (capped 50) with status badge + progress/score line, linking to `/app/sets/[id]`; empty-state CTA to `/app/generate`; dashboard entry link; user-scoped, soft-delete-aware reader with a tolerant per-row mapper (`src/lib/practice/history.ts`) plus unit + IDOR/scoping tests. No schema change; satisfies FR-008 and closes the US-01 account experience (2026-06-28; `implemented`, impl-review APPROVED). Commits: `b17c586`, `5a21a90`, `94377de`.
