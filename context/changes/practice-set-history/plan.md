@@ -26,7 +26,7 @@ Verification: `astro check` passes, `vitest` passes (new unit + scoping tests gr
 ### Key Discoveries:
 
 - Reuse the single-row query pattern verbatim, dropping `.eq('id', ...)`: `src/pages/app/sets/[id].astro:38-44`.
-- Per-row status derivation must mirror the overview's tolerant parse: catch `PracticeSetContractError` and degrade to a "still preparing" row rather than throwing (`[id].astro:70-82`).
+- Per-row status derivation must be tolerant like the overview's parse, but **broader**: catch *any* error (not just `PracticeSetContractError`) and degrade to a "still preparing" row. `parsePracticeSetWithProgress` can throw a `ZodError` from its per-question `.parse()` (`contracts.ts:227,263`); in a 50-row list one such row must not crash the page (`[id].astro:70-82` only handles the single-row case).
 - The completed badge should match the overview's effective rule: `status === 'completed' || isPracticeSetFullyComplete(content)` (`[id].astro:90-91`).
 - The partial index wants `.order('created_at', { ascending: false })` to be used — keep the order column as `created_at`.
 
@@ -39,6 +39,7 @@ Verification: `astro check` passes, `vitest` passes (new unit + scoping tests gr
 - No JD/CV snippet in rows or logs (sensitive per AGENTS.md); rows show only the already-derived `title`.
 - No changes to generation, practice, open-ended, or billing flows.
 - No global app nav bar redesign (out of scope; just a link from `/app`).
+- No failed-generation state in the list. The list does not consult `generation_jobs`; a set whose generation permanently failed keeps `content` at its `'{}'` default and therefore renders as the `contentReady: false` "Still preparing" row, indistinguishable from an in-flight set. The per-set overview (`[id].astro`) remains the place that distinguishes failed vs. preparing.
 
 ## Implementation Approach
 
@@ -61,22 +62,8 @@ Create `src/lib/practice/history.ts` with the row mapper and list reader so the 
 **Contract**:
 - Export `const PRACTICE_SET_HISTORY_LIMIT = 50`.
 - Export `type PracticeSetSummary = { id: string; title: string; createdAt: string; statusLabel: 'completed' | 'in_progress'; contentReady: boolean; abcdAnswered: number; abcdTotal: 15; openEndedChecked: number; openEndedTotal: 5; abcdScorePercent: number | null; hasCv: boolean }`. `abcdScorePercent` is non-null only when the set is fully complete; `contentReady === false` for rows whose `content` fails `parsePracticeSetWithProgress` (badge falls back to the row's `status`).
-- Export `toPracticeSetSummary(row): PracticeSetSummary` — pure. Input row shape mirrors the existing select: `{ id, title, status, content, created_at, cv_text }`. It parses `content` inside a try/catch on `PracticeSetContractError` (re-throw anything else, matching `[id].astro:78-82`); on success derives `abcdAnswered`/`openEndedChecked` via `getAbcdProgress`/`getOpenEndedProgress`, sets `statusLabel` using `status === 'completed' || isPracticeSetFullyComplete(content)`, and sets `abcdScorePercent` from `scoreAbcdPractice(content).percent` only when fully complete; on parse failure returns a row with `contentReady: false`, zeroed counts, `abcdScorePercent: null`, and `statusLabel` from the raw `status`.
-- Export `async listPracticeSetSummaries(supabase: SupabaseClient, userId: string, limit = PRACTICE_SET_HISTORY_LIMIT): Promise<{ ok: true; data: PracticeSetSummary[] } | { ok: false }>`. Runs `.from('practice_sets').select('id, title, status, content, created_at, cv_text').eq('user_id', userId).is('deleted_at', null).order('created_at', { ascending: false }).limit(limit)`; on `error` returns `{ ok: false }`; otherwise maps rows through `toPracticeSetSummary` and returns `{ ok: true, data }`. Follow the `getUsageSummary` result-object convention used by the dashboard (`src/lib/plan`).
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- Type checking passes: `npm run astro -- check`
-- Unit + scoping tests pass: `npx vitest run`
-- Build passes: `npm run build`
-
-#### Manual Verification:
-
-- N/A for this phase (pure lib + tests).
-
-**Implementation Note**: After automated verification passes, pause for human confirmation before Phase 2.
+- Export `toPracticeSetSummary(row): PracticeSetSummary` — pure. Input row shape mirrors the existing select: `{ id, title, status, content, created_at, cv_text }`. It parses `content` inside a try/catch that degrades on **any** thrown error (not only `PracticeSetContractError`). This intentionally differs from `[id].astro:78-82`, which re-throws non-contract errors: `parsePracticeSetWithProgress` can throw a raw `ZodError` (the per-question `normalizeQuestionWithProgress` calls `.parse()` at `contracts.ts:227,263`), and in a 50-row list a single malformed/legacy row must degrade to a placeholder row rather than crash the whole page (see F1). On success derives `abcdAnswered`/`openEndedChecked` via `getAbcdProgress`/`getOpenEndedProgress`, sets `statusLabel` using `status === 'completed' || isPracticeSetFullyComplete(content)`, and sets `abcdScorePercent` from `scoreAbcdPractice(content).percent` only when fully complete; on any parse failure returns a row with `contentReady: false`, zeroed counts, `abcdScorePercent: null`, and `statusLabel` from the raw `status`.
+- Export `async listPracticeSetSummaries(supabase: SupabaseClient, userId: string, limit = PRACTICE_SET_HISTORY_LIMIT): Promise<{ ok: true; data: PracticeSetSummary[] } | { ok: false }>`. Runs `.from('practice_sets').select('id, title, status, content, created_at, cv_text').eq('user_id', userId).is('deleted_at', null).order('created_at', { ascending: false }).limit(limit)`; on `error` returns `{ ok: false }`; otherwise maps rows through `toPracticeSetSummary` and returns `{ ok: true, data }`. Since `toPracticeSetSummary` already degrades any per-row throw internally (see F1), the map cannot throw; no extra reader-level guard is needed beyond the Supabase `error` check. Follow the `getUsageSummary` result-object convention used by the dashboard (`src/lib/plan`). **Do not log raw rows or `cv_text`** — `cv_text` is pulled only to derive the `hasCv` boolean and is sensitive per AGENTS.md.
 
 ---
 
@@ -86,7 +73,7 @@ Create `src/lib/practice/history.ts` with the row mapper and list reader so the 
 
 **Intent**: Lock the row→view-model derivation with inline-literal oracles (the `limits.test.ts` convention).
 
-**Contract**: Cover, using fixture `content` built from the existing contracts: (a) a fully-complete set → `statusLabel: 'completed'`, `abcdScorePercent` a concrete integer, correct `abcdAnswered`/`openEndedChecked`; (b) an in-progress set → `statusLabel: 'in_progress'`, `abcdScorePercent: null`, partial counts; (c) a set with `status: 'completed'` from the row but partial content (grandfathered) → still `'completed'`; (d) unparseable/empty `content` → `contentReady: false`, zeroed counts, `statusLabel` from raw `status`. Build valid fixture content by reusing the practice contracts/schema rather than hand-rolling 20 questions where practical.
+**Contract**: Cover, using fixture `content` built from the existing contracts: (a) a fully-complete set → `statusLabel: 'completed'`, `abcdScorePercent` a concrete integer, correct `abcdAnswered`/`openEndedChecked`; (b) an in-progress set → `statusLabel: 'in_progress'`, `abcdScorePercent: null`, partial counts; (c) a set with `status: 'completed'` from the row but partial content (grandfathered) → still `'completed'`; (d) unparseable/empty `content` → `contentReady: false`, zeroed counts, `statusLabel` from raw `status`; (e) content that makes `parsePracticeSetWithProgress` throw a **non-`PracticeSetContractError`** (e.g. 20 well-formed questions but one with an empty `prompt`, which throws a `ZodError` from the per-question `.parse()`) → still degrades to `contentReady: false` rather than throwing (locks the F1 fix). Build valid fixture content by reusing the practice contracts/schema rather than hand-rolling 20 questions where practical.
 
 #### 3. Scoping test for the reader
 
@@ -101,11 +88,14 @@ Create `src/lib/practice/history.ts` with the row mapper and list reader so the 
 #### Automated Verification:
 
 - Type checking passes: `npm run astro -- check`
-- Tests pass: `npx vitest run`
+- Unit + scoping tests pass: `npx vitest run`
+- Build passes: `npm run build`
 
 #### Manual Verification:
 
-- N/A.
+- N/A for this phase (pure lib + tests).
+
+**Implementation Note**: After automated verification passes, pause for human confirmation before Phase 2.
 
 ---
 
