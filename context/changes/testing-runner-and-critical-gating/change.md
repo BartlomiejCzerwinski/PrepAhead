@@ -1,7 +1,7 @@
 ---
 change_id: testing-runner-and-critical-gating
 title: Test runner + critical gating coverage (test-plan Phase 1)
-status: implementing
+status: complete
 created: 2026-06-28
 updated: 2026-06-28
 archived_at: null

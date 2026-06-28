@@ -350,25 +350,25 @@ No data or schema migration. Adds dev tooling and test files only; no production
 
 #### Automated
 
-- [x] 3.1 IDOR tests pass for all four routes: `npm test`
-- [x] 3.2 Type checking passes: `npm run astro -- check`
-- [x] 3.3 Build still passes: `npm run build`
+- [x] 3.1 IDOR tests pass for all four routes: `npm test` — 0a36510
+- [x] 3.2 Type checking passes: `npm run astro -- check` — 0a36510
+- [x] 3.3 Build still passes: `npm run build` — 0a36510
 
 #### Manual
 
-- [x] 3.4 All four `[id]` routes present in table-driven cases
-- [x] 3.5 No raw/real JD/CV strings in fixtures or output
+- [x] 3.4 All four `[id]` routes present in table-driven cases — 0a36510
+- [x] 3.5 No raw/real JD/CV strings in fixtures or output — 0a36510
 
 ### Phase 4: Quality Gate + Cookbook Wiring
 
 #### Automated
 
-- [ ] 4.1 Full suite passes: `npm test`
-- [ ] 4.2 Type checking passes: `npm run astro -- check`
-- [ ] 4.3 Build passes: `npm run build`
+- [x] 4.1 Full suite passes: `npm test` — 34 passed (7 files)
+- [x] 4.2 Type checking passes: `npm run astro -- check` — 0 errors
+- [x] 4.3 Build passes: `npm run build` — complete
 
 #### Manual
 
-- [ ] 4.4 test-plan §6.1–6.3 are actionable patterns
-- [ ] 4.5 test-plan §3 Phase-1 status and §5 gate row updated
-- [ ] 4.6 README "Testing" section accurate
+- [x] 4.4 test-plan §6.1–6.3 are actionable patterns
+- [x] 4.5 test-plan §3 Phase-1 status and §5 gate row updated
+- [x] 4.6 README "Testing" section accurate

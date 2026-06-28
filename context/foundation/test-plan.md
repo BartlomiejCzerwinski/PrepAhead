@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-28 (Phase 1 change opened)
+> Last updated: 2026-06-28 (Phase 1 complete — runner + critical gating landed)
 
 ## 1. Strategy
 
@@ -69,7 +69,7 @@ orchestrator updates Status as artifacts appear on disk.
 
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|------------|-----------------|----------------|------------|--------|----------------|
-| 1 | Test runner + critical gating coverage | Bootstrap Vitest; prove plan/usage limits are enforced and metered, and endpoints reject non-owners | #1, #2 | unit + integration | change opened | context/changes/testing-runner-and-critical-gating/ |
+| 1 | Test runner + critical gating coverage | Bootstrap Vitest; prove plan/usage limits are enforced and metered, and endpoints reject non-owners | #1, #2 | unit + integration | complete | context/changes/testing-runner-and-critical-gating/ |
 | 2 | Generation & practice contract integrity | Prove an exact 15 + 5 set or a clean failure, and that answer/Check increments are correct | #3 | unit + integration | not started | — |
 | 3 | Auth protection + leakage guards | Prove `/app/*` stays gated without loops and no raw JD/CV or keys leak to logs/errors/bundle | #4, #5 | integration + build-bundle scan | not started | — |
 | 4 | AI-native honest-grounding layer | Prove no fabricated CV facts and JD-specific Check feedback | #6 | AI-native (LLM judge on fixture) | not started | — |
@@ -103,7 +103,7 @@ phase lands; before that, the gate is `planned`.
 | Gate | Where | Required? | Catches |
 |------|-------|-----------|---------|
 | lint + typecheck (`npm run astro -- check`, `npm run build`) | local | required | syntactic / type drift, broken build |
-| unit + integration | local | required after §3 Phase 1 | plan/usage, authorization, and contract logic regressions |
+| unit + integration | local | required (active — §3 Phase 1 landed) | plan/usage, authorization, and contract logic regressions |
 | build-bundle leak scan | local | required after §3 Phase 3 | raw JD/CV or provider keys shipped client-side |
 | AI-native honest-grounding check | local | optional after §3 Phase 4 | fabrication / generic-feedback drift |
 | pre-prod smoke (Vercel Preview) | between merge + prod | optional | environment-specific failures (per `context/deployment/deploy-plan.md`) |
@@ -117,15 +117,25 @@ relevant rollout phase ships; before that, it reads "TBD — see §3 Phase N."
 
 ### 6.1 Adding a unit test
 
-- TBD — see §3 Phase 1 (plan/usage limit logic; assert against PRD limits, not against the increment code).
+- Pure modules under `src/lib/**` may hold a co-located `*.test.ts` (they are not routed and are tree-shaken from the build).
+- When the unit calls Supabase, inject a fake via `createFakeSupabase(seed)` from `test/support/fake-supabase.ts` (seed `.rpc` / `.tables` results); don't hit a network or DB.
+- **Oracle discipline:** assert against literal PRD numbers, never values imported from the module under test.
+- Examples: `src/lib/plan/limits.test.ts` (PRD limit constants), `src/lib/plan/get-usage-summary.test.ts` (gate math + RPC error mapping).
 
 ### 6.2 Adding an integration test
 
-- TBD — see §3 Phase 1 (API handler request → response + side-effect; mock at the Supabase/network edge only, never internal modules).
+- **Route tests must NOT live under `src/pages/**`** — Astro routes every file there, so a `*.test.ts` becomes an endpoint and crashes `npm run build`. Put them under `test/integration/**`.
+- Mock the Supabase factory at its boundary: `vi.mock('.../src/lib/supabase/server')` then `vi.mocked(createSupabaseServerClient).mockReturnValue(createFakeSupabase(seed).client)`. `vi.mock` resolves by absolute path, so the deep relative specifier still matches the route's own import.
+- Mock AI modules (`run-open-ended-check`, `generate-practice-set`) and stub `fetch` (the generate route fire-and-forgets a worker nudge). Invoke the exported `POST`/`GET` with `makeApiContext({ params, body })` from `test/support/fake-context.ts`.
+- Seed terminal results per `(table, operation)` and assert side-effects via `fake.calls` (`rpc` names, `inserts`, `updates`). Example: `test/integration/api/practice-sets/check.test.ts`.
 
 ### 6.3 Adding a test for a new API endpoint
 
-- TBD — see §3 Phase 1 (the highest-priority pattern: ownership/authorization assertion plus usage-metering side-effect for any `src/pages/api` route).
+- For any new `src/pages/api/**` route, add a `test/integration/**` test (see §6.2 harness) covering, at minimum:
+  1. **Auth** — unauthenticated caller → 401.
+  2. **Ownership** — a signed-in non-owner → 404, with no data served and no mutation (`fake.calls.updates` empty). Table-drive alongside the existing routes in `test/integration/api/practice-sets/idor.test.ts`.
+  3. **Metering** (if the route consumes usage) — increment only on success, never on failure, never double; pre-flight 403 at the limit.
+- Mock at the Supabase client boundary only — never mock internal practice/contract modules.
 
 ### 6.4 Adding a generation/contract test
 
@@ -143,12 +153,15 @@ relevant rollout phase ships; before that, it reads "TBD — see §3 Phase N."
 
 (Optional. After each phase lands, `/10x-implement` appends a 2–3 line note here capturing anything surprising the phase taught.)
 
+- **Phase 1 (test runner + critical gating):** Astro routes every file under `src/pages`, so route/integration `*.test.ts` must live under `test/` or they are built as endpoints and crash `npm run build`. Vitest 4.1 + Vite 7 works with a plain `defineConfig` (no `getViteConfig`). Generation metering's atomic cap + `usage_incremented_at` idempotency live in the SQL RPC `finalize_generation_job` — unreachable by the in-process mock, so only handler orchestration (finalize-on-success / mark_failed-on-failure / no double) is asserted here.
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5). Future
 contributors should respect these unless the underlying assumption changes.
 
 - **Marketing, blog, and landing pages** (`src/components/landing`, `src/components/blog`, `src/pages/blog`, `src/content/blog`) — founder-authored static/editorial content with low blast radius; the builder wants budget spent exclusively on in-app (signed-in) features and the API layer. Re-evaluate if the blog gains user-generated content, metered AI, or auth-linked behavior. (Source: Phase 2 interview Q5.)
+- **PRO daily-cap (10/day UTC) and soft-threshold (100) enforcement** — not implemented in code (only the hard cap 300 / FREE 1 and Check caps 5/500 are enforced); `generationSoftThreshold` is a type literal and the daily cap is display text only. Deferred to roadmap **S-05** (`context/changes/supabase-data-schema/plan.md:61,79,347`). Phase 1 tests assert only the enforced caps and do not assert the non-existent daily logic; add that coverage when S-05 ships. (Source: Phase 1 research / implementation.)
 
 ## 8. Freshness Ledger
 
