@@ -51,6 +51,10 @@ type RouteCase = {
   notFoundError: string;
   mutating: boolean;
   isCheck?: boolean;
+  /** Table whose owner-scoped read gates the route (the null-read → 404 path). */
+  scopedTable: string;
+  /** Whether the scoped read also applies the soft-delete `.is('deleted_at', null)` filter. */
+  softDeleteScoped: boolean;
 };
 
 const cases: RouteCase[] = [
@@ -60,6 +64,8 @@ const cases: RouteCase[] = [
     body: { questionId: 'q-1', selectedOptionId: 'A' },
     notFoundError: 'practice_set_not_found',
     mutating: true,
+    scopedTable: 'practice_sets',
+    softDeleteScoped: true,
   },
   {
     name: 'save-answer',
@@ -67,6 +73,8 @@ const cases: RouteCase[] = [
     body: { questionId: 'oe-1', answerText: 'a draft answer' },
     notFoundError: 'practice_set_not_found',
     mutating: true,
+    scopedTable: 'practice_sets',
+    softDeleteScoped: true,
   },
   {
     name: 'check',
@@ -75,12 +83,16 @@ const cases: RouteCase[] = [
     notFoundError: 'practice_set_not_found',
     mutating: true,
     isCheck: true,
+    scopedTable: 'practice_sets',
+    softDeleteScoped: true,
   },
   {
     name: 'status',
     handler: statusGet,
     notFoundError: 'job_not_found',
     mutating: false,
+    scopedTable: 'generation_jobs',
+    softDeleteScoped: false,
   },
 ];
 
@@ -110,6 +122,22 @@ describe('practice-set [id] routes — IDOR / authorization', () => {
       expect(text).not.toContain(JD_MARKER);
       expect(text).not.toContain(CV_MARKER);
       expect(text).not.toContain(ANSWER_MARKER);
+
+      // The 404 must come from the ownership predicate, not merely an empty
+      // read: assert the route actually scoped its gating read by user_id (a
+      // dropped `.eq('user_id', ...)` would be the IDOR regression).
+      expect(fake.calls.filters).toContainEqual({
+        table: route.scopedTable,
+        column: 'user_id',
+        value: 'attacker',
+      });
+      if (route.softDeleteScoped) {
+        expect(fake.calls.filters).toContainEqual({
+          table: route.scopedTable,
+          column: 'deleted_at',
+          value: null,
+        });
+      }
 
       // Mutating routes must fail closed before any write.
       if (route.mutating) {

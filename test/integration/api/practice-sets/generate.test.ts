@@ -77,6 +77,18 @@ describe('POST /api/practice-sets/generate — gating', () => {
     const body = await res.json();
     expect(body).toMatchObject({ jobId: 'job-existing', practiceSetId: 'ps-existing' });
     expect(fake.calls.inserts).toHaveLength(0);
+    // The short-circuit must be keyed: prove the lookup scoped by the caller's
+    // id AND the idempotency key, not just any existing job.
+    expect(fake.calls.filters).toContainEqual({
+      table: 'generation_jobs',
+      column: 'user_id',
+      value: 'u1',
+    });
+    expect(fake.calls.filters).toContainEqual({
+      table: 'generation_jobs',
+      column: 'idempotency_key',
+      value: 'key-1',
+    });
   });
 
   it('happy path creates a job (202) without metering on the request path', async () => {

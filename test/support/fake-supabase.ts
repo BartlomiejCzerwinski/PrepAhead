@@ -44,6 +44,13 @@ export type RecordedCalls = {
   updates: { table: string; payload: unknown }[];
   selects: { table: string }[];
   deletes: { table: string }[];
+  /**
+   * Every `.eq()` / `.is()` filter applied, tagged with its table. Because the
+   * fake does not actually filter rows, this is how ownership tests prove a
+   * route still requests the `user_id` predicate (a dropped predicate would be
+   * an IDOR regression the seeded-null result alone cannot catch).
+   */
+  filters: { table: string; column: string; value: unknown }[];
 };
 
 const EMPTY: TerminalResult = { data: null, error: null };
@@ -89,7 +96,8 @@ class FakeQueryBuilder implements PromiseLike<TerminalResult> {
     return this;
   }
 
-  eq(_column: string, _value: unknown): this {
+  eq(column: string, value: unknown): this {
+    this.calls.filters.push({ table: this.table, column, value });
     return this;
   }
 
@@ -97,7 +105,8 @@ class FakeQueryBuilder implements PromiseLike<TerminalResult> {
     return this;
   }
 
-  is(_column: string, _value: unknown): this {
+  is(column: string, value: unknown): this {
+    this.calls.filters.push({ table: this.table, column, value });
     return this;
   }
 
@@ -168,6 +177,7 @@ export function createFakeSupabase(seed: FakeSupabaseSeed = {}): FakeSupabase {
     updates: [],
     selects: [],
     deletes: [],
+    filters: [],
   };
 
   const client = {
