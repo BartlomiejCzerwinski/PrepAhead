@@ -336,28 +336,28 @@ No data or schema migration. Adds dev tooling and test files only; no production
 
 #### Automated
 
-- [x] 2.1 All Risk #1 tests pass: `npm test`
-- [x] 2.2 Type checking passes: `npm run astro -- check`
-- [x] 2.3 Build still passes: `npm run build`
+- [x] 2.1 All Risk #1 tests pass: `npm test` — 67acb3e
+- [x] 2.2 Type checking passes: `npm run astro -- check` — 67acb3e
+- [x] 2.3 Build still passes: `npm run build` — 67acb3e
 
 #### Manual
 
-- [x] 2.4 Limit literals match PRD FR-014..021
-- [x] 2.5 No test asserts a limit value imported from `limits.ts` (oracle review)
-- [x] 2.6 Under-count edge reads as intended behavior
+- [x] 2.4 Limit literals match PRD FR-014..021 — 67acb3e
+- [x] 2.5 No test asserts a limit value imported from `limits.ts` (oracle review) — 67acb3e
+- [x] 2.6 Under-count edge reads as intended behavior — 67acb3e
 
 ### Phase 3: Risk #2 — IDOR Across the Four `[id]` Routes
 
 #### Automated
 
-- [ ] 3.1 IDOR tests pass for all four routes: `npm test`
-- [ ] 3.2 Type checking passes: `npm run astro -- check`
-- [ ] 3.3 Build still passes: `npm run build`
+- [x] 3.1 IDOR tests pass for all four routes: `npm test`
+- [x] 3.2 Type checking passes: `npm run astro -- check`
+- [x] 3.3 Build still passes: `npm run build`
 
 #### Manual
 
-- [ ] 3.4 All four `[id]` routes present in table-driven cases
-- [ ] 3.5 No raw/real JD/CV strings in fixtures or output
+- [x] 3.4 All four `[id]` routes present in table-driven cases
+- [x] 3.5 No raw/real JD/CV strings in fixtures or output
 
 ### Phase 4: Quality Gate + Cookbook Wiring
 
