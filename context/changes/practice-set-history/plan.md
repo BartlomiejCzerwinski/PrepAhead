@@ -196,9 +196,9 @@ None — no schema change.
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npm run astro -- check`
-- [ ] 1.2 Unit + scoping tests pass: `npx vitest run`
-- [ ] 1.3 Build passes: `npm run build`
+- [x] 1.1 Type checking passes: `npm run astro -- check`
+- [x] 1.2 Unit + scoping tests pass: `npx vitest run`
+- [x] 1.3 Build passes: `npm run build`
 
 ### Phase 2: History page UI + dashboard entry point
 

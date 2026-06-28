@@ -1,7 +1,7 @@
 ---
 change_id: practice-set-history
 title: Practice set history (view and reopen past sets)
-status: planned
+status: implementing
 created: 2026-06-28
 updated: 2026-06-28
 archived_at: null
