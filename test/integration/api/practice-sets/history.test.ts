@@ -68,6 +68,9 @@ describe('listPracticeSetSummaries — scoping + mapping', () => {
 
     expect(result.data).toHaveLength(2);
 
+    // Order/limit are DB-enforced (the `created_at desc` partial index + `.limit(50)`),
+    // not asserted here: the fake treats `.order()`/`.limit()` as no-ops
+    // (fake-supabase.ts:117-123), so this only reflects the seed array order.
     const [newest, older] = result.data;
     expect(newest.id).toBe('set-new');
     expect(newest.statusLabel).toBe('completed');
