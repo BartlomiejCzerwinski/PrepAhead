@@ -322,29 +322,29 @@ No data or schema migration. Adds dev tooling and test files only; no production
 
 #### Automated
 
-- [x] 1.1 Dependencies install: `npm install`
-- [x] 1.2 Test runner executes green: `npm test`
-- [x] 1.3 Type checking passes: `npm run astro -- check`
-- [x] 1.4 Build still passes: `npm run build`
+- [x] 1.1 Dependencies install: `npm install` — 9e7afbe
+- [x] 1.2 Test runner executes green: `npm test` — 9e7afbe
+- [x] 1.3 Type checking passes: `npm run astro -- check` — 9e7afbe
+- [x] 1.4 Build still passes: `npm run build` — 9e7afbe
 
 #### Manual
 
-- [x] 1.5 `npm run test:watch` starts and re-runs on file change
-- [x] 1.6 No Astro/Tailwind plugin is loaded by the Vitest config
+- [x] 1.5 `npm run test:watch` starts and re-runs on file change — 9e7afbe
+- [x] 1.6 No Astro/Tailwind plugin is loaded by the Vitest config — 9e7afbe
 
 ### Phase 2: Risk #1 — Plan/Usage Gating & Metering
 
 #### Automated
 
-- [ ] 2.1 All Risk #1 tests pass: `npm test`
-- [ ] 2.2 Type checking passes: `npm run astro -- check`
-- [ ] 2.3 Build still passes: `npm run build`
+- [x] 2.1 All Risk #1 tests pass: `npm test`
+- [x] 2.2 Type checking passes: `npm run astro -- check`
+- [x] 2.3 Build still passes: `npm run build`
 
 #### Manual
 
-- [ ] 2.4 Limit literals match PRD FR-014..021
-- [ ] 2.5 No test asserts a limit value imported from `limits.ts` (oracle review)
-- [ ] 2.6 Under-count edge reads as intended behavior
+- [x] 2.4 Limit literals match PRD FR-014..021
+- [x] 2.5 No test asserts a limit value imported from `limits.ts` (oracle review)
+- [x] 2.6 Under-count edge reads as intended behavior
 
 ### Phase 3: Risk #2 — IDOR Across the Four `[id]` Routes
 
