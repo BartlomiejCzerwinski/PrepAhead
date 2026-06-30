@@ -459,14 +459,14 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Automated
 
-- [ ] 1.1 Migration applies cleanly
-- [x] 1.2 `npm run build` passes
-- [x] 1.3 `npm run astro -- check` passes
+- [x] 1.1 Migration applies cleanly — fa03bd4
+- [x] 1.2 `npm run build` passes — fa03bd4
+- [x] 1.3 `npm run astro -- check` passes — fa03bd4
 
 #### Manual
 
-- [ ] 1.4 Authenticated client cannot self-update `plan_tier`
-- [ ] 1.5 `set_plan_tier_from_billing` works via service role
+- [x] 1.4 Authenticated client cannot self-update `plan_tier` — fa03bd4
+- [x] 1.5 `set_plan_tier_from_billing` works via service role — fa03bd4
 
 ### Phase 2: Stripe server integration
 
