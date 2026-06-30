@@ -6,7 +6,8 @@ export type EnvKey =
   | 'SUPABASE_SERVICE_ROLE_KEY'
   | 'OPENAI_API_KEY'
   | 'STRIPE_SECRET_KEY'
-  | 'STRIPE_WEBHOOK_SECRET';
+  | 'STRIPE_WEBHOOK_SECRET'
+  | 'STRIPE_PAYMENT_LINK_URL';
 
 export class MissingEnvError extends Error {
   constructor(public readonly key: EnvKey) {
@@ -31,6 +32,8 @@ function readEnv(key: EnvKey): string | undefined {
       return import.meta.env.STRIPE_SECRET_KEY;
     case 'STRIPE_WEBHOOK_SECRET':
       return import.meta.env.STRIPE_WEBHOOK_SECRET;
+    case 'STRIPE_PAYMENT_LINK_URL':
+      return import.meta.env.STRIPE_PAYMENT_LINK_URL;
     default: {
       const _exhaustive: never = key;
       return _exhaustive;

@@ -472,14 +472,14 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Automated
 
-- [ ] 2.1 `npm run test` passes (sync-subscription unit tests)
-- [ ] 2.2 `npm run build` passes
+- [x] 2.1 `npm run test` passes (sync-subscription unit tests)
+- [x] 2.2 `npm run build` passes
 
 #### Manual
 
-- [ ] 2.3 Stripe CLI webhook smoke — checkout.session.completed
-- [ ] 2.4 Duplicate event id skipped
-- [ ] 2.5 Email mismatch rejected
+- [x] 2.3 Stripe CLI webhook smoke — checkout.session.completed
+- [x] 2.4 Duplicate event id skipped
+- [x] 2.5 Email mismatch rejected
 
 ### Phase 3: Checkout & portal UX
 
