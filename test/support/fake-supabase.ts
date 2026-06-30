@@ -211,6 +211,8 @@ export function freeUserSummaryRow(
     period_end: '2026-07-01T00:00:00.000Z',
     generation_count: overrides.generation_count ?? 0,
     check_count: overrides.check_count ?? 0,
+    daily_generation_count: 0,
+    period_generation_count: overrides.generation_count ?? 0,
   };
 }
 
@@ -223,5 +225,7 @@ export function proUserSummaryRow(
     period_end: '2026-07-01T00:00:00.000Z',
     generation_count: overrides.generation_count ?? 0,
     check_count: overrides.check_count ?? 0,
+    daily_generation_count: 0,
+    period_generation_count: overrides.generation_count ?? 0,
   };
 }

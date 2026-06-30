@@ -460,8 +460,8 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 #### Automated
 
 - [ ] 1.1 Migration applies cleanly
-- [ ] 1.2 `npm run build` passes
-- [ ] 1.3 `npm run astro -- check` passes
+- [x] 1.2 `npm run build` passes
+- [x] 1.3 `npm run astro -- check` passes
 
 #### Manual
 
