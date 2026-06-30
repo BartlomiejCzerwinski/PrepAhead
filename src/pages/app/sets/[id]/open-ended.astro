@@ -1,0 +1,137 @@
+---
+import OpenEndedFlow from '../../../../components/app/OpenEndedFlow';
+import AppLayout from '../../../../components/app/AppLayout.astro';
+import { getUsageSummary } from '../../../../lib/plan';
+import { projectClientOpenEndedQuestions } from '../../../../lib/practice/client-payload';
+import {
+  getAbcdProgress,
+  getOpenEndedProgress,
+  getOpenEndedQuestions,
+  isPracticeSetFullyComplete,
+  parsePracticeSetWithProgress,
+  PracticeSetContractError,
+  scoreAbcdPractice,
+  summarizeOpenEndedPractice,
+} from '../../../../lib/practice/contracts';
+import { createSupabaseServerClient } from '../../../../lib/supabase/server';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+const practiceSetId = typeof Astro.params.id === 'string' ? Astro.params.id.trim() : '';
+
+if (!practiceSetId) {
+  return Astro.redirect('/app');
+}
+
+const display = user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
+
+const overviewUrl = `/app/sets/${practiceSetId}`;
+const practiceUrl = `/app/sets/${practiceSetId}/practice`;
+
+const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
+
+const { data: practiceSet, error: practiceSetError } = await supabase
+  .from('practice_sets')
+  .select('id, title, status, content')
+  .eq('id', practiceSetId)
+  .eq('user_id', user.id)
+  .is('deleted_at', null)
+  .maybeSingle();
+
+if (practiceSetError || !practiceSet) {
+  return Astro.redirect('/app');
+}
+
+const { data: generationJob } = await supabase
+  .from('generation_jobs')
+  .select('status')
+  .eq('practice_set_id', practiceSetId)
+  .eq('user_id', user.id)
+  .maybeSingle();
+
+if (generationJob?.status !== 'succeeded' || !practiceSet.content) {
+  return Astro.redirect(overviewUrl);
+}
+
+type Usage = { planTier: 'FREE' | 'PRO'; checkRemaining: number; isAtCheckLimit: boolean };
+type FullSummary = {
+  abcd: { correct: number; total: 15; percent: number };
+  openEnded: { attempted: number; checked: number; total: 5 };
+};
+
+let contentReady = false;
+let clientQuestions: ReturnType<typeof projectClientOpenEndedQuestions> = [];
+let progress = {
+  attemptedCount: 0,
+  checkedCount: 0,
+  total: 5 as const,
+  currentIndex: 0,
+  isCheckedComplete: false,
+};
+let abcdComplete = false;
+let summary: FullSummary | null = null;
+
+try {
+  const content = parsePracticeSetWithProgress(practiceSet.content);
+  clientQuestions = projectClientOpenEndedQuestions(getOpenEndedQuestions(content));
+  progress = getOpenEndedProgress(content);
+  abcdComplete = getAbcdProgress(content).isComplete;
+  contentReady = true;
+
+  if (isPracticeSetFullyComplete(content)) {
+    summary = {
+      abcd: scoreAbcdPractice(content),
+      openEnded: summarizeOpenEndedPractice(content),
+    };
+  }
+} catch (error) {
+  if (!(error instanceof PracticeSetContractError)) {
+    throw error;
+  }
+}
+
+if (!contentReady) {
+  return Astro.redirect(overviewUrl);
+}
+
+const usageSummary = await getUsageSummary(supabase, user.id);
+const usage: Usage | null = usageSummary.ok
+  ? {
+      planTier: usageSummary.data.planTier,
+      checkRemaining: usageSummary.data.checkRemaining,
+      isAtCheckLimit: usageSummary.data.isAtCheckLimit,
+    }
+  : null;
+---
+
+<AppLayout
+  title={`Open-ended: ${practiceSet.title}`}
+  description="Answer open-ended interview questions and get critical Check feedback."
+  userEmail={display}
+>
+  <OpenEndedFlow
+    client:only="react"
+    practiceSetId={practiceSetId}
+    title={practiceSet.title}
+    overviewUrl={overviewUrl}
+    practiceUrl={practiceUrl}
+    initialQuestions={clientQuestions}
+    initialProgress={progress}
+    initialUsage={usage}
+    abcdComplete={abcdComplete}
+    initialSummary={summary}
+  >
+    <div
+      slot="fallback"
+      class="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 text-sm leading-6 text-[var(--text-muted)] shadow-sm dark:shadow-none sm:p-8"
+    >
+      Loading open-ended practice...
+    </div>
+  </OpenEndedFlow>
+</AppLayout>

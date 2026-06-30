@@ -23,6 +23,8 @@ type RpcRow = {
   period_end: string;
   generation_count: number;
   check_count: number;
+  daily_generation_count: number;
+  period_generation_count: number;
 };
 
 const PRO_FAIR_USE_NOTE =
@@ -54,7 +56,7 @@ export async function getUsageSummary(
   const planTier: PlanTier = row.plan_tier === 'PRO' ? 'PRO' : 'FREE';
   const limits = getPlanLimits(planTier);
 
-  const generationUsed = row.generation_count;
+  const generationUsed = row.period_generation_count ?? row.generation_count;
   const checkUsed = row.check_count;
 
   const generationLimit =

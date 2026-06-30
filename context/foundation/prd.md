@@ -244,7 +244,7 @@ Supporting detail:
 - **User encounter (practice):** After sign-in, user sees plan/usage → supplies JD → optional CV → requests generation (blocked if at generation limit) → practices each question type → uses Check on open-ended items (blocked if at Check limit) → sees score summary.
 - **User encounter (blog):** Search or nav → blog index → post → (optional quiz interaction) → CTA → existing practice flow.
 - **Plan rules — generations:** FREE — 1 practice-set generation / usage period. PRO — fair-use: soft at 100 per usage period, then daily max 10 per **calendar day** (UTC) until hard cap 300 per usage period, then block until the next usage-period reset.
-- **Plan rules — Check calls:** FREE — 1 Check / usage period. PRO — 500 Checks / usage period.
+- **Plan rules — Check calls:** FREE — 5 Checks / usage period (S-04: matches the 5 open-ended questions per generated set). PRO — 500 Checks / usage period.
 - **Practice-set composition:** One generation produces ~20 questions (~15 ABCD + ~5 open-ended architecture/behavioral). Regenerate counts as another generation.
 - **Honesty constraint:** When CV is absent, personalization is limited to the JD; feedback must not fabricate employment history, projects, or skills.
 - **Blog boundary:** Blog does not consume or display user JD/CV; does not run Check or plan-metered AI on blog pages in v1.
@@ -255,7 +255,7 @@ Supporting detail:
 - **Roles:** Flat user model only; no admin/member/guest separation in MVP.
 - **Plans:** Every signed-in user has a plan tier — **FREE** (default) or **PRO** (paid). Plan determines generation and Check quotas, not separate RBAC roles.
 - **Usage period (metering):** Generation and Check quotas use a **rolling usage period** per account, anchored at account creation (same day/time each cycle, **UTC** — e.g. user who joins 15 May resets 15 Jun). This is **not** a shared calendar month (1st–last). The dashboard shows remaining allowance for the current period and the next reset time. **PRO daily cap (FR-020)** uses **calendar day** (UTC), separate from the rolling period boundary.
-- **FREE limits:** 1 practice-set generation and 1 Check call per usage period; block at limit with upgrade path to PRO.
+- **FREE limits:** 1 practice-set generation and 5 Check calls per usage period; block at limit with upgrade path to PRO.
 - **PRO limits:** Generations under fair-use (1–100 per usage period normal; 101–300 per usage period with max 10 generations per calendar day; hard block at 300 per usage period). 500 Check calls per usage period. Generation and Check counters reset at each usage-period boundary.
 - **Blog read access:** All blog posts are **public** — anonymous visitors and search crawlers can read full content without signing in.
 - **Blog authoring (v1):** **Founder-authored static content** deployed with the site; no new author roles, no signed-in candidate publishing.
@@ -283,10 +283,11 @@ Supporting detail:
 2. **PRO price** — Monthly subscription amount and whether to offer annual billing later. Owner: product.
 3. **Subscription lifecycle** — Cancel/downgrade to FREE, failed payment, and grace-period rules before launch. Owner: product.
 4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations per usage period (warning vs silent daily-cap enforcement). Owner: product.
-5. **Score summary for open-ended** — How open-ended/Check results aggregate in end-of-set summary (informational only vs weighted score). Owner: product.
+5. **Score summary for open-ended** — How open-ended/Check results aggregate in end-of-set summary (informational only vs weighted score). Owner: product. **Resolved 2026-06-26 (S-04):** informational only — summary shows `attempted / 5` and `checked / 5` counts, no numeric grade or weighting.
 6. **MVP timeline vs scope** — Blog v1 (static quiz, open-ended articles, interactive quiz, SEO basics, CTA) plus core practice scope may exceed ~3 weeks after-hours; sustained-effort / slip risk was accepted on 2026-05-26. Owner: builder.
 7. **Default theme on first visit** — Light by default, dark by default, or match OS preference before the user makes an explicit choice. Owner: product. Resolve during implementation.
 8. **Interactive quiz format** — Single reusable quiz component vs per-post custom markup? Resolve during implementation planning.
 9. **Structured data** — Structured markup (Article, FAQ, Quiz) for rich search results — include in v1 or fast-follow?
 10. **Analytics** — Privacy-friendly traffic measurement for blog → sign-in funnel (tool choice deferred).
 11. **Post URL scheme** — Flat `/blog/[slug]` vs topic hierarchy — resolve during implementation.
+12. **FREE Check allowance** — **Changed 2026-06-26 (S-04):** FREE Check calls raised from 1 → 5 per usage period so a FREE user can Check all 5 open-ended questions in a set (full-set completion requires all 5 Checked). Earlier shape notes / Business Logic stated 1; this is the authoritative value. Owner: product.

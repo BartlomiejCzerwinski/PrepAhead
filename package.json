@@ -10,7 +10,9 @@
     "build": "astro build",
     "preview": "node scripts/preview.mjs",
     "preview:astro": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.5",
@@ -29,6 +31,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
-    "typescript": "^6.0.3"
+    "@vitest/coverage-v8": "^4.1.9",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1"
   }
 }

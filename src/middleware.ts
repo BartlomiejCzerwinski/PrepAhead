@@ -3,6 +3,8 @@ import { defineMiddleware } from 'astro:middleware';
 import { MissingEnvError } from './lib/server/env';
 import { safeAuthRedirectPath } from './lib/server/auth-redirect';
 import { createSupabaseServerClient } from './lib/supabase/server';
+import { isTheme, THEME_COOKIE } from './lib/theme/client';
+import { THEME_COOKIE_OPTIONS } from './lib/theme/server';
 
 function needsSessionRefresh(pathname: string): boolean {
   return (
@@ -55,6 +57,27 @@ export const onRequest = defineMiddleware(async (context, next) => {
       const redirect = context.redirect('/app');
       mergeHeaders(redirect.headers, authResponseHeaders);
       return redirect;
+    }
+
+    // Cross-device restore: when a signed-in user hits the app without a theme
+    // cookie (e.g. cleared, or a fresh device), seed it from their saved
+    // preference. Gated on the cookie being absent so steady-state requests
+    // add no extra query.
+    if (pathname.startsWith('/app') && user && !context.cookies.get(THEME_COOKIE)) {
+      // Best-effort: a failed theme read must never affect auth/redirect.
+      try {
+        const { data: settings } = await supabase
+          .from('user_settings')
+          .select('theme')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (isTheme(settings?.theme)) {
+          context.cookies.set(THEME_COOKIE, settings.theme, THEME_COOKIE_OPTIONS);
+        }
+      } catch {
+        // Ignore — cookie stays absent and the client falls back to `system`.
+      }
     }
   } catch (err) {
     if (err instanceof MissingEnvError && pathname.startsWith('/app')) {

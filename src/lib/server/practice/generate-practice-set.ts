@@ -47,13 +47,13 @@ function buildMessages(params: { jobDescription: string; resumeText?: string | n
     {
       role: 'system',
       content:
-        'You generate interview practice sets for software engineering candidates. Return JSON only. Produce exactly 20 questions: 15 abcd and 5 open_ended. For abcd questions, include exactly 4 options, a correctOptionId that matches one option id, and a concise explanation. For open-ended questions, include guidance that explains what a strong answer should cover. Never mention experience or projects unless they are present in the provided inputs.',
+        'You generate interview practice sets for software engineering candidates. Return JSON only. Produce exactly 20 questions: 15 abcd and 5 open_ended. For abcd questions, include exactly 4 options with ids A, B, C, and D, a correctOptionId that matches one option id, and a concise explanation. Vary correctOptionId across abcd questions — spread correct answers across A, B, C, and D; do not default every question to A. For open-ended questions, include guidance that explains what a strong answer should cover. Never mention experience or projects unless they are present in the provided inputs.',
     },
     {
       role: 'user',
       content: `${inputContext}
 
-Return JSON with this exact top-level shape:
+Return JSON with this exact top-level shape (abcd examples show varied correctOptionId — follow that pattern):
 {
   "questions": [
     {
@@ -66,7 +66,20 @@ Return JSON with this exact top-level shape:
         { "id": "C", "text": "..." },
         { "id": "D", "text": "..." }
       ],
-      "correctOptionId": "A",
+      "correctOptionId": "C",
+      "explanation": "..."
+    },
+    {
+      "id": "q-2",
+      "type": "abcd",
+      "prompt": "...",
+      "options": [
+        { "id": "A", "text": "..." },
+        { "id": "B", "text": "..." },
+        { "id": "C", "text": "..." },
+        { "id": "D", "text": "..." }
+      ],
+      "correctOptionId": "B",
       "explanation": "..."
     },
     {
