@@ -135,7 +135,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
           usageSummary.data.planTier === 'FREE'
             ? 'You have reached your FREE plan generation limit.'
             : 'You have reached your generation limit for this period.',
-        upgradeUrl: usageSummary.data.planTier === 'FREE' ? '/#plans' : null,
+        upgradeUrl: usageSummary.data.planTier === 'FREE' ? '/api/billing/checkout-redirect' : null,
       },
       { status: 403, headers: responseHeaders },
     );

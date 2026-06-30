@@ -64,7 +64,7 @@ const showGenerationUpgrade = summary?.planTier === 'FREE' && summary.isAtGenera
                 Upgrade to PRO for more practice-set generations and Check calls.
               </p>
               <a
-                href="/#plans"
+                href="/api/billing/checkout-redirect"
                 class="btn-primary mt-4 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
               >
                 Upgrade to PRO
@@ -124,7 +124,7 @@ const showGenerationUpgrade = summary?.planTier === 'FREE' && summary.isAtGenera
                 </a>
               ) : showGenerationUpgrade ? (
                 <a
-                  href="/#plans"
+                  href="/api/billing/checkout-redirect"
                   class="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
                 >
                   Upgrade to PRO
@@ -153,6 +153,19 @@ const showGenerationUpgrade = summary?.planTier === 'FREE' && summary.isAtGenera
         <p class="text-sm leading-6 text-[var(--text-muted)]">
           Usage period resets on {formatResetDate(summary.periodEnd)} (rolling monthly cycle, UTC anchor).
         </p>
+
+        {
+          summary.planTier === 'PRO' && (
+            <p class="text-sm leading-6">
+              <a
+                href="/api/billing/portal"
+                class="font-medium text-[var(--brand)] no-underline hover:underline"
+              >
+                Manage subscription
+              </a>
+            </p>
+          )
+        }
 
         {
           summary.proFairUseNote && (

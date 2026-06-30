@@ -485,15 +485,15 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Automated
 
-- [ ] 3.1 `npm run build` passes
-- [ ] 3.2 Checkout redirect 401 when unauthenticated
-- [ ] 3.3 Portal route 401 when unauthenticated
+- [x] 3.1 `npm run build` passes
+- [x] 3.2 Checkout redirect 401 when unauthenticated
+- [x] 3.3 Portal route 401 when unauthenticated
 
 #### Manual
 
-- [ ] 3.4 FREE upgrade → Payment Link with prefilled email
-- [ ] 3.5 Post-checkout dashboard shows PRO
-- [ ] 3.6 PRO Manage subscription opens Portal
+- [x] 3.4 FREE upgrade → Payment Link with prefilled email
+- [x] 3.5 Post-checkout dashboard shows PRO
+- [x] 3.6 PRO Manage subscription opens Portal
 
 ### Phase 4: PRO fair-use enforcement
 

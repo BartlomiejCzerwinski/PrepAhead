@@ -390,7 +390,7 @@ export default function OpenEndedFlow({
               You can still save drafts.{' '}
               {usage?.planTier === 'FREE' ? (
                 <a
-                  href="/#plans"
+                  href="/api/billing/checkout-redirect"
                   className="font-medium text-[var(--brand)] no-underline hover:underline"
                 >
                   Upgrade to PRO

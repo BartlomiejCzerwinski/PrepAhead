@@ -239,7 +239,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
             ? 'You have used all your FREE plan Check calls for this period.'
             : 'You have reached your Check limit for this period.',
         checkRemaining: 0,
-        upgradeUrl: usageSummary.data.planTier === 'FREE' ? '/#plans' : null,
+        upgradeUrl: usageSummary.data.planTier === 'FREE' ? '/api/billing/checkout-redirect' : null,
       },
       { status: 403, headers: responseHeaders },
     );
