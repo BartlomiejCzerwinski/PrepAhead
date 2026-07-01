@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || 'http://localhost:4321';
+import { loadE2EEnv } from './e2e/helpers/env';
+
+const env = loadE2EEnv();
+const e2ePort = Number(process.env.PLAYWRIGHT_PORT ?? 4333);
+const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || `http://localhost:${e2ePort}`;
 const authFile = 'e2e/.auth/user.json';
 
 export default defineConfig({
@@ -26,13 +30,29 @@ export default defineConfig({
         storageState: authFile,
       },
       dependencies: ['setup'],
-      testIgnore: /auth\.setup\.ts/,
+      testIgnore: [/auth\.setup\.ts/, /billing-.*\.spec\.ts/],
+    },
+    {
+      name: 'chromium-billing',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
+      dependencies: ['setup'],
+      testMatch: /billing-.*\.spec\.ts/,
+      fullyParallel: false,
+      workers: 1,
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: `npm run dev -- --port ${e2ePort}`,
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      PUBLIC_SITE_URL: baseURL,
+      STRIPE_PAYMENT_LINK_URL: env.stripePaymentLinkUrl,
+    },
   },
 });

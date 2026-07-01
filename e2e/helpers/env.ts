@@ -35,6 +35,10 @@ function loadEnvFile(filePath: string): void {
 loadEnvFile(resolve(process.cwd(), '.env.local'));
 loadEnvFile(resolve(process.cwd(), '.env'));
 
+/** Placeholder Payment Link for local E2E when STRIPE_PAYMENT_LINK_URL is unset. */
+export const E2E_DEFAULT_STRIPE_PAYMENT_LINK =
+  'https://buy.stripe.com/test_e2e_placeholder';
+
 export type E2EEnv = {
   supabaseUrl: string;
   supabaseAnonKey: string;
@@ -42,6 +46,7 @@ export type E2EEnv = {
   baseURL: string;
   testEmail: string;
   testPassword: string;
+  stripePaymentLinkUrl: string;
 };
 
 function requireEnv(name: string): string {
@@ -64,7 +69,13 @@ export function loadE2EEnv(): E2EEnv {
     baseURL: process.env.PLAYWRIGHT_BASE_URL?.trim() || 'http://localhost:4321',
     testEmail: process.env.E2E_TEST_EMAIL?.trim() || 'e2e-delete@example.com',
     testPassword: process.env.E2E_TEST_PASSWORD?.trim() || 'E2e-Delete-Test-9x!',
+    stripePaymentLinkUrl:
+      process.env.STRIPE_PAYMENT_LINK_URL?.trim() || E2E_DEFAULT_STRIPE_PAYMENT_LINK,
   };
+}
+
+export function requireStripePaymentLinkUrl(env: E2EEnv): string {
+  return env.stripePaymentLinkUrl ?? E2E_DEFAULT_STRIPE_PAYMENT_LINK;
 }
 
 export function requireServiceRoleKey(env: E2EEnv): string {
