@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createFakeSupabase,
   freeUserSummaryRow,
+  proUserSummaryRow,
   type FakeSupabaseSeed,
 } from '../../../support/fake-supabase';
 import { makeApiContext } from '../../../support/fake-context';
@@ -56,6 +57,27 @@ describe('POST /api/practice-sets/generate — gating', () => {
     expect(body.error).toBe('generation_limit_reached');
     expect(body.upgradeUrl).toBe('/api/billing/checkout-redirect');
     // No draft set / job is created when blocked.
+    expect(fake.calls.inserts).toHaveLength(0);
+  });
+
+  it('403 daily_generation_limit_reached when PRO is above soft threshold with daily exhausted', async () => {
+    const fake = mockClient({
+      user: { id: 'u1' },
+      rpc: {
+        get_current_usage_summary: {
+          data: proUserSummaryRow({
+            generation_count: 100,
+            daily_generation_count: 10,
+          }),
+        },
+      },
+    });
+
+    const res = await POST(makeApiContext({ body: { jobDescription: 'JD' } }));
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe('daily_generation_limit_reached');
+    expect(body.message).toContain('tomorrow (UTC)');
     expect(fake.calls.inserts).toHaveLength(0);
   });
 

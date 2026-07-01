@@ -499,9 +499,9 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Automated
 
-- [ ] 4.1 Daily-cap unit tests in get-usage-summary.test.ts
-- [ ] 4.2 Generate integration test for daily_generation_limit_reached
-- [ ] 4.3 `npm run test` passes
+- [x] 4.1 Daily-cap unit tests in get-usage-summary.test.ts
+- [x] 4.2 Generate integration test for daily_generation_limit_reached
+- [x] 4.3 `npm run test` passes
 
 #### Manual
 
@@ -512,9 +512,9 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Automated
 
-- [ ] 5.1 `npm run test` passes
-- [ ] 5.2 `npm run build` passes
-- [ ] 5.3 `npm run astro -- check` passes
+- [x] 5.1 `npm run test` passes
+- [x] 5.2 `npm run build` passes
+- [x] 5.3 `npm run astro -- check` passes
 
 #### Manual
 

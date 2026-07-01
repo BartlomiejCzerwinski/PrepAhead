@@ -127,6 +127,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
 
   if (usageSummary.data.isAtGenerationLimit) {
+    if (usageSummary.data.generationLimitReason === 'daily') {
+      return jsonResponse(
+        {
+          ok: false,
+          error: 'daily_generation_limit_reached',
+          message:
+            "You have reached today's generation limit. Try again tomorrow (UTC).",
+        },
+        { status: 403, headers: responseHeaders },
+      );
+    }
+
     return jsonResponse(
       {
         ok: false,
