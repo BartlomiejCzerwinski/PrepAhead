@@ -96,6 +96,27 @@ Configure in the **Supabase Dashboard** (not repo secrets). See [`.env.example`]
 
 **F-03 smoke:** Sign in on Preview → land on `/app`; sign out → `/app` redirects to `/login`.
 
+### Stripe billing (S-05)
+
+Configure in the **Stripe Dashboard** and **Vercel** (server-only secrets; names in [`.env.example`](../../.env.example)).
+
+| Item | Value / action |
+|------|----------------|
+| Payment Link | $9/mo PRO price on a Stripe Payment Link; copy URL → `STRIPE_PAYMENT_LINK_URL` |
+| Customer Portal | Stripe Dashboard → Settings → Billing → Customer portal (enable cancel / update card) |
+| Webhook endpoint (production) | `https://prepahead.dev/api/webhooks/stripe` |
+| Webhook events | `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.paid` |
+| Webhook signing secret | Dashboard endpoint → `STRIPE_WEBHOOK_SECRET` in Vercel Production (+ Preview if testing billing on preview) |
+| API keys | `STRIPE_SECRET_KEY` (test vs live per environment) |
+| Local dev forwarding | `stripe listen --forward-to localhost:4321/api/webhooks/stripe` (CLI prints a temporary `whsec_…` for `.env.local`) |
+| Supabase migration | Apply `supabase/migrations/*_stripe_billing_schema.sql` and `*_pro_daily_cap_on_finalize.sql` on hosted DB **before** relying on webhooks or PRO daily caps in production |
+
+**Preview pitfall:** Payment Link success/cancel URLs and webhook delivery must target the same origin users browse. For preview billing smoke, either use Stripe CLI forwarding to a local `npm run dev` session or configure a preview-specific webhook + `PUBLIC_SITE_URL` on that deployment.
+
+**S-05 smoke:** FREE user → `/api/billing/checkout-redirect` → test checkout → `/app` shows PRO; PRO user → `/api/billing/portal` opens Stripe Portal; duplicate webhook `event.id` does not double-upgrade.
+
+**Checkout binding rejected (ops):** Webhook logs `stripe webhook: checkout binding rejected` with `eventId` only (no email). Stripe returns 200 and does **not** retry. Typical cause: Google OAuth email ≠ email entered on Stripe Checkout. **Fix:** In Supabase Auth, align the user's email with Stripe, or refund and have them re-checkout with matching email via `/api/billing/checkout-redirect` (prefilled from auth). **Monitor:** Alert or periodic log search on `checkout binding rejected` in production Functions logs.
+
 ### Phase 3 — Production (after merge to `prod`)
 
 - [ ] Production deployment succeeded on `prod` HEAD
@@ -154,7 +175,7 @@ Gaps identified when this plan was written (2026-05-22). Use as a backlog; check
 | `.env.example` + Vercel env scopes (Supabase, payments, models) | **Partially resolved (foundation)** — `.env.example` added (names only). Still needs env values configured in Vercel when features land |
 | Deployment Protection on Vercel previews | Before real JD/CV on preview builds |
 | Vercel spend / invocation alerts | Before public launch |
-| Webhook idempotency design | Before Stripe webhooks |
+| Webhook idempotency design | **Resolved (S-05)** — `stripe_webhook_events` table + handler dedupe |
 | Supabase Auth + Postgres | MVP |
 | `src/pages/api/` server routes | **Resolved (foundation)** — on-demand API routes enabled (e.g. `/api/health`) |
 | shadcn/ui init | MVP UI |

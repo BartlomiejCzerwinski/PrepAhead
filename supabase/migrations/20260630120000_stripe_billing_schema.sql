@@ -117,6 +117,8 @@ grant execute on function public.set_plan_tier_from_billing(uuid, text, text, te
 -- get_current_usage_summary: add daily_generation_count + period_generation_count
 -- ---------------------------------------------------------------------------
 
+drop function if exists public.get_current_usage_summary();
+
 create or replace function public.get_current_usage_summary()
 returns table (
   plan_tier text,

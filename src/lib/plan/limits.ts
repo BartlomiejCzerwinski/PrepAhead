@@ -15,6 +15,9 @@ export type ProPlanLimits = {
 
 export type PlanLimits = FreePlanLimits | ProPlanLimits;
 
+export function getPlanLimits(tier: 'FREE'): FreePlanLimits;
+export function getPlanLimits(tier: 'PRO'): ProPlanLimits;
+export function getPlanLimits(tier: PlanTier): PlanLimits;
 export function getPlanLimits(tier: PlanTier): PlanLimits {
   if (tier === 'PRO') {
     return {

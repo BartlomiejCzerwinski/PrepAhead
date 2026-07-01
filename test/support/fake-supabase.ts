@@ -28,8 +28,10 @@ type TableSeed = {
 
 export type FakeSupabaseSeed = {
   /** Drives `auth.getUser()`; `null` simulates an unauthenticated request. */
-  user?: { id: string } | null;
+  user?: { id: string; email?: string } | null;
   authError?: unknown;
+  /** Drives `auth.admin.getUserById()` when present (service-role / webhook tests). */
+  adminUsers?: Record<string, { email: string } | null>;
   /** Terminal results per table, keyed by operation. */
   tables?: Record<string, TableSeed>;
   /** Terminal results per RPC name (e.g. `get_current_usage_summary`). */
@@ -188,6 +190,27 @@ export function createFakeSupabase(seed: FakeSupabaseSeed = {}): FakeSupabase {
           error: seed.authError ?? null,
         });
       },
+      admin: {
+        getUserById(id: string) {
+          if (!seed.adminUsers || !(id in seed.adminUsers)) {
+            return Promise.resolve({
+              data: { user: null },
+              error: { message: 'User not found' },
+            });
+          }
+          const row = seed.adminUsers[id];
+          if (!row) {
+            return Promise.resolve({
+              data: { user: null },
+              error: { message: 'User not found' },
+            });
+          }
+          return Promise.resolve({
+            data: { user: { id, email: row.email } },
+            error: null,
+          });
+        },
+      },
     },
     from(table: string) {
       return new FakeQueryBuilder(table, seed.tables?.[table] ?? {}, calls);
@@ -217,15 +240,20 @@ export function freeUserSummaryRow(
 }
 
 export function proUserSummaryRow(
-  overrides: { generation_count?: number; check_count?: number } = {},
+  overrides: {
+    generation_count?: number;
+    check_count?: number;
+    daily_generation_count?: number;
+  } = {},
 ): Record<string, unknown> {
+  const generationCount = overrides.generation_count ?? 0;
   return {
     plan_tier: 'PRO',
     period_start: '2026-06-01T00:00:00.000Z',
     period_end: '2026-07-01T00:00:00.000Z',
-    generation_count: overrides.generation_count ?? 0,
+    generation_count: generationCount,
     check_count: overrides.check_count ?? 0,
-    daily_generation_count: 0,
-    period_generation_count: overrides.generation_count ?? 0,
+    daily_generation_count: overrides.daily_generation_count ?? 0,
+    period_generation_count: generationCount,
   };
 }

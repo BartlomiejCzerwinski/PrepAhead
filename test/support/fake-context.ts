@@ -12,6 +12,7 @@ type MakeApiContextOptions = {
   cookies?: string;
   url?: string;
   method?: string;
+  headers?: Record<string, string>;
 };
 
 /** No-op cookie jar sufficient for `@supabase/ssr`'s `setAll`. */
@@ -27,7 +28,7 @@ function makeCookieJar() {
 }
 
 export function makeApiContext(options: MakeApiContextOptions = {}): APIContext {
-  const { params = {}, body, cookies, url = 'http://localhost:4321/api', method } =
+  const { params = {}, body, cookies, url = 'http://localhost:4321/api', method, headers: extraHeaders } =
     options;
 
   const hasBody = body !== undefined;
@@ -39,6 +40,11 @@ export function makeApiContext(options: MakeApiContextOptions = {}): APIContext 
   }
   if (cookies) {
     headers.set('Cookie', cookies);
+  }
+  if (extraHeaders) {
+    for (const [key, value] of Object.entries(extraHeaders)) {
+      headers.set(key, value);
+    }
   }
 
   const request = new Request(url, {

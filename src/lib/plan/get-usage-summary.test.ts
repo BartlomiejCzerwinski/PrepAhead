@@ -7,12 +7,6 @@ import {
 } from '../../../test/support/fake-supabase';
 import { getUsageSummary } from './get-usage-summary';
 
-// Deferred gap (test-plan §2 Risk #1, ref roadmap S-05): the PRO soft threshold
-// (100) and daily cap (10/day UTC) are NOT enforced in code — only the hard cap
-// (300 PRO / 1 FREE) and Check caps (5 / 500) are. These tests assert only what
-// is enforced; the PRO `generation_count: 100` case below confirms the soft
-// threshold does NOT block, which is current (intended-for-now) behavior.
-
 function summaryClient(row: Record<string, unknown> | null, error?: unknown) {
   return createFakeSupabase({
     rpc: { get_current_usage_summary: { data: row, error: error ?? null } },
@@ -29,6 +23,7 @@ describe('getUsageSummary — gate derivation', () => {
     if (!result.ok) return;
     expect(result.data.generationRemaining).toBe(0);
     expect(result.data.isAtGenerationLimit).toBe(true);
+    expect(result.data.generationLimitReason).toBe('period');
   });
 
   it('FREE at the Check limit → isAtCheckLimit', async () => {
@@ -49,27 +44,62 @@ describe('getUsageSummary — gate derivation', () => {
     expect(result.data.isAtGenerationLimit).toBe(false);
     expect(result.data.generationRemaining).toBe(1);
     expect(result.data.checkRemaining).toBe(5);
+    expect(result.data.generationLimitReason).toBe('none');
   });
 
-  it('PRO uses the hard cap (300), not the soft threshold (100)', async () => {
-    const atSoft = await getUsageSummary(
-      summaryClient(proUserSummaryRow({ generation_count: 100 })),
+  it('PRO below soft threshold uses 100-generation UX hint', async () => {
+    const result = await getUsageSummary(
+      summaryClient(proUserSummaryRow({ generation_count: 50 })),
       'u1',
     );
-    expect(atSoft.ok).toBe(true);
-    if (!atSoft.ok) return;
-    // Soft threshold is not enforced — 100 generations is NOT a block.
-    expect(atSoft.data.isAtGenerationLimit).toBe(false);
-    expect(atSoft.data.generationRemaining).toBe(200);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.isAtGenerationLimit).toBe(false);
+    expect(result.data.generationLimit).toBe(100);
+    expect(result.data.generationRemaining).toBe(50);
+    expect(result.data.generationLimitReason).toBe('none');
+  });
 
-    const atHard = await getUsageSummary(
+  it('PRO at soft threshold (100) with daily headroom is not blocked', async () => {
+    const result = await getUsageSummary(
+      summaryClient(
+        proUserSummaryRow({ generation_count: 100, daily_generation_count: 9 }),
+      ),
+      'u1',
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.isAtGenerationLimit).toBe(false);
+    expect(result.data.generationLimit).toBe(10);
+    expect(result.data.generationRemaining).toBe(1);
+    expect(result.data.generationLimitReason).toBe('none');
+  });
+
+  it('PRO at period 100 with daily 10 → daily cap blocks', async () => {
+    const result = await getUsageSummary(
+      summaryClient(
+        proUserSummaryRow({ generation_count: 100, daily_generation_count: 10 }),
+      ),
+      'u1',
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.isAtGenerationLimit).toBe(true);
+    expect(result.data.generationLimitReason).toBe('daily');
+    expect(result.data.generationLimit).toBe(10);
+    expect(result.data.generationRemaining).toBe(0);
+  });
+
+  it('PRO at hard cap (300) → period limit', async () => {
+    const result = await getUsageSummary(
       summaryClient(proUserSummaryRow({ generation_count: 300 })),
       'u1',
     );
-    expect(atHard.ok).toBe(true);
-    if (!atHard.ok) return;
-    expect(atHard.data.isAtGenerationLimit).toBe(true);
-    expect(atHard.data.generationRemaining).toBe(0);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.isAtGenerationLimit).toBe(true);
+    expect(result.data.generationLimitReason).toBe('period');
+    expect(result.data.generationRemaining).toBe(0);
   });
 
   it('remaining clamps at 0 when count exceeds the limit', async () => {

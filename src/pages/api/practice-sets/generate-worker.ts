@@ -225,24 +225,33 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (finalizeError) {
     const failureDetail = finalizeError.message?.trim() || 'unknown finalize error';
+    const isDailyLimit = failureDetail.includes('Daily generation limit reached');
 
     await supabase.rpc('mark_generation_job_failed', {
       p_job_id: claimedJob.id,
-      p_failure_code: 'finalization_failed',
-      p_failure_message: 'The generated set could not be saved.',
+      p_failure_code: isDailyLimit
+        ? 'daily_generation_limit_reached'
+        : 'finalization_failed',
+      p_failure_message: isDailyLimit
+        ? "You have reached today's generation limit. Try again tomorrow (UTC)."
+        : 'The generated set could not be saved.',
     });
 
     return jsonResponse(
       {
         ok: false,
-        error: 'finalization_failed',
-        message: import.meta.env.DEV
-          ? `The generated set could not be saved (${failureDetail}).`
-          : 'The generated set could not be saved.',
+        error: isDailyLimit
+          ? 'daily_generation_limit_reached'
+          : 'finalization_failed',
+        message: isDailyLimit
+          ? "You have reached today's generation limit. Try again tomorrow (UTC)."
+          : import.meta.env.DEV
+            ? `The generated set could not be saved (${failureDetail}).`
+            : 'The generated set could not be saved.',
         rpcCode: finalizeError.code ?? null,
-        detail: import.meta.env.DEV ? failureDetail : undefined,
+        detail: import.meta.env.DEV && !isDailyLimit ? failureDetail : undefined,
       },
-      { status: 500, headers: responseHeaders },
+      { status: isDailyLimit ? 403 : 500, headers: responseHeaders },
     );
   }
 
