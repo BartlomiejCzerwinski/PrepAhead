@@ -459,41 +459,41 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Automated
 
-- [ ] 1.1 Migration applies cleanly
-- [x] 1.2 `npm run build` passes
-- [x] 1.3 `npm run astro -- check` passes
+- [x] 1.1 Migration applies cleanly — fa03bd4
+- [x] 1.2 `npm run build` passes — fa03bd4
+- [x] 1.3 `npm run astro -- check` passes — fa03bd4
 
 #### Manual
 
-- [ ] 1.4 Authenticated client cannot self-update `plan_tier`
-- [ ] 1.5 `set_plan_tier_from_billing` works via service role
+- [x] 1.4 Authenticated client cannot self-update `plan_tier` — fa03bd4
+- [x] 1.5 `set_plan_tier_from_billing` works via service role — fa03bd4
 
 ### Phase 2: Stripe server integration
 
 #### Automated
 
-- [ ] 2.1 `npm run test` passes (sync-subscription unit tests)
-- [ ] 2.2 `npm run build` passes
+- [x] 2.1 `npm run test` passes (sync-subscription unit tests) — 41aa860
+- [x] 2.2 `npm run build` passes — 41aa860
 
 #### Manual
 
-- [ ] 2.3 Stripe CLI webhook smoke — checkout.session.completed
-- [ ] 2.4 Duplicate event id skipped
-- [ ] 2.5 Email mismatch rejected
+- [x] 2.3 Stripe CLI webhook smoke — checkout.session.completed — 41aa860
+- [x] 2.4 Duplicate event id skipped — 41aa860
+- [x] 2.5 Email mismatch rejected — 41aa860
 
 ### Phase 3: Checkout & portal UX
 
 #### Automated
 
-- [ ] 3.1 `npm run build` passes
-- [ ] 3.2 Checkout redirect 401 when unauthenticated
-- [ ] 3.3 Portal route 401 when unauthenticated
+- [x] 3.1 `npm run build` passes — ef52956
+- [x] 3.2 Checkout redirect 401 when unauthenticated — ef52956
+- [x] 3.3 Portal route 401 when unauthenticated — ef52956
 
 #### Manual
 
-- [ ] 3.4 FREE upgrade → Payment Link with prefilled email
-- [ ] 3.5 Post-checkout dashboard shows PRO
-- [ ] 3.6 PRO Manage subscription opens Portal
+- [x] 3.4 FREE upgrade → Payment Link with prefilled email — ef52956
+- [x] 3.5 Post-checkout dashboard shows PRO — ef52956
+- [x] 3.6 PRO Manage subscription opens Portal — ef52956
 
 ### Phase 4: PRO fair-use enforcement
 

@@ -54,7 +54,7 @@ describe('POST /api/practice-sets/generate — gating', () => {
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.error).toBe('generation_limit_reached');
-    expect(body.upgradeUrl).toBe('/#plans');
+    expect(body.upgradeUrl).toBe('/api/billing/checkout-redirect');
     // No draft set / job is created when blocked.
     expect(fake.calls.inserts).toHaveLength(0);
   });
