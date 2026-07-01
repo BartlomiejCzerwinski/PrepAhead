@@ -505,8 +505,8 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Manual
 
-- [ ] 4.4 PRO 11th generation same UTC day blocked
-- [ ] 4.5 Generation allowed next UTC day (period < 300)
+- [x] 4.4 PRO 11th generation same UTC day blocked — 44468ae
+- [x] 4.5 Generation allowed next UTC day (period < 300) — 44468ae
 
 ### Phase 5: Tests, copy fixes & verification
 
@@ -518,5 +518,5 @@ Webhook handler must respond within Stripe's timeout (~20s); keep DB work to sin
 
 #### Manual
 
-- [ ] 5.4 Stripe test-mode E2E checkout → cancel lifecycle
-- [ ] 5.5 Landing FREE Check copy shows 5
+- [x] 5.4 Stripe test-mode E2E checkout → cancel lifecycle — 44468ae
+- [x] 5.5 Landing FREE Check copy shows 5 — 44468ae

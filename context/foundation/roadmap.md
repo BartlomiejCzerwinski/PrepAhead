@@ -3,7 +3,7 @@ project: PrepAhead.dev
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-28
+updated: 2026-07-01
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -25,7 +25,7 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 
 **S-04: Open-ended Check flow** — **Shipped 2026-06-26** (`open-ended-check-flow`, `impl_reviewed`). Signed-in users save free-text answers, run critical AI Check on each of the 5 open-ended questions within plan limits, and a set completes only when all 15 ABCD are answered and all 5 open-ended are Checked. Builds on **S-03** (Shipped 2026-06-07, `abcd-practice-and-summary`).
 
-> **North star (delivered):** Full **US-01** is now real end-to-end — generate a set, answer ABCD with immediate feedback, and submit open-ended answers for Check feedback through completion. The core practice stream (Stream B) is complete, and account polish (**S-06** theme, **S-07** delete, **S-09** practice-set history) has shipped; the only remaining work is monetization (**S-05**, blocked on pricing decisions).
+> **North star (delivered):** Full **US-01** is real end-to-end — generate a set, answer ABCD with immediate feedback, and submit open-ended answers for Check feedback through completion. The core practice stream (Stream B) is complete, account polish (**S-06** theme, **S-07** delete, **S-09** practice-set history) has shipped, and monetization (**S-05** Stripe PRO) is live.
 
 ## At a glance
 
@@ -38,7 +38,7 @@ The product wedge — the trait that, if removed, makes PrepAhead a generic AI q
 | S-02 | jd-gated-generation | paste a JD (and optional PDF CV), request generation, and receive a ~20-question set within limits | S-01 | FR-002, FR-003, FR-004, FR-014, FR-015, US-01 | done |
 | S-03 | abcd-practice-and-summary | answer ABCD items with immediate feedback and see an end-of-set score summary | S-02 | FR-005, FR-006, FR-007, FR-009, US-01 | done |
 | S-04 | open-ended-check-flow | submit open-ended answers and receive Check feedback within Check limits | S-03 | FR-017, FR-018, FR-019, US-01, US-03 | done |
-| S-05 | stripe-pro-subscription | subscribe to PRO and operate under PRO fair-use generation and Check rules | S-01 | FR-013, FR-016, FR-020, FR-021, US-02 | blocked |
+| S-05 | stripe-pro-subscription | subscribe to PRO and operate under PRO fair-use generation and Check rules | S-01 | FR-013, FR-016, FR-020, FR-021, US-02 | done |
 | S-06 | theme-preference-all-surfaces | switch light/dark on landing, blog, and practice; preference persists on the account | S-01 | FR-022, FR-023, US-04 | done |
 | S-07 | delete-practice-data | delete a saved practice set or associated personal data | S-02 | FR-010 | done |
 | S-08 | public-blog-and-seo | browse the blog index, read all launch post formats, use CTAs to practice, and be indexed via SEO basics | — | FR-024–FR-032, US-05 | done |
@@ -52,7 +52,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 |---|---|---|---|
 | A | Platform & identity | `F-01` / `F-02` (parallel) → `F-03` → `S-01` | Foundations and **S-01** done. |
 | B | Core practice (north star path) | `S-01` → `S-02` → `S-03` → `S-04` | **Complete** — **S-02**, **S-03**, and **S-04** shipped; **US-01** delivered end-to-end. |
-| C | Monetization | `S-01` → `S-05` | Joins Stream A at **S-01**; blocked on PRO pricing and subscription decisions. |
+| C | Monetization | `S-01` → `S-05` | **Complete** — **S-05** shipped 2026-07-01. |
 | D | Blog & SEO | `S-08` | **S-08** shipped 2026-06-04; parallel track complete. |
 | E | Account polish | `S-01` → `S-06`, `S-07`, `S-09` | **Complete** — **S-06**, **S-07**, and **S-09** all shipped (parallel with Stream B). |
 
@@ -62,7 +62,7 @@ What's already in place in the codebase as of `2026-06-07` (foundations **F-01**
 Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Frontend:** partial — Astro 6 + Tailwind v4 landing (`src/components/landing/`, `src/pages/index.astro`); public blog shipped (`/blog`, launch posts, `src/components/blog/`); signed-in shell at `/app` with usage dashboard; **React islands** for generation (`GeneratePracticeFlow.tsx` at `/app/generate`) and ABCD practice (`PracticeFlow.tsx` at `/app/sets/[id]/practice`); set overview at `/app/sets/[id]` with Start/Continue/View score CTAs; blog quiz interactivity via vanilla `quiz-practice-client.ts`; shadcn not installed (planned per `tech-stack.md`)
-- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth, resume PDF parse, practice-set generate/worker/status/**answer**); OpenAI generation server-side (`generate-practice-set.ts`); plan/usage read (`src/lib/plan/`); auth redirect hardening; **Stripe/billing routes not yet built**
+- **Backend / API:** partial — `@astrojs/vercel`, `src/pages/api/` (health, auth, resume PDF parse, practice-set generate/worker/status/**answer**, **billing checkout/portal**, **Stripe webhooks**); OpenAI generation server-side (`generate-practice-set.ts`); plan/usage read (`src/lib/plan/`); auth redirect hardening; Stripe Payment Link + Customer Portal + webhook-driven `plan_tier`
 - **Data:** partial — `supabase/migrations/` (profiles, usage_periods, practice_sets with answer state in JSONB `content`, **generation_jobs**, finalize RPCs, RLS, usage increment/read RPCs); GitHub → `prod` deploy; Supabase SSR clients in app code
 - **Auth:** partial — Google OAuth via Supabase (`@supabase/ssr`), middleware gates `/app/*`, `/login`; usage dashboard and generation routes enforce per-user auth at API boundaries
 - **Deploy / infra:** partial — Vercel adapter + `context/deployment/deploy-plan.md`; `OPENAI_API_KEY` required for generation; no `.github/workflows/` in repo
@@ -171,11 +171,10 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-03, S-04
 - **Blockers:** —
 - **Unknowns:**
-  - PRO monthly price and annual billing later? — Owner: product. Block: yes.
-  - Cancel/downgrade, failed payment, and grace-period rules? — Owner: product. Block: yes.
-  - Exact UX when crossing 100 generations/month (warning vs silent daily cap)? — Owner: product. Block: no.
-- **Risk:** Must-have for MVP per PRD but decision-heavy — sequenced after FREE path works to protect the 3-week timeline.
-- **Status:** blocked
+  - Annual billing later? — Owner: product. Block: no (deferred post-MVP).
+- **Risk:** Billing integrity depends on webhook idempotency and RLS hardening on `profiles.plan_tier` — verified in manual + automated tests.
+- **Status:** done
+- **Shipped:** 2026-07-01 (`implemented`). $9/mo PRO via Stripe Payment Link (`/api/billing/checkout-redirect`); Customer Portal (`/api/billing/portal`); signed webhook handler with checkout email binding, grace period, and tier sync; PRO fair-use (soft 100 / daily 10 UTC / hard 300) in SQL + API pre-flight; RLS blocks self-promote. See `context/changes/stripe-pro-subscription/reviews/impl-review.md`.
 
 ### S-06: Theme preference on all surfaces
 
@@ -241,7 +240,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-02 | jd-gated-generation | JD paste + PDF CV + gated AI generation (exact 20 questions) | — | Shipped 2026-06-07 (`impl_reviewed`); see `verification.md` |
 | S-03 | abcd-practice-and-summary | ABCD practice loop + score summary | — | Shipped 2026-06-07 (`impl_reviewed`); see `verification.md` |
 | S-04 | open-ended-check-flow | Open-ended answers + Check feedback | — | Shipped 2026-06-26 (`impl_reviewed`); completes US-01 / Stream B |
-| S-05 | stripe-pro-subscription | Stripe PRO checkout + fair-use limits | no | Blocked: PRO price + subscription lifecycle (OQ 2–3) |
+| S-05 | stripe-pro-subscription | Stripe PRO checkout + fair-use limits | — | Shipped 2026-07-01 (`implemented`); see `reviews/impl-review.md` |
 | S-06 | theme-preference-all-surfaces | Light/dark theme across all surfaces | — | Shipped 2026-06-27 (`impl_reviewed`) |
 | S-07 | delete-practice-data | Delete practice set / personal data | — | Shipped 2026-06-28 (`impl_reviewed`); see `reviews/impl-review.md` |
 | S-08 | public-blog-and-seo | Blog index, 3 post formats, SEO, CTA | — | Shipped 2026-06-04 (`impl_reviewed`); preview smoke items remain in verification.md |
@@ -250,9 +249,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Open Roadmap Questions
 
 1. ~~**CV upload format**~~ — Resolved 2026-06-07: **PDF upload only** for S-02 (server parse → hidden `resumeText`); no DOCX, no OCR, no editable parsed text in UI. Owner: product. Block: none.
-2. **PRO price** — Monthly subscription amount and whether to offer annual billing later. Owner: product. Block: S-05.
-3. **Subscription lifecycle** — Cancel/downgrade to FREE, failed payment, and grace-period rules before launch. Owner: product. Block: S-05.
-4. **PRO soft-limit UX** — Exact copy and behavior when crossing 100 generations/month. Owner: product. Block: roadmap-wide (no).
+2. ~~**PRO price**~~ — Resolved 2026-07-01 (S-05): **$9/month** via Stripe Payment Link; annual billing deferred. Owner: product. Block: none.
+3. ~~**Subscription lifecycle**~~ — Resolved 2026-07-01 (S-05): cancel at period end keeps PRO until `subscription.deleted`; 3-day grace on `invoice.payment_failed`; downgrade on grace expiry or deletion. Owner: product. Block: none.
+4. ~~**PRO soft-limit UX**~~ — Resolved 2026-07-01 (S-05): silent daily cap (10/day UTC) after 100/period; distinct error for daily vs period hard cap. Owner: product. Block: none.
 5. ~~**Score summary for open-ended**~~ — Resolved: S-03 shipped ABCD-only score with a `0/5 attempted` stub; **S-04** (2026-06-26) replaced the stub with real `X/5 attempted, Y/5 checked` counts (informational only, no pass/fail grade). Owner: product. Block: none.
 6. **MVP timeline vs scope** — Blog v1 plus core practice may exceed ~3 weeks after-hours; slip risk accepted 2026-05-26. Owner: builder. Block: roadmap-wide (no).
 7. ~~**Default theme on first visit**~~ — Resolved 2026-06-27 (S-06): ships a **System** option that matches OS before an explicit choice is made. Owner: product. Block: none.
@@ -282,3 +281,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-06** `theme-preference-all-surfaces` — Light/Dark/System toggle across landing, blog, and signed-in surfaces with no-flash apply; preference persisted to the account and restored across sessions and devices (FR-022, FR-023, US-04). (2026-06-27; `impl_reviewed`). Commits: `7cfa638`, `6bb89c0`, `d0b0b49`, `c4e0e72`, `03d3edf`.
 - **S-07** `delete-practice-data` — Ownership-scoped soft-delete (`POST /api/practice-sets/[id]/delete` stamps `deleted_at`, no migration), confirm-then-delete React island on `/app/sets/[id]`, and IDOR/auth integration tests; satisfies the FR-010 trust signal for sensitive JD/CV (2026-06-28; `impl_reviewed`).
 - **S-09** `practice-set-history` — SSR `/app/sets` history page listing a user's non-deleted sets newest-first (capped 50) with status badge + progress/score line, linking to `/app/sets/[id]`; empty-state CTA to `/app/generate`; dashboard entry link; user-scoped, soft-delete-aware reader with a tolerant per-row mapper (`src/lib/practice/history.ts`) plus unit + IDOR/scoping tests. No schema change; satisfies FR-008 and closes the US-01 account experience (2026-06-28; `implemented`, impl-review APPROVED). Commits: `b17c586`, `5a21a90`, `94377de`.
+- **S-05** `stripe-pro-subscription` — Stripe PRO at $9/mo (Payment Link + Customer Portal), webhook-driven `plan_tier` with email binding and grace rules, PRO fair-use enforcement (100 soft / 10 daily UTC / 300 hard), upgrade CTAs wired to checkout redirect (2026-07-01; `implemented`). See `context/changes/stripe-pro-subscription/reviews/impl-review.md`.
