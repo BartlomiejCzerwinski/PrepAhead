@@ -52,10 +52,18 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     return jsonResponse({ received: true });
-  } catch {
+  } catch (err) {
     console.error('stripe webhook processing failed', {
       eventId: event.id,
       type: event.type,
+      ...(err && typeof err === 'object'
+        ? {
+            code: (err as { code?: string }).code,
+            message: (err as { message?: string }).message,
+            details: (err as { details?: string }).details,
+            hint: (err as { hint?: string }).hint,
+          }
+        : { error: err }),
     });
     return jsonResponse({ error: 'Processing failed' }, { status: 500 });
   }

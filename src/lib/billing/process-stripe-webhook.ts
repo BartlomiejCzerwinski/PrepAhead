@@ -54,6 +54,36 @@ function graceEndsAtIso(daysFromNow: number, from: Date = new Date()): string {
   return end.toISOString();
 }
 
+function logBillingWebhookError(
+  eventId: string,
+  eventType: string,
+  error: unknown,
+): void {
+  if (error && typeof error === 'object') {
+    const record = error as {
+      code?: string;
+      message?: string;
+      details?: string;
+      hint?: string;
+    };
+    console.error('stripe webhook processing failed', {
+      eventId,
+      type: eventType,
+      code: record.code,
+      message: record.message,
+      details: record.details,
+      hint: record.hint,
+    });
+    return;
+  }
+
+  console.error('stripe webhook processing failed', {
+    eventId,
+    type: eventType,
+    error,
+  });
+}
+
 async function callSetPlanTier(
   admin: SupabaseClient,
   params: {
@@ -73,6 +103,7 @@ async function callSetPlanTier(
   });
 
   if (error) {
+    logBillingWebhookError(params.userId, 'set_plan_tier_from_billing', error);
     throw error;
   }
 }
@@ -178,11 +209,24 @@ async function handleCheckoutCompleted(
     return;
   }
 
+  const stripe = getStripeClient();
+  let stripeCustomerId = stripeId(session.customer);
+  let stripeSubscriptionId = stripeId(session.subscription);
+
+  if ((!stripeCustomerId || !stripeSubscriptionId) && session.id) {
+    const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['customer', 'subscription'],
+    });
+    stripeCustomerId = stripeCustomerId ?? stripeId(fullSession.customer);
+    stripeSubscriptionId =
+      stripeSubscriptionId ?? stripeId(fullSession.subscription);
+  }
+
   await callSetPlanTier(admin, {
     userId,
     planTier: 'PRO',
-    stripeCustomerId: stripeId(session.customer),
-    stripeSubscriptionId: stripeId(session.subscription),
+    stripeCustomerId,
+    stripeSubscriptionId,
     graceEndsAt: null,
   });
 }
@@ -265,18 +309,11 @@ async function handleInvoicePaid(
   const subscriptionId =
     invoiceSubscriptionId(invoice) ?? profile.stripe_subscription_id;
 
-  if (subscriptionId) {
-    const subscription =
-      await getStripeClient().subscriptions.retrieve(subscriptionId);
-    await syncSubscriptionTier(admin, subscription, profile, null);
-    return;
-  }
-
   await callSetPlanTier(admin, {
     userId: profile.id,
-    planTier: profile.stripe_subscription_id ? 'PRO' : 'FREE',
+    planTier: 'PRO',
     stripeCustomerId: profile.stripe_customer_id ?? customerId,
-    stripeSubscriptionId: profile.stripe_subscription_id,
+    stripeSubscriptionId: subscriptionId,
     graceEndsAt: null,
   });
 }
