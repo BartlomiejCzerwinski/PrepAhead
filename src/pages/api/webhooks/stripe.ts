@@ -2,10 +2,10 @@ import type { APIRoute } from 'astro';
 import type Stripe from 'stripe';
 
 import {
+  claimStripeEvent,
   isHandledStripeEventType,
-  isStripeEventProcessed,
-  markStripeEventProcessed,
   processStripeWebhookEvent,
+  releaseStripeEventClaim,
 } from '../../../lib/billing/process-stripe-webhook';
 import { getStripeClient } from '../../../lib/billing/stripe';
 import { requireEnv } from '../../../lib/server/env';
@@ -40,15 +40,25 @@ export const POST: APIRoute = async ({ request }) => {
   const admin = createSupabaseAdminClient();
 
   try {
-    if (await isStripeEventProcessed(admin, event.id)) {
+    const claim = await claimStripeEvent(admin, event);
+    if (claim === 'duplicate') {
       return jsonResponse({ received: true });
     }
 
-    await processStripeWebhookEvent(admin, event);
-
-    const insertResult = await markStripeEventProcessed(admin, event);
-    if (insertResult === 'duplicate') {
-      return jsonResponse({ received: true });
+    try {
+      await processStripeWebhookEvent(admin, event);
+    } catch (processErr) {
+      try {
+        await releaseStripeEventClaim(admin, event.id);
+      } catch (releaseErr) {
+        console.error('stripe webhook: failed to release event claim', {
+          eventId: event.id,
+          ...(releaseErr && typeof releaseErr === 'object'
+            ? { message: (releaseErr as { message?: string }).message }
+            : { error: releaseErr }),
+        });
+      }
+      throw processErr;
     }
 
     return jsonResponse({ received: true });

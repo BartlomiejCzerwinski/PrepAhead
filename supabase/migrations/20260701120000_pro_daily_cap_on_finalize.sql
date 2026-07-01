@@ -27,10 +27,10 @@ declare
   v_period_start timestamptz;
   v_period_end timestamptz;
   v_period_generation integer;
-  v_daily_generation integer;
   v_utc_today date := (now() at time zone 'utc')::date;
   v_rows_updated integer;
   v_incremented_count integer;
+  v_daily_incremented integer;
 begin
   if v_user_id is null then
     raise exception 'Not authenticated' using errcode = '28000';
@@ -113,15 +113,20 @@ begin
     v_period_generation := coalesce(v_period_generation, 0);
 
     if v_plan_tier = 'PRO' and v_period_generation >= 100 then
-      select coalesce(ud.generation_count, 0)
-      into v_daily_generation
-      from public.usage_daily as ud
-      where ud.user_id = v_user_id
-        and ud.usage_date = v_utc_today;
+      insert into public.usage_daily as ud (
+        user_id,
+        usage_date,
+        generation_count
+      )
+      values (v_user_id, v_utc_today, 1)
+      on conflict (user_id, usage_date)
+      do update set
+        generation_count = ud.generation_count + 1
+      where ud.generation_count < 10
+      returning ud.generation_count
+      into v_daily_incremented;
 
-      v_daily_generation := coalesce(v_daily_generation, 0);
-
-      if v_daily_generation >= 10 then
+      if v_daily_incremented is null then
         raise exception 'Daily generation limit reached' using errcode = 'P0001';
       end if;
     end if;
@@ -145,18 +150,6 @@ begin
 
     if v_incremented_count is null then
       raise exception 'Generation limit reached for current period' using errcode = 'P0001';
-    end if;
-
-    if v_plan_tier = 'PRO' and v_period_generation >= 100 then
-      insert into public.usage_daily as ud (
-        user_id,
-        usage_date,
-        generation_count
-      )
-      values (v_user_id, v_utc_today, 1)
-      on conflict (user_id, usage_date)
-      do update set
-        generation_count = ud.generation_count + 1;
     end if;
 
     v_usage_incremented := true;

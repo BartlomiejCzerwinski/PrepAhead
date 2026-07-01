@@ -115,6 +115,8 @@ Configure in the **Stripe Dashboard** and **Vercel** (server-only secrets; names
 
 **S-05 smoke:** FREE user → `/api/billing/checkout-redirect` → test checkout → `/app` shows PRO; PRO user → `/api/billing/portal` opens Stripe Portal; duplicate webhook `event.id` does not double-upgrade.
 
+**Checkout binding rejected (ops):** Webhook logs `stripe webhook: checkout binding rejected` with `eventId` only (no email). Stripe returns 200 and does **not** retry. Typical cause: Google OAuth email ≠ email entered on Stripe Checkout. **Fix:** In Supabase Auth, align the user's email with Stripe, or refund and have them re-checkout with matching email via `/api/billing/checkout-redirect` (prefilled from auth). **Monitor:** Alert or periodic log search on `checkout binding rejected` in production Functions logs.
+
 ### Phase 3 — Production (after merge to `prod`)
 
 - [ ] Production deployment succeeded on `prod` HEAD

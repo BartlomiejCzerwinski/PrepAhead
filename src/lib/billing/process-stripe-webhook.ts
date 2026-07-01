@@ -222,11 +222,25 @@ async function handleCheckoutCompleted(
       stripeSubscriptionId ?? stripeId(fullSession.subscription);
   }
 
+  if (!stripeSubscriptionId) {
+    console.warn('stripe webhook: missing subscription on checkout', { eventId });
+    return;
+  }
+
+  const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+  const planTier = resolvePlanTierFromSubscription(
+    {
+      status: subscription.status,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+    },
+    null,
+  );
+
   await callSetPlanTier(admin, {
     userId,
-    planTier: 'PRO',
+    planTier,
     stripeCustomerId,
-    stripeSubscriptionId,
+    stripeSubscriptionId: planTier === 'PRO' ? stripeSubscriptionId : null,
     graceEndsAt: null,
   });
 }
@@ -309,36 +323,34 @@ async function handleInvoicePaid(
   const subscriptionId =
     invoiceSubscriptionId(invoice) ?? profile.stripe_subscription_id;
 
+  if (!subscriptionId) {
+    return;
+  }
+
+  const stripe = getStripeClient();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const planTier = resolvePlanTierFromSubscription(
+    {
+      status: subscription.status,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+    },
+    parseGraceEndsAt(profile.subscription_grace_ends_at),
+  );
+
   await callSetPlanTier(admin, {
     userId: profile.id,
-    planTier: 'PRO',
+    planTier,
     stripeCustomerId: profile.stripe_customer_id ?? customerId,
-    stripeSubscriptionId: subscriptionId,
+    stripeSubscriptionId: planTier === 'PRO' ? subscriptionId : null,
     graceEndsAt: null,
   });
 }
 
-export async function isStripeEventProcessed(
-  admin: SupabaseClient,
-  eventId: string,
-): Promise<boolean> {
-  const { data, error } = await admin
-    .from('stripe_webhook_events')
-    .select('event_id')
-    .eq('event_id', eventId)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return Boolean(data);
-}
-
-export async function markStripeEventProcessed(
+/** Insert-first claim so concurrent deliveries cannot double-process the same event. */
+export async function claimStripeEvent(
   admin: SupabaseClient,
   event: Stripe.Event,
-): Promise<'inserted' | 'duplicate'> {
+): Promise<'claimed' | 'duplicate'> {
   const { error } = await admin.from('stripe_webhook_events').insert({
     event_id: event.id,
     event_type: event.type,
@@ -351,7 +363,22 @@ export async function markStripeEventProcessed(
     throw error;
   }
 
-  return 'inserted';
+  return 'claimed';
+}
+
+/** Release claim after a processing failure so Stripe retries can re-run handlers. */
+export async function releaseStripeEventClaim(
+  admin: SupabaseClient,
+  eventId: string,
+): Promise<void> {
+  const { error } = await admin
+    .from('stripe_webhook_events')
+    .delete()
+    .eq('event_id', eventId);
+
+  if (error) {
+    throw error;
+  }
 }
 
 export async function processStripeWebhookEvent(

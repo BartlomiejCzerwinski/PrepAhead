@@ -52,7 +52,7 @@ function mockAdmin(seed: Parameters<typeof createFakeSupabase>[0] = {}) {
   return fake;
 }
 
-function mockStripe() {
+function mockStripe(subscriptionStatus = 'active') {
   vi.mocked(getStripeClient).mockReturnValue({
     webhooks: {
       constructEvent: vi.fn(() => mockEvent),
@@ -61,6 +61,13 @@ function mockStripe() {
       sessions: {
         retrieve: vi.fn(),
       },
+    },
+    subscriptions: {
+      retrieve: vi.fn().mockResolvedValue({
+        id: 'sub_test',
+        status: subscriptionStatus,
+        cancel_at_period_end: false,
+      }),
     },
   } as never);
 }
@@ -223,8 +230,7 @@ describe('POST /api/webhooks/stripe', () => {
       },
       tables: {
         stripe_webhook_events: {
-          select: { data: { event_id: 'evt_checkout_1' } },
-          insert: { data: null, error: null },
+          insert: { data: null, error: { code: '23505' } },
         },
         profiles: {
           select: { data: PROFILE_ROW },
