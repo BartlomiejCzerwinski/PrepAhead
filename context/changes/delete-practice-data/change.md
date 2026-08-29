@@ -1,9 +1,9 @@
 ---
 change_id: delete-practice-data
 title: Delete a saved practice set (soft-delete)
-status: impl_reviewed
+status: implementing
 created: 2026-06-28
-updated: 2026-06-28
+updated: 2026-07-01
 archived_at: null
 roadmap: S-07
 prd_refs:

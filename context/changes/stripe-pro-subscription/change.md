@@ -1,7 +1,7 @@
 ---
 id: stripe-pro-subscription
 title: Stripe PRO subscription
-status: impl_reviewed
+status: implemented
 created: 2026-06-30
 updated: 2026-07-01
 roadmap: S-05

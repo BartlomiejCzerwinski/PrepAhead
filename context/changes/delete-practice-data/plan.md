@@ -187,6 +187,8 @@ None — soft-delete reuses the existing `deleted_at` column, RLS policy, and gr
 
 - [x] 2.1 Astro check passes
 - [x] 2.2 Build succeeds
+- [ ] 2.5 E2E: confirm delete redirects and hides set from direct nav
+- [ ] 2.6 E2E: cancel dismisses without deleting
 
 #### Manual
 
