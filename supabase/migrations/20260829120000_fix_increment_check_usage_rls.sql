@@ -14,6 +14,7 @@ security definer
 set search_path = public
 set row_security = off
 as $$
+#variable_conflict use_column
 declare
   v_user_id uuid := auth.uid();
   v_anchor timestamptz;

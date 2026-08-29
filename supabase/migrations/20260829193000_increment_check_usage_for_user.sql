@@ -13,6 +13,7 @@ security definer
 set search_path = public
 set row_security = off
 as $$
+#variable_conflict use_column
 declare
   v_anchor timestamptz;
   v_period_start timestamptz;
