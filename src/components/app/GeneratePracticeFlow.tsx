@@ -7,6 +7,12 @@ import {
 } from 'react';
 
 import type { UsageSummary } from '../../lib/plan';
+import {
+  decrementGenerationUsage,
+  shouldShowProgressPanel,
+  shouldWarnBeforeUnload,
+  type GenerationPhase,
+} from './generation-flow-state';
 
 type RecoveryState = {
   status: 'idle' | 'running' | 'failed' | 'ready';
@@ -74,7 +80,8 @@ export default function GeneratePracticeFlow({
   const [jobDescription, setJobDescription] = useState('');
   const [resumeText, setResumeText] = useState('');
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' });
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationPhase, setGenerationPhase] = useState<GenerationPhase>('idle');
+  const [localUsageSummary, setLocalUsageSummary] = useState<UsageSummary | null>(usageSummary);
   const [stageIndex, setStageIndex] = useState(0);
   const stageTimerRef = useRef<number | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -83,24 +90,31 @@ export default function GeneratePracticeFlow({
   const idempotencyKeyRef = useRef<string | null>(null);
   const recoveryStartedRef = useRef(false);
 
-  const isAtGenerationLimit = usageSummary?.isAtGenerationLimit ?? false;
-  const showUpgradePath = usageSummary?.planTier === 'FREE' && isAtGenerationLimit;
-  const hasRecoverableJob = isGenerating || Boolean(activeJobId);
+  useEffect(() => {
+    setLocalUsageSummary(usageSummary);
+  }, [usageSummary]);
+
+  const isGenerating = generationPhase === 'running';
+  const showProgressPanel = shouldShowProgressPanel(generationPhase);
+  const isAtGenerationLimit = localUsageSummary?.isAtGenerationLimit ?? false;
+  const showUpgradePath = localUsageSummary?.planTier === 'FREE' && isAtGenerationLimit;
+  const hasRecoverableJob = generationPhase === 'running' && Boolean(activeJobId);
   const submitDisabled =
     usageError ||
-    !usageSummary ||
+    !localUsageSummary ||
     isAtGenerationLimit ||
     isGenerating ||
+    generationPhase === 'succeeded' ||
     uploadState.status === 'parsing' ||
     jobDescription.trim().length === 0;
 
   const helperCopy = useMemo(() => {
-    if (usageSummary) {
-      return `${usageSummary.generationRemaining} of ${usageSummary.generationLimit} generations remaining this period.`;
+    if (localUsageSummary) {
+      return `${localUsageSummary.generationRemaining} of ${localUsageSummary.generationLimit} generations remaining this period.`;
     }
 
     return 'Load your usage summary to see remaining generations before you submit.';
-  }, [usageSummary]);
+  }, [localUsageSummary]);
 
   useEffect(() => {
     if (!isGenerating) {
@@ -128,17 +142,18 @@ export default function GeneratePracticeFlow({
   }, [isGenerating, stageIndex]);
 
   useEffect(() => {
-    if (!hasRecoverableJob) {
+    if (!shouldWarnBeforeUnload(generationPhase)) {
       return undefined;
     }
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
+      event.returnValue = '';
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasRecoverableJob]);
+  }, [generationPhase]);
 
   async function nudgeGenerationWorker(jobId: string): Promise<void> {
     try {
@@ -196,15 +211,21 @@ export default function GeneratePracticeFlow({
   async function startTrackedGeneration(jobId: string, practiceSetId: string): Promise<void> {
     setGenerationError(null);
     setStageIndex(0);
-    setIsGenerating(true);
+    setGenerationPhase('running');
     setActiveJobId(jobId);
     setActivePracticeSetId(practiceSetId);
 
     try {
       await pollGenerationUntilTerminal(jobId, practiceSetId);
       idempotencyKeyRef.current = null;
+      setActiveJobId(null);
+      setLocalUsageSummary((previous) =>
+        previous ? decrementGenerationUsage(previous) : previous,
+      );
+      setGenerationPhase('succeeded');
       redirectToOverview(practiceSetId);
     } catch (error) {
+      setGenerationPhase('idle');
       if (error instanceof GenerationStillRunningError) {
         setGenerationError(error.message);
       } else {
@@ -214,8 +235,6 @@ export default function GeneratePracticeFlow({
         setActiveJobId(null);
         setActivePracticeSetId(null);
       }
-    } finally {
-      setIsGenerating(false);
     }
   }
 
@@ -347,7 +366,7 @@ export default function GeneratePracticeFlow({
         </div>
       )}
 
-      {latestReadySetId && (
+      {latestReadySetId && generationPhase === 'idle' && (
         <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm leading-6 text-green-800 dark:text-green-300">
           <p>
             Your latest practice set is ready.{' '}
@@ -382,57 +401,76 @@ export default function GeneratePracticeFlow({
         </div>
       )}
 
-      {isGenerating ? (
+      {showProgressPanel ? (
         <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--brand)]">
-            <span>In progress</span>
+            <span>{generationPhase === 'succeeded' ? 'Complete' : 'In progress'}</span>
           </div>
-          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">Generating your practice set</h2>
+          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">
+            {generationPhase === 'succeeded'
+              ? 'Practice set ready'
+              : 'Generating your practice set'}
+          </h2>
           <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-            PrepAhead is parsing any uploaded CV context, generating questions, and validating the
-            exact 20-question contract before saving the result.
+            {generationPhase === 'succeeded'
+              ? 'Your practice set was saved. Opening the overview now.'
+              : 'PrepAhead is parsing any uploaded CV context, generating questions, and validating the exact 20-question contract before saving the result.'}
           </p>
-          {activePracticeSetId && (
+          {activePracticeSetId && generationPhase === 'running' && (
             <p className="mt-2 text-sm text-[var(--text-muted)]">
               Recoverable job linked to practice set{' '}
               <span className="font-semibold text-[var(--text)]">{activePracticeSetId}</span>.
             </p>
           )}
+          {generationPhase === 'succeeded' && activePracticeSetId && (
+            <p className="mt-4 text-sm leading-6 text-[var(--text-muted)]">
+              If you are not redirected automatically,{' '}
+              <a
+                href={`/app/sets/${activePracticeSetId}`}
+                className="font-semibold text-[var(--brand)] underline underline-offset-2"
+              >
+                view the overview
+              </a>
+              .
+            </p>
+          )}
 
-          <ol className="mt-6 space-y-3">
-            {GENERATION_STAGES.map((stage, index) => {
-              const isDone = index < stageIndex;
-              const isCurrent = index === stageIndex;
+          {generationPhase === 'running' && (
+            <ol className="mt-6 space-y-3">
+              {GENERATION_STAGES.map((stage, index) => {
+                const isDone = index < stageIndex;
+                const isCurrent = index === stageIndex;
 
-              return (
-                <li
-                  key={stage}
-                  className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3"
-                >
-                  <span
-                    className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                      isDone || isCurrent
-                        ? 'bg-[var(--brand)] text-white'
-                        : 'bg-[var(--surface-strong)] text-[var(--text-muted)]'
-                    }`}
-                    aria-hidden="true"
+                return (
+                  <li
+                    key={stage}
+                    className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3"
                   >
-                    {isDone ? '✓' : index + 1}
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text)]">{stage}</p>
-                    <p className="mt-1 text-sm text-[var(--text-muted)]">
-                      {isCurrent
-                        ? 'Current step'
-                        : isDone
-                          ? 'Completed'
-                          : 'Waiting'}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
+                    <span
+                      className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                        isDone || isCurrent
+                          ? 'bg-[var(--brand)] text-white'
+                          : 'bg-[var(--surface-strong)] text-[var(--text-muted)]'
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {isDone ? '✓' : index + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text)]">{stage}</p>
+                      <p className="mt-1 text-sm text-[var(--text-muted)]">
+                        {isCurrent
+                          ? 'Current step'
+                          : isDone
+                            ? 'Completed'
+                            : 'Waiting'}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </div>
       ) : (
         <form
@@ -481,7 +519,7 @@ export default function GeneratePracticeFlow({
               setGenerationError(
                 error instanceof Error ? error.message : 'Generation failed. Please try again.',
               );
-              setIsGenerating(false);
+              setGenerationPhase('idle');
               setActiveJobId(null);
               setActivePracticeSetId(null);
             }
