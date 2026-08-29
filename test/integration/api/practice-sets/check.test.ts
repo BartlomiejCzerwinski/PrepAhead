@@ -15,9 +15,22 @@ vi.mock('../../../../src/lib/supabase/server', () => ({
 vi.mock('../../../../src/lib/server/practice/run-open-ended-check', () => ({
   runOpenEndedCheck: vi.fn(),
 }));
+vi.mock('../../../../src/lib/server/usage/increment-check-usage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../src/lib/server/usage/increment-check-usage')>();
+  return {
+    ...actual,
+    incrementCheckUsageForUser: vi.fn(actual.incrementCheckUsageForUser),
+    readCheckRemaining: vi.fn(actual.readCheckRemaining),
+  };
+});
 
 import { createSupabaseServerClient } from '../../../../src/lib/supabase/server';
 import { runOpenEndedCheck } from '../../../../src/lib/server/practice/run-open-ended-check';
+import {
+  getCheckIncrementRpcName,
+  incrementCheckUsageForUser,
+  readCheckRemaining,
+} from '../../../../src/lib/server/usage/increment-check-usage';
 import { POST } from '../../../../src/pages/api/practice-sets/[id]/check';
 
 const ANSWER = 'x'.repeat(50);
@@ -37,16 +50,17 @@ function readySeed(
   overrides: {
     content?: Record<string, unknown>;
     summaryRow?: Record<string, unknown>;
+    postIncrementSummaryRow?: Record<string, unknown>;
     updateRows?: unknown;
-    incrementError?: unknown;
-    incrementCheckCount?: number;
   } = {},
 ): FakeSupabaseSeed {
-  const startingCheckCount =
-    typeof overrides.summaryRow?.check_count === 'number'
-      ? overrides.summaryRow.check_count
-      : 0;
-  const incrementCheckCount = overrides.incrementCheckCount ?? startingCheckCount + 1;
+  const preflightRow = overrides.summaryRow ?? freeUserSummaryRow();
+  const postIncrementRow =
+    overrides.postIncrementSummaryRow ??
+    freeUserSummaryRow({
+      check_count:
+        typeof preflightRow.check_count === 'number' ? preflightRow.check_count + 1 : 1,
+    });
 
   return {
     user: { id: 'u1' },
@@ -66,18 +80,8 @@ function readySeed(
       generation_jobs: { select: { data: { status: 'succeeded' } } },
     },
     rpc: {
-      get_current_usage_summary: { data: overrides.summaryRow ?? freeUserSummaryRow() },
-      increment_check_usage: {
-        error: overrides.incrementError ?? null,
-        data: overrides.incrementError
-          ? null
-          : {
-              period_start: '2026-06-01T00:00:00.000Z',
-              period_end: '2026-07-01T00:00:00.000Z',
-              generation_count: 0,
-              check_count: incrementCheckCount,
-            },
-      },
+      get_current_usage_summary: { data: preflightRow },
+      get_current_usage_summary_after_increment: { data: postIncrementRow },
     },
   };
 }
@@ -89,6 +93,8 @@ function checkRequest() {
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.mocked(runOpenEndedCheck).mockResolvedValue({ ok: true, feedback: 'Helpful feedback.' });
+  vi.mocked(incrementCheckUsageForUser).mockResolvedValue({ ok: true, checkCount: 1 });
+  vi.mocked(readCheckRemaining).mockImplementation(async () => 4);
 });
 
 afterEach(() => {
@@ -110,11 +116,13 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     expect(body.error).toBe('check_limit_reached');
     expect(body.checkRemaining).toBe(0);
     expect(runOpenEndedCheck).not.toHaveBeenCalled();
-    expect(rpcNames(fake)).not.toContain('increment_check_usage');
+    expect(incrementCheckUsageForUser).not.toHaveBeenCalled();
+    expect(rpcNames(fake)).not.toContain(getCheckIncrementRpcName());
   });
 
-  it('success: AI called, increments exactly once, remaining decremented', async () => {
+  it('success: AI called, increments exactly once, remaining from post-increment summary', async () => {
     const fake = mockClient(readySeed());
+    vi.mocked(readCheckRemaining).mockResolvedValueOnce(4);
     const res = await POST(checkRequest());
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -122,21 +130,40 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     expect(body.feedback).toBe('Helpful feedback.');
     expect(body.checkRemaining).toBe(4);
     expect(runOpenEndedCheck).toHaveBeenCalledTimes(1);
-    expect(rpcNames(fake).filter((n) => n === 'increment_check_usage')).toHaveLength(1);
+    expect(incrementCheckUsageForUser).toHaveBeenCalledTimes(1);
+    expect(incrementCheckUsageForUser).toHaveBeenCalledWith('u1');
+    expect(readCheckRemaining).toHaveBeenCalledTimes(1);
+    expect(rpcNames(fake)).not.toContain('increment_check_usage');
   });
 
-  it('success on PRO: remaining derived from increment RPC check_count', async () => {
-    const fake = mockClient(
+  it('success on PRO: remaining comes from refreshed getUsageSummary', async () => {
+    mockClient(
       readySeed({
         summaryRow: proUserSummaryRow({ check_count: 0 }),
-        incrementCheckCount: 1,
+        postIncrementSummaryRow: proUserSummaryRow({ check_count: 1 }),
       }),
     );
+    vi.mocked(readCheckRemaining).mockResolvedValueOnce(499);
     const res = await POST(checkRequest());
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.checkRemaining).toBe(499);
-    expect(rpcNames(fake).filter((n) => n === 'increment_check_usage')).toHaveLength(1);
+    expect(incrementCheckUsageForUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails when increment is skipped (metering contract)', async () => {
+    mockClient(readySeed());
+    vi.mocked(incrementCheckUsageForUser).mockResolvedValueOnce({
+      ok: false,
+      code: 'skipped',
+      message: 'increment not called',
+    });
+    const res = await POST(checkRequest());
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe('usage_increment_failed');
+    expect(readCheckRemaining).not.toHaveBeenCalled();
   });
 
   it('AI failure: no persist and no increment (no charge)', async () => {
@@ -149,14 +176,15 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     const res = await POST(checkRequest());
     expect(res.status).toBe(502);
     expect(fake.calls.updates).toHaveLength(0);
-    expect(rpcNames(fake)).not.toContain('increment_check_usage');
+    expect(incrementCheckUsageForUser).not.toHaveBeenCalled();
   });
 
   it('persist failure: 500 and no increment (no charge)', async () => {
     const fake = mockClient(readySeed({ updateRows: [] }));
     const res = await POST(checkRequest());
     expect(res.status).toBe(500);
-    expect(rpcNames(fake)).not.toContain('increment_check_usage');
+    expect(incrementCheckUsageForUser).not.toHaveBeenCalled();
+    expect(rpcNames(fake)).not.toContain(getCheckIncrementRpcName());
   });
 
   it('already-checked question: 409 with no AI call and no increment', async () => {
@@ -174,19 +202,23 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     const res = await POST(checkRequest());
     expect(res.status).toBe(409);
     expect(runOpenEndedCheck).not.toHaveBeenCalled();
-    expect(rpcNames(fake)).not.toContain('increment_check_usage');
+    expect(incrementCheckUsageForUser).not.toHaveBeenCalled();
   });
 
-  it('increment-RPC failure after persist: still ok, under-counted (remaining unchanged)', async () => {
-    const fake = mockClient(readySeed({ incrementError: { code: 'XX999' } }));
+  it('increment failure after persist: 500, not ok, no stale remaining', async () => {
+    mockClient(readySeed());
+    vi.mocked(incrementCheckUsageForUser).mockResolvedValueOnce({
+      ok: false,
+      code: 'XX999',
+      message: 'increment failed',
+    });
     const res = await POST(checkRequest());
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.ok).toBe(true);
-    expect(body.feedback).toBe('Helpful feedback.');
-    // Persist succeeded but the increment failed → user keeps feedback, is not
-    // charged (accepted v1 under-count edge), so remaining stays at 5 not 4.
-    expect(body.checkRemaining).toBe(5);
-    expect(rpcNames(fake).filter((n) => n === 'increment_check_usage')).toHaveLength(1);
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe('usage_increment_failed');
+    expect(body.checkRemaining).toBeUndefined();
+    expect(incrementCheckUsageForUser).toHaveBeenCalledTimes(1);
+    expect(readCheckRemaining).not.toHaveBeenCalled();
   });
 });

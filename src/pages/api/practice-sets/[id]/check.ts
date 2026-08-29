@@ -14,6 +14,10 @@ import {
 } from '../../../../lib/practice/contracts';
 import { runOpenEndedCheck } from '../../../../lib/server/practice/run-open-ended-check';
 import { jsonResponse } from '../../../../lib/server/response';
+import {
+  incrementCheckUsageForUser,
+  readCheckRemaining,
+} from '../../../../lib/server/usage/increment-check-usage';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const prerender = false;
@@ -358,30 +362,37 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     );
   }
 
-  // Persist succeeded — only now consume a Check call. If this RPC fails, the
-  // user keeps their feedback but is under-counted (accepted v1 edge case).
-  const { data: incrementRow, error: incrementError } = await supabase
-    .rpc('increment_check_usage')
-    .maybeSingle();
-  if (incrementError) {
-    console.error('increment_check_usage failed after Check persisted', {
+  // Persist succeeded — consume a Check via service-role RPC (bypasses RLS/auth.uid gaps).
+  const incrementResult = await incrementCheckUsageForUser(user.id);
+  if (!incrementResult.ok) {
+    console.error('increment_check_usage_for_user failed after Check persisted', {
       practiceSetId,
-      code: incrementError.code,
+      code: incrementResult.code,
     });
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'usage_increment_failed',
+        message:
+          'Your Check feedback was saved, but usage could not be updated. Refresh the page or try again.',
+      },
+      { status: 500, headers: responseHeaders },
+    );
+  }
+
+  const checkRemaining = await readCheckRemaining(supabase, user.id);
+  if (checkRemaining === null) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'usage_unavailable',
+        message: 'Check usage was updated but could not be read back. Please refresh.',
+      },
+      { status: 503, headers: responseHeaders },
+    );
   }
 
   const progress = getOpenEndedProgress(updatedContent);
-  const incrementedCheckCount =
-    incrementRow &&
-    typeof incrementRow === 'object' &&
-    'check_count' in incrementRow &&
-    typeof incrementRow.check_count === 'number'
-      ? incrementRow.check_count
-      : null;
-  const checkRemaining =
-    incrementedCheckCount === null
-      ? usageSummary.data.checkRemaining
-      : Math.max(0, usageSummary.data.checkLimit - incrementedCheckCount);
 
   const responseBody: Record<string, unknown> = {
     ok: true,

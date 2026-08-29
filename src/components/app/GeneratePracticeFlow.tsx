@@ -9,8 +9,8 @@ import {
 import type { UsageSummary } from '../../lib/plan';
 import {
   decrementGenerationUsage,
+  shouldBlockBeforeUnload,
   shouldShowProgressPanel,
-  shouldWarnBeforeUnload,
   type GenerationPhase,
 } from './generation-flow-state';
 
@@ -67,10 +67,6 @@ async function parseApiResponse(response: Response): Promise<any> {
   }
 }
 
-function redirectToOverview(practiceSetId: string): void {
-  window.location.assign(`/app/sets/${practiceSetId}`);
-}
-
 export default function GeneratePracticeFlow({
   usageSummary,
   usageError = false,
@@ -89,6 +85,17 @@ export default function GeneratePracticeFlow({
   const [activePracticeSetId, setActivePracticeSetId] = useState<string | null>(null);
   const idempotencyKeyRef = useRef<string | null>(null);
   const recoveryStartedRef = useRef(false);
+  const suppressBeforeUnloadRef = useRef(false);
+  const generationPhaseRef = useRef<GenerationPhase>('idle');
+
+  useEffect(() => {
+    generationPhaseRef.current = generationPhase;
+  }, [generationPhase]);
+
+  function navigateToOverview(practiceSetId: string): void {
+    suppressBeforeUnloadRef.current = true;
+    window.location.assign(`/app/sets/${practiceSetId}`);
+  }
 
   useEffect(() => {
     setLocalUsageSummary(usageSummary);
@@ -142,18 +149,20 @@ export default function GeneratePracticeFlow({
   }, [isGenerating, stageIndex]);
 
   useEffect(() => {
-    if (!shouldWarnBeforeUnload(generationPhase)) {
-      return undefined;
-    }
-
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (
+        !shouldBlockBeforeUnload(generationPhaseRef.current, suppressBeforeUnloadRef.current)
+      ) {
+        return;
+      }
+
       event.preventDefault();
       event.returnValue = '';
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [generationPhase]);
+  }, []);
 
   async function nudgeGenerationWorker(jobId: string): Promise<void> {
     try {
@@ -223,7 +232,7 @@ export default function GeneratePracticeFlow({
         previous ? decrementGenerationUsage(previous) : previous,
       );
       setGenerationPhase('succeeded');
-      redirectToOverview(practiceSetId);
+      navigateToOverview(practiceSetId);
     } catch (error) {
       setGenerationPhase('idle');
       if (error instanceof GenerationStillRunningError) {
