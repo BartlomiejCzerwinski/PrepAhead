@@ -307,7 +307,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   }
 
   // A concurrent Check on the same question may have landed during the AI call.
-  // Bail before persisting (and before charging usage) if so.
+  // Bail before charging usage or persisting if so.
   const freshTarget = getOpenEndedQuestions(freshContent).find(
     (question) => question.id === questionId,
   );
@@ -319,6 +319,25 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         message: 'This answer has already been checked.',
       },
       { status: 409, headers: responseHeaders },
+    );
+  }
+
+  // Charge usage before persisting feedback — never save a Check we cannot meter.
+  const incrementResult = await incrementCheckUsageForUser(user.id);
+  if (!incrementResult.ok) {
+    console.error('increment_check_usage_for_user failed before Check persist', {
+      practiceSetId,
+      userId: user.id,
+      code: incrementResult.code,
+      message: incrementResult.message,
+    });
+    return jsonResponse(
+      {
+        ok: false,
+        error: 'usage_increment_failed',
+        message: 'Could not record Check usage. Please try again or contact support if this persists.',
+      },
+      { status: 500, headers: responseHeaders },
     );
   }
 
@@ -352,29 +371,17 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     .select('id');
 
   if (updateError || !updatedRows?.length) {
+    console.error('Check feedback persist failed after usage increment', {
+      practiceSetId,
+      userId: user.id,
+      incrementedCheckCount: incrementResult.checkCount,
+      updateError: updateError?.code,
+    });
     return jsonResponse(
       {
         ok: false,
         error: 'update_failed',
         message: 'Could not save your Check feedback. Please try again.',
-      },
-      { status: 500, headers: responseHeaders },
-    );
-  }
-
-  // Persist succeeded — consume a Check via service-role RPC (bypasses RLS/auth.uid gaps).
-  const incrementResult = await incrementCheckUsageForUser(user.id);
-  if (!incrementResult.ok) {
-    console.error('increment_check_usage_for_user failed after Check persisted', {
-      practiceSetId,
-      code: incrementResult.code,
-    });
-    return jsonResponse(
-      {
-        ok: false,
-        error: 'usage_increment_failed',
-        message:
-          'Your Check feedback was saved, but usage could not be updated. Refresh the page or try again.',
       },
       { status: 500, headers: responseHeaders },
     );
