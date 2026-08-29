@@ -147,7 +147,7 @@ describe('practice-set [id] routes — IDOR / authorization', () => {
       // Check must not call the AI or consume usage for a non-owner.
       if (route.isCheck) {
         expect(runOpenEndedCheck).not.toHaveBeenCalled();
-        expect(fake.calls.rpc.map((c) => c.name)).not.toContain('increment_check_usage');
+        expect(fake.calls.rpc.map((c) => c.name)).not.toContain('increment_check_usage_for_user');
       }
     },
   );

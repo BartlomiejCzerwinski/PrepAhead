@@ -6,6 +6,13 @@ export function shouldWarnBeforeUnload(phase: GenerationPhase): boolean {
   return phase === 'running';
 }
 
+export function shouldBlockBeforeUnload(
+  phase: GenerationPhase,
+  suppressNavigationWarning: boolean,
+): boolean {
+  return shouldWarnBeforeUnload(phase) && !suppressNavigationWarning;
+}
+
 export function shouldShowProgressPanel(phase: GenerationPhase): boolean {
   return phase === 'running' || phase === 'succeeded';
 }

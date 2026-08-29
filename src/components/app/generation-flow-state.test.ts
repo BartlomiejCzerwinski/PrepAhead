@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { UsageSummary } from '../../lib/plan';
 import {
   decrementGenerationUsage,
+  shouldBlockBeforeUnload,
   shouldShowProgressPanel,
   shouldWarnBeforeUnload,
 } from './generation-flow-state';
@@ -32,6 +33,12 @@ describe('generation-flow-state', () => {
     expect(shouldWarnBeforeUnload('idle')).toBe(false);
     expect(shouldWarnBeforeUnload('succeeded')).toBe(false);
     expect(shouldWarnBeforeUnload('failed')).toBe(false);
+  });
+
+  it('suppresses beforeunload during programmatic success navigation', () => {
+    expect(shouldBlockBeforeUnload('running', true)).toBe(false);
+    expect(shouldBlockBeforeUnload('running', false)).toBe(true);
+    expect(shouldBlockBeforeUnload('succeeded', false)).toBe(false);
   });
 
   it('keeps the progress panel visible through success redirect', () => {
