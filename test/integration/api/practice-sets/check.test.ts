@@ -152,7 +152,7 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
   });
 
   it('fails when increment is skipped (metering contract)', async () => {
-    mockClient(readySeed());
+    const fake = mockClient(readySeed());
     vi.mocked(incrementCheckUsageForUser).mockResolvedValueOnce({
       ok: false,
       code: 'skipped',
@@ -163,6 +163,7 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     const body = await res.json();
     expect(body.ok).toBe(false);
     expect(body.error).toBe('usage_increment_failed');
+    expect(fake.calls.updates).toHaveLength(0);
     expect(readCheckRemaining).not.toHaveBeenCalled();
   });
 
@@ -179,12 +180,13 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     expect(incrementCheckUsageForUser).not.toHaveBeenCalled();
   });
 
-  it('persist failure: 500 and no increment (no charge)', async () => {
+  it('persist failure after increment: 500, no feedback saved', async () => {
     const fake = mockClient(readySeed({ updateRows: [] }));
     const res = await POST(checkRequest());
     expect(res.status).toBe(500);
-    expect(incrementCheckUsageForUser).not.toHaveBeenCalled();
-    expect(rpcNames(fake)).not.toContain(getCheckIncrementRpcName());
+    expect(incrementCheckUsageForUser).toHaveBeenCalledTimes(1);
+    expect(fake.calls.updates).toHaveLength(1);
+    expect(readCheckRemaining).not.toHaveBeenCalled();
   });
 
   it('already-checked question: 409 with no AI call and no increment', async () => {
@@ -205,8 +207,8 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     expect(incrementCheckUsageForUser).not.toHaveBeenCalled();
   });
 
-  it('increment failure after persist: 500, not ok, no stale remaining', async () => {
-    mockClient(readySeed());
+  it('increment failure before persist: 500, no feedback saved', async () => {
+    const fake = mockClient(readySeed());
     vi.mocked(incrementCheckUsageForUser).mockResolvedValueOnce({
       ok: false,
       code: 'XX999',
@@ -219,6 +221,7 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     expect(body.error).toBe('usage_increment_failed');
     expect(body.checkRemaining).toBeUndefined();
     expect(incrementCheckUsageForUser).toHaveBeenCalledTimes(1);
+    expect(fake.calls.updates).toHaveLength(0);
     expect(readCheckRemaining).not.toHaveBeenCalled();
   });
 });
