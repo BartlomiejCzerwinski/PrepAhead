@@ -360,7 +360,9 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
   // Persist succeeded — only now consume a Check call. If this RPC fails, the
   // user keeps their feedback but is under-counted (accepted v1 edge case).
-  const { error: incrementError } = await supabase.rpc('increment_check_usage');
+  const { data: incrementRow, error: incrementError } = await supabase
+    .rpc('increment_check_usage')
+    .maybeSingle();
   if (incrementError) {
     console.error('increment_check_usage failed after Check persisted', {
       practiceSetId,
@@ -369,9 +371,17 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   }
 
   const progress = getOpenEndedProgress(updatedContent);
-  const checkRemaining = incrementError
-    ? usageSummary.data.checkRemaining
-    : Math.max(0, usageSummary.data.checkRemaining - 1);
+  const incrementedCheckCount =
+    incrementRow &&
+    typeof incrementRow === 'object' &&
+    'check_count' in incrementRow &&
+    typeof incrementRow.check_count === 'number'
+      ? incrementRow.check_count
+      : null;
+  const checkRemaining =
+    incrementedCheckCount === null
+      ? usageSummary.data.checkRemaining
+      : Math.max(0, usageSummary.data.checkLimit - incrementedCheckCount);
 
   const responseBody: Record<string, unknown> = {
     ok: true,

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createFakeSupabase,
   freeUserSummaryRow,
+  proUserSummaryRow,
   type FakeSupabaseSeed,
 } from '../../../support/fake-supabase';
 import { makeApiContext } from '../../../support/fake-context';
@@ -38,8 +39,15 @@ function readySeed(
     summaryRow?: Record<string, unknown>;
     updateRows?: unknown;
     incrementError?: unknown;
+    incrementCheckCount?: number;
   } = {},
 ): FakeSupabaseSeed {
+  const startingCheckCount =
+    typeof overrides.summaryRow?.check_count === 'number'
+      ? overrides.summaryRow.check_count
+      : 0;
+  const incrementCheckCount = overrides.incrementCheckCount ?? startingCheckCount + 1;
+
   return {
     user: { id: 'u1' },
     tables: {
@@ -59,7 +67,17 @@ function readySeed(
     },
     rpc: {
       get_current_usage_summary: { data: overrides.summaryRow ?? freeUserSummaryRow() },
-      increment_check_usage: { error: overrides.incrementError ?? null },
+      increment_check_usage: {
+        error: overrides.incrementError ?? null,
+        data: overrides.incrementError
+          ? null
+          : {
+              period_start: '2026-06-01T00:00:00.000Z',
+              period_end: '2026-07-01T00:00:00.000Z',
+              generation_count: 0,
+              check_count: incrementCheckCount,
+            },
+      },
     },
   };
 }
@@ -104,6 +122,20 @@ describe('POST /api/practice-sets/[id]/check — gating & metering contract', ()
     expect(body.feedback).toBe('Helpful feedback.');
     expect(body.checkRemaining).toBe(4);
     expect(runOpenEndedCheck).toHaveBeenCalledTimes(1);
+    expect(rpcNames(fake).filter((n) => n === 'increment_check_usage')).toHaveLength(1);
+  });
+
+  it('success on PRO: remaining derived from increment RPC check_count', async () => {
+    const fake = mockClient(
+      readySeed({
+        summaryRow: proUserSummaryRow({ check_count: 0 }),
+        incrementCheckCount: 1,
+      }),
+    );
+    const res = await POST(checkRequest());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.checkRemaining).toBe(499);
     expect(rpcNames(fake).filter((n) => n === 'increment_check_usage')).toHaveLength(1);
   });
 
