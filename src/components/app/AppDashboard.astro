@@ -1,0 +1,231 @@
+---
+import type { UsageSummary } from '../../lib/plan';
+import {
+  getGenerationCta,
+  getPlanBanner,
+  getProFairUseBlurb,
+} from '../../lib/plan/usage-messages';
+import { deriveDashboardPracticeStats } from '../../lib/practice/dashboard-stats';
+import type { PracticeSetSummary } from '../../lib/practice/history';
+import PracticeSetCard from './PracticeSetCard.astro';
+
+interface Props {
+  summary?: UsageSummary;
+  usageError?: boolean;
+  practiceSets: PracticeSetSummary[];
+  practiceSetsError?: boolean;
+  recentLimit?: number;
+}
+
+const {
+  summary,
+  usageError = false,
+  practiceSets,
+  practiceSetsError = false,
+  recentLimit = 3,
+} = Astro.props;
+
+const locale = Astro.request.headers.get('accept-language')?.split(',')[0]?.trim() ?? 'en';
+const stats = deriveDashboardPracticeStats(practiceSets);
+const recentSets = practiceSets.slice(0, recentLimit);
+const planBanner = summary ? getPlanBanner(summary) : null;
+const generationCta = summary ? getGenerationCta(summary) : null;
+const proBlurb = summary ? getProFairUseBlurb(summary) : null;
+
+function formatResetDate(iso: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(iso));
+}
+---
+
+<section class="space-y-8">
+  <div class="space-y-2">
+    <h1 class="text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">Dashboard</h1>
+    <p class="text-sm leading-6 text-[var(--text-muted)]">
+      Pick up where you left off, start a new tailored practice set, or review your progress.
+    </p>
+  </div>
+
+  {
+    (usageError || practiceSetsError) && (
+      <div
+        class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-700 dark:text-red-300"
+        role="alert"
+      >
+        {usageError && practiceSetsError
+          ? 'Could not load your plan or practice sets — try refreshing.'
+          : usageError
+            ? 'Could not load your plan — try refreshing.'
+            : 'Could not load your practice sets — try refreshing.'}
+      </div>
+    )
+  }
+
+  {
+    planBanner && (
+      <div
+        class:list={[
+          'rounded-[1.75rem] border px-5 py-5 sm:px-6',
+          planBanner.tone === 'pro'
+            ? 'border-brand-500/25 bg-[var(--brand-soft)]'
+            : planBanner.tone === 'blocked'
+              ? 'border-amber-500/30 bg-amber-500/10'
+              : 'border-brand-500/20 bg-[var(--surface-elevated)]',
+        ]}
+        role="status"
+      >
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="space-y-2">
+            <div class="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-[var(--surface)]/60 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--brand)]">
+              {summary?.planTier ?? 'Plan'}
+            </div>
+            <h2 class="text-lg font-semibold text-[var(--text)]">{planBanner.title}</h2>
+            <p class="text-sm leading-6 text-[var(--text-muted)]">{planBanner.description}</p>
+            {proBlurb && (
+              <p class="text-sm leading-6 text-[var(--text-muted)]">{proBlurb}</p>
+            )}
+          </div>
+          <a
+            href={planBanner.primaryHref}
+            class="btn-primary inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
+          >
+            {planBanner.primaryLabel}
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+      <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        Practice sets
+      </p>
+      <p class="mt-3 text-3xl font-bold text-[var(--text)]">{stats.total}</p>
+      <p class="mt-1 text-sm text-[var(--text-muted)]">Total generated</p>
+    </article>
+    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+      <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        Completed
+      </p>
+      <p class="mt-3 text-3xl font-bold text-[var(--text)]">{stats.completed}</p>
+      <p class="mt-1 text-sm text-[var(--text-muted)]">Finished all questions</p>
+    </article>
+    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+      <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        In progress
+      </p>
+      <p class="mt-3 text-3xl font-bold text-[var(--text)]">{stats.inProgress}</p>
+      <p class="mt-1 text-sm text-[var(--text-muted)]">Ready to resume</p>
+    </article>
+    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+      <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        ABCD average
+      </p>
+      <p class="mt-3 text-3xl font-bold text-[var(--text)]">
+        {stats.averageAbcdScore !== null ? `${stats.averageAbcdScore}%` : '—'}
+      </p>
+      <p class="mt-1 text-sm text-[var(--text-muted)]">Across completed sets</p>
+    </article>
+  </div>
+
+  <section class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-lg font-semibold text-[var(--text)]">Generate a practice set</h2>
+        <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+          Paste a job description, optionally add a PDF CV, and get a tailored 20-question set.
+        </p>
+      </div>
+      {
+        generationCta && (
+          generationCta.canGenerate ? (
+            <a
+              href={generationCta.href}
+              class="btn-primary inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
+            >
+              {generationCta.label}
+            </a>
+          ) : summary?.planTier === 'FREE' ? (
+            <a
+              href={generationCta.href}
+              class="btn-primary inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
+            >
+              {generationCta.label}
+            </a>
+          ) : (
+            <span class="inline-flex shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-2.5 text-sm font-semibold text-[var(--text-muted)]">
+              {generationCta.label}
+            </span>
+          )
+        )
+      }
+    </div>
+  {
+    generationCta?.hint && (
+      <p class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--text-muted)]">
+        {generationCta.hint}
+      </p>
+    )
+  }
+  </section>
+
+  <section class="space-y-4">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-semibold text-[var(--text)]">Recent practice sets</h2>
+        <p class="mt-1 text-sm text-[var(--text-muted)]">
+          Jump back into a set you started or review a completed run.
+        </p>
+      </div>
+      {
+        practiceSets.length > 0 && (
+          <a
+            href="/app/sets"
+            class="text-sm font-semibold text-[var(--brand)] no-underline hover:underline"
+          >
+            View all
+          </a>
+        )
+      }
+    </div>
+
+    {
+      practiceSetsError ? null : practiceSets.length === 0 ? (
+        <div class="rounded-[1.75rem] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] px-5 py-8 text-center">
+          <p class="text-sm leading-6 text-[var(--text-muted)]">
+            No practice sets yet. Generate your first set from a job description to see it here.
+          </p>
+          {
+            generationCta?.canGenerate && (
+              <a
+                href="/app/generate"
+                class="btn-primary mt-4 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+              >
+                Generate your first set
+              </a>
+            )
+          }
+        </div>
+      ) : (
+        <ol class="space-y-3">
+          {recentSets.map((item) => (
+            <li>
+              <PracticeSetCard summary={item} locale={locale} />
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </section>
+
+  {
+    summary && (
+      <p class="text-sm leading-6 text-[var(--text-muted)]">
+        Usage period resets on {formatResetDate(summary.periodEnd)} (rolling monthly cycle, UTC).
+      </p>
+    )
+  }
+</section>

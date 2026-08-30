@@ -302,13 +302,6 @@ export default function OpenEndedFlow({
     setCurrentIndex(nextIndex);
   }
 
-  const remainingLabel =
-    usage && usage.planTier === 'FREE'
-      ? `${usage.checkRemaining} of 5 Checks left this period`
-      : usage
-        ? `${usage.checkRemaining} Checks left this period`
-        : null;
-
   return (
     <section className="space-y-6">
       <div className="space-y-2">
@@ -323,7 +316,6 @@ export default function OpenEndedFlow({
         </h1>
         <p className="text-sm text-[var(--text-muted)]">
           Open-ended · {progress.checkedCount} / {progress.total} checked
-          {remainingLabel ? ` · ${remainingLabel}` : ''}
         </p>
         {!abcdComplete ? (
           <p className="text-sm text-[var(--text-muted)]">

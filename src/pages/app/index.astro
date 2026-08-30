@@ -1,7 +1,8 @@
 ---
+import AppDashboard from '../../components/app/AppDashboard.astro';
 import AppLayout from '../../components/app/AppLayout.astro';
-import UsageDashboard from '../../components/app/UsageDashboard.astro';
 import { getUsageSummary } from '../../lib/plan';
+import { listPracticeSetSummaries } from '../../lib/practice/history';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 
 export const prerender = false;
@@ -16,26 +17,21 @@ const display =
   user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
 
 const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
-const usageResult = await getUsageSummary(supabase, user.id);
+const [usageResult, practiceSetsResult] = await Promise.all([
+  getUsageSummary(supabase, user.id),
+  listPracticeSetSummaries(supabase, user.id),
+]);
 ---
 
 <AppLayout
   title="Dashboard"
-  description="View your PrepAhead plan, remaining practice-set generations, and Check calls."
+  description="Your PrepAhead practice dashboard — resume sets, track progress, and generate new interview prep."
   userEmail={display}
 >
-  <UsageDashboard
+  <AppDashboard
     summary={usageResult.ok ? usageResult.data : undefined}
-    error={!usageResult.ok}
+    usageError={!usageResult.ok}
+    practiceSets={practiceSetsResult.ok ? practiceSetsResult.data : []}
+    practiceSetsError={!practiceSetsResult.ok}
   />
-
-  <a
-    href="/app/sets"
-    class="mt-6 block rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4 no-underline shadow-sm transition hover:bg-[var(--surface-muted)] dark:shadow-none"
-  >
-    <p class="text-sm font-semibold text-[var(--brand)]">Your practice sets</p>
-    <p class="mt-1 text-sm text-[var(--text-muted)]">
-      View and reopen the practice sets you've already generated.
-    </p>
-  </a>
 </AppLayout>
