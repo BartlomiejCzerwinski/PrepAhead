@@ -23,6 +23,12 @@ function resolveSiteUrl() {
 // https://astro.build/config
 export default defineConfig({
   site: resolveSiteUrl(),
+  redirects: {
+    '/sitemap.xml': {
+      status: 301,
+      destination: '/sitemap-index.xml',
+    },
+  },
   integrations: [
     react(),
     sitemap({
