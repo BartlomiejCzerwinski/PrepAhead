@@ -58,15 +58,16 @@ export function toPracticeSetSummary(row: PracticeSetRow): PracticeSetSummary {
 
   try {
     const content = parsePracticeSetWithProgress(row.content);
+    const abcdProgress = getAbcdProgress(content);
     const fullyComplete = isPracticeSetFullyComplete(content);
 
     return {
       ...base,
       statusLabel: row.status === 'completed' || fullyComplete ? 'completed' : 'in_progress',
       contentReady: true,
-      abcdAnswered: getAbcdProgress(content).answeredCount,
+      abcdAnswered: abcdProgress.answeredCount,
       openEndedChecked: getOpenEndedProgress(content).checkedCount,
-      abcdScorePercent: fullyComplete ? scoreAbcdPractice(content).percent : null,
+      abcdScorePercent: abcdProgress.isComplete ? scoreAbcdPractice(content).percent : null,
     };
   } catch {
     return {

@@ -69,7 +69,7 @@ describe('toPracticeSetSummary', () => {
     expect(summary.abcdScorePercent).toBe(80);
   });
 
-  it('(b) in-progress set → in_progress badge, null score, partial counts', () => {
+  it('(b) in-progress set → in_progress badge, null score until ABCD complete', () => {
     const summary = toPracticeSetSummary(
       row({ content: buildContent({ abcdAnswered: 7, abcdCorrect: 7, openEndedChecked: 2 }) }),
     );
@@ -79,6 +79,15 @@ describe('toPracticeSetSummary', () => {
     expect(summary.abcdAnswered).toBe(7);
     expect(summary.openEndedChecked).toBe(2);
     expect(summary.abcdScorePercent).toBeNull();
+  });
+
+  it('scores ABCD when multiple-choice is complete even if open-ended is not', () => {
+    const summary = toPracticeSetSummary(
+      row({ content: buildContent({ abcdAnswered: 15, abcdCorrect: 12, openEndedChecked: 2 }) }),
+    );
+
+    expect(summary.statusLabel).toBe('in_progress');
+    expect(summary.abcdScorePercent).toBe(80);
   });
 
   it('(c) grandfathered: row status completed but partial content → still completed, null score', () => {
