@@ -6,21 +6,32 @@ interface Props {
   title: string;
   description?: string;
   userEmail: string;
+  /** Practice session shell: fills the viewport and locks page scroll. */
   fullWidth?: boolean;
+  /** Wider content width for dashboard-style pages (not viewport-locked). */
+  wide?: boolean;
 }
 
 const {
   title,
-  description = 'Your PrepAhead usage dashboard and practice workspace.',
+  description = 'Your PrepAhead practice workspace.',
   userEmail,
   fullWidth = false,
+  wide = false,
 } = Astro.props;
+
+const headerMaxClass = fullWidth ? 'max-w-none py-3' : wide ? 'max-w-7xl py-3.5' : 'max-w-4xl py-4';
+const mainClass = fullWidth
+  ? 'min-h-0 w-full flex-1 overflow-hidden'
+  : wide
+    ? 'mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10'
+    : 'mx-auto max-w-4xl px-4 py-10 sm:px-6';
 ---
 
 <Layout title={title} description={description}>
   <div
     class:list={[
-      'bg-[var(--surface)]',
+      'bg-[var(--background)]',
       fullWidth ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen',
     ]}
   >
@@ -33,7 +44,8 @@ const {
       <div
         class:list={[
           'mx-auto flex items-center justify-between gap-4 px-4 sm:px-6',
-          fullWidth ? 'max-w-none py-3' : 'max-w-4xl py-4',
+          headerMaxClass,
+          wide && !fullWidth ? 'lg:px-8' : '',
         ]}
       >
         <a href="/" class="inline-flex items-center gap-2.5 text-[var(--text)] no-underline">
@@ -63,11 +75,7 @@ const {
         </div>
       </div>
     </header>
-    <main
-      class:list={[
-        fullWidth ? 'min-h-0 w-full flex-1 overflow-hidden' : 'mx-auto max-w-4xl px-4 py-10 sm:px-6',
-      ]}
-    >
+    <main class={mainClass}>
       <slot />
     </main>
   </div>

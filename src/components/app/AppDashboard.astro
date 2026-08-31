@@ -1,10 +1,6 @@
 ---
 import type { UsageSummary } from '../../lib/plan';
-import {
-  getGenerationCta,
-  getPlanBanner,
-  getProFairUseBlurb,
-} from '../../lib/plan/usage-messages';
+import { getGenerationCta, getPlanBanner } from '../../lib/plan/usage-messages';
 import { deriveDashboardPracticeStats } from '../../lib/practice/dashboard-stats';
 import type { PracticeSetSummary } from '../../lib/practice/history';
 import PracticeSetCard from './PracticeSetCard.astro';
@@ -22,31 +18,72 @@ const {
   usageError = false,
   practiceSets,
   practiceSetsError = false,
-  recentLimit = 3,
+  recentLimit = 6,
 } = Astro.props;
 
 const locale = Astro.request.headers.get('accept-language')?.split(',')[0]?.trim() ?? 'en';
 const stats = deriveDashboardPracticeStats(practiceSets);
 const recentSets = practiceSets.slice(0, recentLimit);
+const continueSet =
+  practiceSets.find(
+    (item) => item.statusLabel === 'in_progress' && item.contentReady,
+  ) ?? null;
 const planBanner = summary ? getPlanBanner(summary) : null;
-const generationCta = summary ? getGenerationCta(summary) : null;
-const proBlurb = summary ? getProFairUseBlurb(summary) : null;
+const generationCta = summary
+  ? getGenerationCta(summary)
+  : { canGenerate: true, label: 'Generate practice set', href: '/app/generate' };
 
-function formatResetDate(iso: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(iso));
-}
+const greetingHour = new Date().getHours();
+const greeting =
+  greetingHour < 12 ? 'Good morning' : greetingHour < 18 ? 'Good afternoon' : 'Good evening';
 ---
 
-<section class="space-y-8">
-  <div class="space-y-2">
-    <h1 class="text-2xl font-bold tracking-tight text-[var(--text)] sm:text-3xl">Dashboard</h1>
-    <p class="text-sm leading-6 text-[var(--text-muted)]">
-      Pick up where you left off, start a new tailored practice set, or review your progress.
-    </p>
-  </div>
+<section class="space-y-8 lg:space-y-10">
+  <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div class="space-y-2">
+      <p class="text-sm font-medium text-[var(--brand)]">{greeting}</p>
+      <h1 class="text-3xl font-bold tracking-tight text-[var(--text)] sm:text-4xl">
+        Your practice dashboard
+      </h1>
+      <p class="max-w-2xl text-sm leading-6 text-[var(--text-muted)] sm:text-base">
+        Resume an open set, generate a new one from a job description, or review how your prep is
+        progressing.
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      {
+        generationCta.canGenerate ? (
+          <a
+            href={generationCta.href}
+            class="btn-primary inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
+          >
+            {generationCta.label}
+          </a>
+        ) : summary?.planTier === 'FREE' ? (
+          <a
+            href={generationCta.href}
+            class="btn-primary inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
+          >
+            {generationCta.label}
+          </a>
+        ) : (
+          <span class="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-2.5 text-sm font-semibold text-[var(--text-muted)]">
+            {generationCta.label}
+          </span>
+        )
+      }
+      {
+        practiceSets.length > 0 && (
+          <a
+            href="/app/sets"
+            class="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-2.5 text-sm font-semibold text-[var(--text)] no-underline transition hover:bg-[var(--surface-muted)]"
+          >
+            All practice sets
+          </a>
+        )
+      }
+    </div>
+  </header>
 
   {
     (usageError || practiceSetsError) && (
@@ -55,7 +92,7 @@ function formatResetDate(iso: string): string {
         role="alert"
       >
         {usageError && practiceSetsError
-          ? 'Could not load your plan or practice sets — try refreshing.'
+          ? 'Could not load your dashboard — try refreshing.'
           : usageError
             ? 'Could not load your plan — try refreshing.'
             : 'Could not load your practice sets — try refreshing.'}
@@ -63,169 +100,250 @@ function formatResetDate(iso: string): string {
     )
   }
 
-  {
-    planBanner && (
-      <div
-        class:list={[
-          'rounded-[1.75rem] border px-5 py-5 sm:px-6',
-          planBanner.tone === 'pro'
-            ? 'border-brand-500/25 bg-[var(--brand-soft)]'
-            : planBanner.tone === 'blocked'
-              ? 'border-amber-500/30 bg-amber-500/10'
-              : 'border-brand-500/20 bg-[var(--surface-elevated)]',
-        ]}
-        role="status"
-      >
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="space-y-2">
-            <div class="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-[var(--surface)]/60 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--brand)]">
-              {summary?.planTier ?? 'Plan'}
-            </div>
-            <h2 class="text-lg font-semibold text-[var(--text)]">{planBanner.title}</h2>
-            <p class="text-sm leading-6 text-[var(--text-muted)]">{planBanner.description}</p>
-            {proBlurb && (
-              <p class="text-sm leading-6 text-[var(--text-muted)]">{proBlurb}</p>
-            )}
-          </div>
-          <a
-            href={planBanner.primaryHref}
-            class="btn-primary inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
-          >
-            {planBanner.primaryLabel}
-          </a>
-        </div>
-      </div>
-    )
-  }
-
-  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <article class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
       <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         Practice sets
       </p>
-      <p class="mt-3 text-3xl font-bold text-[var(--text)]">{stats.total}</p>
-      <p class="mt-1 text-sm text-[var(--text-muted)]">Total generated</p>
+      <p class="mt-3 text-3xl font-bold tracking-tight text-[var(--text)]">{stats.total}</p>
+      <p class="mt-1 text-sm text-[var(--text-muted)]">Generated for your roles</p>
     </article>
-    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+    <article class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
       <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         Completed
       </p>
-      <p class="mt-3 text-3xl font-bold text-[var(--text)]">{stats.completed}</p>
-      <p class="mt-1 text-sm text-[var(--text-muted)]">Finished all questions</p>
+      <p class="mt-3 text-3xl font-bold tracking-tight text-[var(--text)]">{stats.completed}</p>
+      <p class="mt-1 text-sm text-[var(--text-muted)]">Fully finished sets</p>
     </article>
-    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+    <article class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
       <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         In progress
       </p>
-      <p class="mt-3 text-3xl font-bold text-[var(--text)]">{stats.inProgress}</p>
-      <p class="mt-1 text-sm text-[var(--text-muted)]">Ready to resume</p>
+      <p class="mt-3 text-3xl font-bold tracking-tight text-[var(--text)]">{stats.inProgress}</p>
+      <p class="mt-1 text-sm text-[var(--text-muted)]">Ready to continue</p>
     </article>
-    <article class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+    <article class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
       <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
         ABCD average
       </p>
-      <p class="mt-3 text-3xl font-bold text-[var(--text)]">
+      <p class="mt-3 text-3xl font-bold tracking-tight text-[var(--text)]">
         {stats.averageAbcdScore !== null ? `${stats.averageAbcdScore}%` : '—'}
       </p>
       <p class="mt-1 text-sm text-[var(--text-muted)]">Sets with ABCD finished</p>
     </article>
   </div>
 
-  <section class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 class="text-lg font-semibold text-[var(--text)]">Generate a practice set</h2>
-        <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-          Paste a job description, optionally add a PDF CV, and get a tailored 20-question set.
-        </p>
-      </div>
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-8">
+    <div class="space-y-6">
       {
-        generationCta && (
-          generationCta.canGenerate ? (
-            <a
-              href={generationCta.href}
-              class="btn-primary inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
-            >
-              {generationCta.label}
-            </a>
-          ) : summary?.planTier === 'FREE' ? (
-            <a
-              href={generationCta.href}
-              class="btn-primary inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
-            >
-              {generationCta.label}
-            </a>
-          ) : (
-            <span class="inline-flex shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-2.5 text-sm font-semibold text-[var(--text-muted)]">
-              {generationCta.label}
-            </span>
-          )
-        )
-      }
-    </div>
-  {
-    generationCta?.hint && (
-      <p class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--text-muted)]">
-        {generationCta.hint}
-      </p>
-    )
-  }
-  </section>
-
-  <section class="space-y-4">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h2 class="text-lg font-semibold text-[var(--text)]">Recent practice sets</h2>
-        <p class="mt-1 text-sm text-[var(--text-muted)]">
-          Jump back into a set you started or review a completed run.
-        </p>
-      </div>
-      {
-        practiceSets.length > 0 && (
-          <a
-            href="/app/sets"
-            class="text-sm font-semibold text-[var(--brand)] no-underline hover:underline"
-          >
-            View all
-          </a>
-        )
-      }
-    </div>
-
-    {
-      practiceSetsError ? null : practiceSets.length === 0 ? (
-        <div class="rounded-[1.75rem] border border-dashed border-[var(--border)] bg-[var(--surface-muted)] px-5 py-8 text-center">
-          <p class="text-sm leading-6 text-[var(--text-muted)]">
-            No practice sets yet. Generate your first set from a job description to see it here.
-          </p>
-          {
-            generationCta?.canGenerate && (
+        continueSet && (
+          <section class="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] shadow-sm dark:shadow-none">
+            <div class="border-b border-[var(--border)] bg-[var(--brand-soft)]/60 px-5 py-4 sm:px-6">
+              <p class="text-xs font-semibold uppercase tracking-wider text-[var(--brand)]">
+                Continue practicing
+              </p>
+              <h2 class="mt-1 text-xl font-semibold tracking-tight text-[var(--text)]">
+                {continueSet.title}
+              </h2>
+            </div>
+            <div class="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div class="space-y-3">
+                <p class="text-sm leading-6 text-[var(--text-muted)]">
+                  {continueSet.abcdAnswered}/{continueSet.abcdTotal} multiple-choice answered ·{' '}
+                  {continueSet.openEndedChecked}/{continueSet.openEndedTotal} open-ended checked
+                  {continueSet.abcdScorePercent !== null
+                    ? ` · ${continueSet.abcdScorePercent}% ABCD`
+                    : ''}
+                </p>
+                <div class="grid max-w-md grid-cols-2 gap-3">
+                  <div>
+                    <div class="mb-1 flex justify-between text-xs text-[var(--text-muted)]">
+                      <span>Multiple choice</span>
+                      <span>
+                        {continueSet.abcdAnswered}/{continueSet.abcdTotal}
+                      </span>
+                    </div>
+                    <div class="h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                      <div
+                        class="h-full rounded-full bg-[var(--brand)]"
+                        style={`width: ${(continueSet.abcdAnswered / continueSet.abcdTotal) * 100}%`}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div class="mb-1 flex justify-between text-xs text-[var(--text-muted)]">
+                      <span>Open-ended</span>
+                      <span>
+                        {continueSet.openEndedChecked}/{continueSet.openEndedTotal}
+                      </span>
+                    </div>
+                    <div class="h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                      <div
+                        class="h-full rounded-full bg-[var(--brand)]"
+                        style={`width: ${(continueSet.openEndedChecked / continueSet.openEndedTotal) * 100}%`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
               <a
-                href="/app/generate"
-                class="btn-primary mt-4 inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm no-underline"
+                href={`/app/sets/${continueSet.id}/practice`}
+                class="btn-primary inline-flex shrink-0 items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
               >
-                Generate your first set
+                Resume set
+              </a>
+            </div>
+          </section>
+        )
+      }
+
+      <section class="space-y-4">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-[var(--text)]">Recent practice sets</h2>
+            <p class="mt-1 text-sm text-[var(--text-muted)]">
+              Jump back into a set or review a completed run.
+            </p>
+          </div>
+          {
+            practiceSets.length > recentLimit && (
+              <a
+                href="/app/sets"
+                class="text-sm font-semibold text-[var(--brand)] no-underline hover:underline"
+              >
+                View all ({practiceSets.length})
               </a>
             )
           }
         </div>
-      ) : (
-        <ol class="space-y-3">
-          {recentSets.map((item) => (
-            <li>
-              <PracticeSetCard summary={item} locale={locale} />
-            </li>
-          ))}
-        </ol>
-      )
-    }
-  </section>
 
-  {
-    summary && (
-      <p class="text-sm leading-6 text-[var(--text-muted)]">
-        Usage period resets on {formatResetDate(summary.periodEnd)} (rolling monthly cycle, UTC).
-      </p>
-    )
-  }
+        {
+          practiceSetsError ? null : practiceSets.length === 0 ? (
+            <div class="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-12 text-center">
+              <p class="text-base font-semibold text-[var(--text)]">No practice sets yet</p>
+              <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-muted)]">
+                Paste a job description to generate a tailored set of multiple-choice and
+                open-ended interview questions.
+              </p>
+              {
+                generationCta.canGenerate && (
+                  <a
+                    href="/app/generate"
+                    class="btn-primary mt-5 inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm no-underline"
+                  >
+                    Generate your first set
+                  </a>
+                )
+              }
+            </div>
+          ) : (
+            <ol class="grid gap-4 sm:grid-cols-2">
+              {recentSets.map((item) => (
+                <li>
+                  <PracticeSetCard summary={item} locale={locale} />
+                </li>
+              ))}
+            </ol>
+          )
+        }
+      </section>
+    </div>
+
+    <aside class="space-y-4 lg:sticky lg:top-6 lg:self-start">
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+        <h2 class="text-sm font-semibold text-[var(--text)]">Quick actions</h2>
+        <ul class="mt-4 space-y-2">
+          <li>
+            <a
+              href={generationCta.canGenerate || summary?.planTier === 'FREE' ? generationCta.href : '/app/generate'}
+              class="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text)] no-underline transition hover:border-brand-500/30 hover:bg-[var(--surface-muted)]"
+            >
+              <span>Generate practice set</span>
+              <span class="text-[var(--brand)]" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a
+              href="/app/sets"
+              class="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text)] no-underline transition hover:border-brand-500/30 hover:bg-[var(--surface-muted)]"
+            >
+              <span>Browse all sets</span>
+              <span class="text-[var(--brand)]" aria-hidden="true">→</span>
+            </a>
+          </li>
+          {
+            continueSet && (
+              <li>
+                <a
+                  href={`/app/sets/${continueSet.id}`}
+                  class="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text)] no-underline transition hover:border-brand-500/30 hover:bg-[var(--surface-muted)]"
+                >
+                  <span>Open current set</span>
+                  <span class="text-[var(--brand)]" aria-hidden="true">→</span>
+                </a>
+              </li>
+            )
+          }
+        </ul>
+        {
+          generationCta.hint && (
+            <p class="mt-4 text-xs leading-5 text-[var(--text-muted)]">{generationCta.hint}</p>
+          )
+        }
+      </section>
+
+      {
+        planBanner && (
+          <section
+            class:list={[
+              'rounded-2xl border p-5 shadow-sm dark:shadow-none',
+              planBanner.tone === 'pro'
+                ? 'border-brand-500/25 bg-[var(--brand-soft)]'
+                : planBanner.tone === 'blocked'
+                  ? 'border-amber-500/30 bg-amber-500/10'
+                  : 'border-[var(--border)] bg-[var(--surface-elevated)]',
+            ]}
+            role="status"
+          >
+            <div class="inline-flex items-center rounded-md border border-brand-500/20 bg-[var(--surface)]/70 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--brand)]">
+              {summary?.planTier ?? 'Plan'}
+            </div>
+            <h2 class="mt-3 text-base font-semibold text-[var(--text)]">{planBanner.title}</h2>
+            <p class="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+              {planBanner.description}
+            </p>
+            <a
+              href={planBanner.primaryHref}
+              class:list={[
+                'mt-4 inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold no-underline shadow-sm',
+                planBanner.tone === 'pro'
+                  ? 'border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--text)] transition hover:bg-[var(--surface-muted)]'
+                  : 'btn-primary',
+              ]}
+            >
+              {planBanner.primaryLabel}
+            </a>
+          </section>
+        )
+      }
+
+      <section class="rounded-2xl border border-[var(--border)] bg-[var(--surface-elevated)] p-5 shadow-sm dark:shadow-none">
+        <h2 class="text-sm font-semibold text-[var(--text)]">How practice works</h2>
+        <ol class="mt-3 space-y-3 text-sm leading-6 text-[var(--text-muted)]">
+          <li>
+            <span class="font-semibold text-[var(--text)]">1.</span> Paste a job description
+            (optional CV).
+          </li>
+          <li>
+            <span class="font-semibold text-[var(--text)]">2.</span> Get 15 multiple-choice and 5
+            open-ended questions.
+          </li>
+          <li>
+            <span class="font-semibold text-[var(--text)]">3.</span> Practice with instant ABCD
+            feedback and Check on open-ended answers.
+          </li>
+        </ol>
+      </section>
+    </aside>
+  </div>
 </section>

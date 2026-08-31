@@ -27,6 +27,7 @@ const [usageResult, practiceSetsResult] = await Promise.all([
   title="Dashboard"
   description="Your PrepAhead practice dashboard — resume sets, track progress, and generate new interview prep."
   userEmail={display}
+  wide
 >
   <AppDashboard
     summary={usageResult.ok ? usageResult.data : undefined}

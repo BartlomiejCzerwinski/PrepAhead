@@ -20,10 +20,10 @@ export function getPlanBanner(summary: UsageSummary): PlanBanner {
     const atLimit = summary.isAtGenerationLimit || summary.isAtCheckLimit;
     return {
       tone: atLimit ? 'blocked' : 'free',
-      title: atLimit ? 'You have reached your FREE plan limits' : 'Upgrade to PRO',
+      title: atLimit ? 'Upgrade to keep practicing' : 'Upgrade to PRO',
       description: atLimit
-        ? 'Upgrade for generous fair-use generation and more Check feedback on open-ended answers.'
-        : 'Get generous fair-use practice-set generation and 500 Check calls per usage period.',
+        ? 'You’ve reached FREE plan limits for this period. Upgrade for generous fair-use generation and Check feedback.'
+        : 'Unlock generous fair-use generation and more Check feedback on open-ended answers.',
       primaryLabel: 'Upgrade to PRO',
       primaryHref: '/api/billing/checkout-redirect',
     };
@@ -32,8 +32,7 @@ export function getPlanBanner(summary: UsageSummary): PlanBanner {
   return {
     tone: 'pro',
     title: 'PrepAhead PRO',
-    description:
-      'Fair-use generation with clear caps—no surprise bills. Manage billing or cancel anytime.',
+    description: 'Manage billing or cancel anytime from the customer portal.',
     primaryLabel: 'Manage subscription',
     primaryHref: '/api/billing/portal',
   };
