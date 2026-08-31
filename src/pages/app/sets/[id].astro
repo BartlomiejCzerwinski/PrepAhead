@@ -31,7 +31,7 @@ const display =
   user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
 
 const practiceUrl = `/app/sets/${practiceSetId}/practice`;
-const openEndedUrl = `/app/sets/${practiceSetId}/open-ended`;
+const openEndedPracticeUrl = `${practiceUrl}?q=16`;
 
 const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
 
@@ -100,52 +100,27 @@ type PracticeCta = {
 let practiceCta: PracticeCta | null = null;
 
 if (generationSucceeded) {
-  if (abcdProgress.isComplete) {
+  const progressHint = `${abcdProgress.answeredCount} / ${abcdProgress.total} multiple-choice answered · ${openEndedProgress.checkedCount} / ${openEndedProgress.total} open-ended checked`;
+
+  if (fullyComplete || practiceSet.status === 'completed') {
     practiceCta = {
       href: practiceUrl,
       label: 'View score summary',
-      hint: `${abcdProgress.answeredCount} / ${abcdProgress.total} multiple-choice answered`,
+      hint: progressHint,
       primary: true,
     };
-  } else if (abcdProgress.answeredCount > 0) {
+  } else if (abcdProgress.answeredCount > 0 || openEndedProgress.attemptedCount > 0) {
     practiceCta = {
       href: practiceUrl,
       label: 'Continue practice',
-      hint: `${abcdProgress.answeredCount} / ${abcdProgress.total} multiple-choice answered`,
+      hint: progressHint,
       primary: true,
     };
   } else {
     practiceCta = {
       href: practiceUrl,
       label: 'Start practice',
-      primary: true,
-    };
-  }
-}
-
-let openEndedCta: PracticeCta | null = null;
-
-if (generationSucceeded) {
-  const openEndedHint = `${openEndedProgress.attemptedCount} / ${openEndedProgress.total} attempted, ${openEndedProgress.checkedCount} / ${openEndedProgress.total} checked`;
-
-  if (openEndedProgress.isCheckedComplete) {
-    openEndedCta = {
-      href: openEndedUrl,
-      label: 'Review open-ended',
-      hint: openEndedHint,
-      primary: false,
-    };
-  } else if (openEndedProgress.attemptedCount > 0 || openEndedProgress.checkedCount > 0) {
-    openEndedCta = {
-      href: openEndedUrl,
-      label: 'Continue open-ended',
-      hint: openEndedHint,
-      primary: true,
-    };
-  } else {
-    openEndedCta = {
-      href: openEndedUrl,
-      label: 'Answer open-ended',
+      hint: '15 multiple-choice and 5 open-ended questions in one session.',
       primary: true,
     };
   }
@@ -202,48 +177,29 @@ if (generationSucceeded) {
 
     {practiceCta && (
       <div class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-5 shadow-sm dark:shadow-none sm:px-6">
-        <p class="text-sm font-semibold text-[var(--text)]">Multiple-choice practice</p>
+        <p class="text-sm font-semibold text-[var(--text)]">Practice session</p>
         {practiceCta.hint ? (
           <p class="mt-1 text-sm text-[var(--text-muted)]">{practiceCta.hint}</p>
         ) : (
           <p class="mt-1 text-sm text-[var(--text-muted)]">
-            Answer 15 questions with immediate feedback and a practice drill score.
+            Answer all 20 questions in one place — multiple-choice and open-ended with Check feedback.
           </p>
         )}
-        <div class="mt-4">
+        <div class="mt-4 flex flex-wrap gap-3">
           <a
             href={practiceCta.href}
-            class:list={[
-              'inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold no-underline shadow-sm',
-              practiceCta.primary ? 'btn-primary' : '',
-            ]}
+            class="btn-primary inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold no-underline shadow-sm"
           >
             {practiceCta.label}
           </a>
-        </div>
-      </div>
-    )}
-
-    {openEndedCta && (
-      <div class="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-5 shadow-sm dark:shadow-none sm:px-6">
-        <p class="text-sm font-semibold text-[var(--text)]">Open-ended practice</p>
-        {openEndedCta.hint ? (
-          <p class="mt-1 text-sm text-[var(--text-muted)]">{openEndedCta.hint}</p>
-        ) : (
-          <p class="mt-1 text-sm text-[var(--text-muted)]">
-            Answer 5 open-ended questions and get critical Check feedback on each.
-          </p>
-        )}
-        <div class="mt-4">
-          <a
-            href={openEndedCta.href}
-            class:list={[
-              'inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold no-underline shadow-sm',
-              openEndedCta.primary ? 'btn-primary' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition hover:bg-[var(--surface-muted)]',
-            ]}
-          >
-            {openEndedCta.label}
-          </a>
+          {abcdProgress.isComplete && !openEndedProgress.isCheckedComplete ? (
+            <a
+              href={openEndedPracticeUrl}
+              class="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text)] no-underline transition hover:bg-[var(--surface-muted)]"
+            >
+              Jump to open-ended
+            </a>
+          ) : null}
         </div>
       </div>
     )}
@@ -287,7 +243,7 @@ if (generationSucceeded) {
             <h2 class="text-lg font-semibold text-[var(--text)]">Open-ended ({openEndedQuestions.length})</h2>
             <p class="text-sm text-[var(--text-muted)]">
               Answer these and run Check from
-              <a href={openEndedUrl} class="font-medium text-[var(--brand)] no-underline hover:underline"> open-ended practice</a>.
+              <a href={openEndedPracticeUrl} class="font-medium text-[var(--brand)] no-underline hover:underline"> practice</a>.
               Saved answers and Check feedback appear here once you complete them.
             </p>
           </div>

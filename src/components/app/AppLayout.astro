@@ -6,26 +6,46 @@ interface Props {
   title: string;
   description?: string;
   userEmail: string;
+  fullWidth?: boolean;
 }
 
 const {
   title,
   description = 'Your PrepAhead usage dashboard and practice workspace.',
   userEmail,
+  fullWidth = false,
 } = Astro.props;
 ---
 
 <Layout title={title} description={description}>
-  <div class="min-h-screen bg-[var(--surface)]">
-    <header class="border-b border-[var(--border)] bg-[var(--surface-elevated)]/90 backdrop-blur-md">
-      <div class="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <a href="/" class="inline-flex items-center gap-3 text-[var(--text)] no-underline">
+  <div
+    class:list={[
+      'bg-[var(--surface)]',
+      fullWidth ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen',
+    ]}
+  >
+    <header
+      class:list={[
+        'border-b border-[var(--border)] bg-[var(--surface-elevated)]/95',
+        fullWidth ? '' : 'backdrop-blur-md',
+      ]}
+    >
+      <div
+        class:list={[
+          'mx-auto flex items-center justify-between gap-4 px-4 sm:px-6',
+          fullWidth ? 'max-w-none py-3' : 'max-w-4xl py-4',
+        ]}
+      >
+        <a href="/" class="inline-flex items-center gap-2.5 text-[var(--text)] no-underline">
           <span
-            class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-500 text-sm font-bold text-white shadow-sm"
+            class:list={[
+              'flex items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-500 text-sm font-bold text-white shadow-sm',
+              fullWidth ? 'h-8 w-8' : 'h-9 w-9',
+            ]}
             aria-hidden="true">P</span>
-          <span class="text-base font-semibold tracking-tight">PrepAhead</span>
+          <span class="text-sm font-semibold tracking-tight sm:text-base">PrepAhead</span>
         </a>
-        <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-2.5 sm:gap-3">
           <span class="hidden max-w-[12rem] truncate text-sm text-[var(--text-muted)] sm:inline">
             {userEmail}
           </span>
@@ -35,7 +55,7 @@ const {
           <form method="POST" action="/api/auth/sign-out">
             <button
               type="submit"
-              class="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-muted)]"
+              class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-semibold text-[var(--text)] transition hover:bg-[var(--surface-muted)]"
             >
               Sign out
             </button>
@@ -43,8 +63,11 @@ const {
         </div>
       </div>
     </header>
-
-    <main class="mx-auto max-w-4xl px-4 py-10 sm:px-6">
+    <main
+      class:list={[
+        fullWidth ? 'min-h-0 w-full flex-1 overflow-hidden' : 'mx-auto max-w-4xl px-4 py-10 sm:px-6',
+      ]}
+    >
       <slot />
     </main>
   </div>

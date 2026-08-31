@@ -1,15 +1,23 @@
 ---
-import PracticeFlow from '../../../../components/app/PracticeFlow';
+import PracticeSetFlow from '../../../../components/app/PracticeSetFlow';
 import AppLayout from '../../../../components/app/AppLayout.astro';
-import { projectClientAbcdQuestions } from '../../../../lib/practice/client-payload';
+import { getUsageSummary } from '../../../../lib/plan';
+import {
+  projectClientAbcdQuestions,
+  projectClientOpenEndedQuestions,
+} from '../../../../lib/practice/client-payload';
 import {
   getAbcdProgress,
+  getOpenEndedProgress,
   getAbcdQuestions,
+  getOpenEndedQuestions,
+  isPracticeSetFullyComplete,
   parsePracticeSetWithProgress,
   PracticeSetContractError,
   scoreAbcdPractice,
   summarizeOpenEndedPractice,
 } from '../../../../lib/practice/contracts';
+import { resolveInitialQuestionIndex } from '../../../../lib/practice/practice-set-navigation';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server';
 
 export const prerender = false;
@@ -30,7 +38,6 @@ const display =
   user.email ?? (user.id ? `${user.id.slice(0, 8)}…` : 'Signed in');
 
 const overviewUrl = `/app/sets/${practiceSetId}`;
-const openEndedUrl = `/app/sets/${practiceSetId}/open-ended`;
 
 const supabase = createSupabaseServerClient(Astro.request, Astro.cookies);
 
@@ -57,22 +64,46 @@ if (generationJob?.status !== 'succeeded' || !practiceSet.content) {
   return Astro.redirect(overviewUrl);
 }
 
+type Usage = { planTier: 'FREE' | 'PRO'; checkRemaining: number; isAtCheckLimit: boolean };
+type FullSummary = {
+  abcd: { correct: number; total: 15; percent: number };
+  openEnded: { attempted: number; checked: number; total: 5 };
+};
+
 let contentReady = false;
-let clientQuestions: ReturnType<typeof projectClientAbcdQuestions> = [];
-let progress = { answeredCount: 0, total: 15 as const, currentIndex: 0, isComplete: false };
-let summary: { correct: number; total: 15; percent: number } | null = null;
-let openEndedSummary: { attempted: number; checked: number; total: 5 } | null = null;
+let clientAbcdQuestions: ReturnType<typeof projectClientAbcdQuestions> = [];
+let clientOpenEndedQuestions: ReturnType<typeof projectClientOpenEndedQuestions> = [];
+let abcdProgress = { answeredCount: 0, total: 15 as const, currentIndex: 0, isComplete: false };
+let openEndedProgress = {
+  attemptedCount: 0,
+  checkedCount: 0,
+  total: 5 as const,
+  currentIndex: 0,
+  isCheckedComplete: false,
+};
+let summary: FullSummary | null = null;
+let initialQuestionIndex = 0;
 
 try {
   const content = parsePracticeSetWithProgress(practiceSet.content);
-  const abcdQuestions = getAbcdQuestions(content);
-  clientQuestions = projectClientAbcdQuestions(abcdQuestions);
-  progress = getAbcdProgress(content);
+  clientAbcdQuestions = projectClientAbcdQuestions(getAbcdQuestions(content));
+  clientOpenEndedQuestions = projectClientOpenEndedQuestions(getOpenEndedQuestions(content));
+  abcdProgress = getAbcdProgress(content);
+  openEndedProgress = getOpenEndedProgress(content);
   contentReady = true;
 
-  if (progress.isComplete || practiceSet.status === 'completed') {
-    summary = scoreAbcdPractice(content);
-    openEndedSummary = summarizeOpenEndedPractice(content);
+  initialQuestionIndex = resolveInitialQuestionIndex({
+    queryQuestion: Astro.url.searchParams.get('q'),
+    abcdCurrentIndex: abcdProgress.currentIndex,
+    abcdComplete: abcdProgress.isComplete,
+    openEndedCurrentIndex: openEndedProgress.currentIndex,
+  });
+
+  if (isPracticeSetFullyComplete(content)) {
+    summary = {
+      abcd: scoreAbcdPractice(content),
+      openEnded: summarizeOpenEndedPractice(content),
+    };
   }
 } catch (error) {
   if (!(error instanceof PracticeSetContractError)) {
@@ -83,23 +114,35 @@ try {
 if (!contentReady) {
   return Astro.redirect(overviewUrl);
 }
+
+const usageSummary = await getUsageSummary(supabase, user.id);
+const usage: Usage | null = usageSummary.ok
+  ? {
+      planTier: usageSummary.data.planTier,
+      checkRemaining: usageSummary.data.checkRemaining,
+      isAtCheckLimit: usageSummary.data.isAtCheckLimit,
+    }
+  : null;
 ---
 
 <AppLayout
   title={`Practice: ${practiceSet.title}`}
-  description="Answer multiple-choice interview questions with immediate feedback."
+  description="Answer multiple-choice and open-ended interview questions with feedback."
   userEmail={display}
+  fullWidth
 >
-  <PracticeFlow
+  <PracticeSetFlow
     client:only="react"
     practiceSetId={practiceSetId}
     title={practiceSet.title}
     overviewUrl={overviewUrl}
-    initialQuestions={clientQuestions}
-    initialProgress={progress}
+    initialAbcdQuestions={clientAbcdQuestions}
+    initialOpenEndedQuestions={clientOpenEndedQuestions}
+    initialAbcdProgress={abcdProgress}
+    initialOpenEndedProgress={openEndedProgress}
+    initialUsage={usage}
     initialSummary={summary}
-    initialOpenEndedSummary={openEndedSummary}
-    openEndedUrl={openEndedUrl}
+    initialQuestionIndex={initialQuestionIndex}
   >
     <div
       slot="fallback"
@@ -107,5 +150,5 @@ if (!contentReady) {
     >
       Loading practice...
     </div>
-  </PracticeFlow>
+  </PracticeSetFlow>
 </AppLayout>
