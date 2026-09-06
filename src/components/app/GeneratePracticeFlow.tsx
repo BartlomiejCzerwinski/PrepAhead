@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -111,14 +110,6 @@ export default function GeneratePracticeFlow({
     generationPhase === 'succeeded' ||
     uploadState.status === 'parsing' ||
     jobDescription.trim().length === 0;
-
-  const helperCopy = useMemo(() => {
-    if (localUsageSummary) {
-      return `${localUsageSummary.generationRemaining} of ${localUsageSummary.generationLimit} generations remaining this period.`;
-    }
-
-    return 'Load your usage summary to see remaining generations before you submit.';
-  }, [localUsageSummary]);
 
   useEffect(() => {
     if (!isGenerating) {
@@ -630,11 +621,6 @@ export default function GeneratePracticeFlow({
             </div>
 
             <input type="hidden" name="resumeText" value={resumeText} />
-
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4">
-              <p className="text-sm font-semibold text-[var(--text)]">Usage</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{helperCopy}</p>
-            </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <button
