@@ -350,12 +350,47 @@ export function derivePracticeSetTitle(jobDescription: string): string {
     .find((line) => line.length > 0);
 
   if (!firstNonEmptyLine) {
-    return 'Generated practice set';
+    return 'Interview practice set';
   }
 
   const compact = firstNonEmptyLine.replace(/\s+/g, ' ');
-  const truncated = compact.length > 72 ? `${compact.slice(0, 69).trimEnd()}...` : compact;
-  return `Practice set: ${truncated}`;
+  // Prefer short role-like first lines; avoid dumping long "About the job" section headers.
+  const looksLikeSectionHeader =
+    /^(about|overview|description|the role|job description)\b/i.test(compact) ||
+    compact.length < 8;
+
+  if (looksLikeSectionHeader) {
+    return 'Interview practice set';
+  }
+
+  const truncated = compact.length > 72 ? `${compact.slice(0, 69).trimEnd()}…` : compact;
+  return truncated;
+}
+
+/** Normalize an AI-provided title; fall back when missing or low quality. */
+export function sanitizeGeneratedPracticeSetTitle(
+  rawTitle: unknown,
+  jobDescription: string,
+): string {
+  if (typeof rawTitle !== 'string') {
+    return derivePracticeSetTitle(jobDescription);
+  }
+
+  const cleaned = rawTitle
+    .replace(/^["'`]+|["'`]+$/g, '')
+    .replace(/^(practice set|interview practice|prep set)\s*[:\-–—]\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (cleaned.length < 4 || cleaned.length > 80) {
+    return derivePracticeSetTitle(jobDescription);
+  }
+
+  if (/^(about the job|job description|untitled)$/i.test(cleaned)) {
+    return derivePracticeSetTitle(jobDescription);
+  }
+
+  return cleaned;
 }
 
 export {

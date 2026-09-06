@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
 
 import { getUsageSummary } from '../../../lib/plan';
-import { derivePracticeSetTitle } from '../../../lib/practice/contracts';
 import { jsonResponse } from '../../../lib/server/response';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 
@@ -171,7 +170,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   }
 
-  const placeholderTitle = derivePracticeSetTitle(jobDescription);
+  const placeholderTitle = 'Generating practice set…';
 
   const { data: practiceSet, error: practiceSetError } = await supabase
     .from('practice_sets')

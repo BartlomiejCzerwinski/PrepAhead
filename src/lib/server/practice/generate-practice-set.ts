@@ -1,8 +1,8 @@
 import { MissingEnvError, requireEnv } from '../env';
 import {
-  derivePracticeSetTitle,
   normalizePracticeSetContent,
   PracticeSetContractError,
+  sanitizeGeneratedPracticeSetTitle,
   type PracticeSetContent,
 } from '../../practice/contracts';
 
@@ -49,6 +49,8 @@ const GENERATION_SYSTEM_PROMPT = [
   'Bad example: “According to the job description, which framework is required?” / “What salary range is listed?” / “Which responsibility is mentioned in the posting?”',
   'Good example: “How would you debug intermittent latency in a Node.js API behind a load balancer?” / “Walk through how you would design X for this kind of product.”',
   'If the JD names tools or domains (e.g. React, Postgres, payments), ask substantive interview questions that exercise those skills—not questions about whether they appear in the posting.',
+  'Also invent a short, human-friendly practice set title (3–8 words) that names the role or focus area (e.g. “Senior Backend System Design Prep”).',
+  'Title rules: do not start with “Practice set:”; do not use “About the job”, “Job description”, or generic placeholders; no company names from the posting unless essential to the role label; max 80 characters.',
   'Return JSON only. Produce exactly 20 questions: 15 abcd and 5 open_ended.',
   'For abcd questions, include exactly 4 options with ids A, B, C, and D, a correctOptionId that matches one option id, and a concise explanation grounded in role competence—not in “the JD says…”.',
   'Vary correctOptionId across abcd questions — spread correct answers across A, B, C, and D; do not default every question to A.',
@@ -77,9 +79,11 @@ Rules for this request:
 - Do not ask what is written in the job description.
 - Do not ask about salary, benefits, location, company facts, or other posting details.
 - Do not use phrases like "according to the job description" or "as listed in the posting".
+- Include a concise title for the practice set (role-focused, not "About the job").
 
 Return JSON with this exact top-level shape (abcd examples show varied correctOptionId — follow that pattern):
 {
+  "title": "Senior Backend Interview Prep",
   "questions": [
     {
       "id": "q-1",
@@ -207,11 +211,12 @@ export async function generatePracticeSet(
 
   try {
     const rawPayload = await response.json();
-    const normalizedContent = normalizePracticeSetContent(parseChatCompletionPayload(rawPayload));
+    const parsedPayload = parseChatCompletionPayload(rawPayload) as Record<string, unknown>;
+    const normalizedContent = normalizePracticeSetContent(parsedPayload);
 
     return {
       ok: true,
-      title: derivePracticeSetTitle(params.jobDescription),
+      title: sanitizeGeneratedPracticeSetTitle(parsedPayload.title, params.jobDescription),
       content: normalizedContent,
     };
   } catch (error) {

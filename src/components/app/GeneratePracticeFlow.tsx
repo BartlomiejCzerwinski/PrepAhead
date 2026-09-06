@@ -52,9 +52,7 @@ async function sleep(ms: number): Promise<void> {
 
 class GenerationStillRunningError extends Error {
   constructor() {
-    super(
-      'Generation is still running in the background. Return to /app/generate to recover the result.',
-    );
+    super('Generation is still running. Please wait a moment and try again.');
     this.name = 'GenerationStillRunningError';
   }
 }
@@ -105,7 +103,6 @@ export default function GeneratePracticeFlow({
   const showProgressPanel = shouldShowProgressPanel(generationPhase);
   const isAtGenerationLimit = localUsageSummary?.isAtGenerationLimit ?? false;
   const showUpgradePath = localUsageSummary?.planTier === 'FREE' && isAtGenerationLimit;
-  const hasRecoverableJob = generationPhase === 'running' && Boolean(activeJobId);
   const submitDisabled =
     usageError ||
     !localUsageSummary ||
@@ -390,17 +387,6 @@ export default function GeneratePracticeFlow({
         </div>
       )}
 
-      {hasRecoverableJob && (
-        <div
-          className="rounded-xl border border-brand-500/20 bg-[var(--brand-soft)] px-4 py-3 text-sm leading-6 text-[var(--text)]"
-          role="status"
-        >
-          Generation is running in the background. You can leave this page and return to
-          <span className="font-semibold"> /app/generate </span>
-          to recover the result. Closing the tab may show a browser warning while the job is active.
-        </div>
-      )}
-
       {generationError && (
         <div
           className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm leading-6 text-red-700 dark:text-red-300"
@@ -411,26 +397,48 @@ export default function GeneratePracticeFlow({
       )}
 
       {showProgressPanel ? (
-        <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-[var(--brand-soft)] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--brand)]">
-            <span>{generationPhase === 'succeeded' ? 'Complete' : 'In progress'}</span>
-          </div>
-          <h2 className="mt-4 text-xl font-semibold text-[var(--text)]">
-            {generationPhase === 'succeeded'
-              ? 'Practice set ready'
-              : 'Generating your practice set'}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-            {generationPhase === 'succeeded'
-              ? 'Your practice set was saved. Opening the overview now.'
-              : 'PrepAhead is parsing any uploaded CV context, generating questions, and validating the exact 20-question contract before saving the result.'}
-          </p>
-          {activePracticeSetId && generationPhase === 'running' && (
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              Recoverable job linked to practice set{' '}
-              <span className="font-semibold text-[var(--text)]">{activePracticeSetId}</span>.
+        <div className="generation-progress-panel rounded-[2rem] border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-sm dark:shadow-none sm:p-8">
+          <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+            {generationPhase === 'running' ? (
+              <div className="generation-orbit" aria-hidden="true">
+                <span className="generation-orbit__ring" />
+                <span className="generation-orbit__ring generation-orbit__ring--delayed" />
+                <span className="generation-orbit__core" />
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-full border border-green-500/25 bg-green-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-green-700 dark:text-green-300">
+                Complete
+              </div>
+            )}
+
+            <h2 className="mt-5 text-xl font-semibold text-[var(--text)] sm:text-2xl">
+              {generationPhase === 'succeeded'
+                ? 'Practice set ready'
+                : 'Crafting your interview practice'}
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--text-muted)]">
+              {generationPhase === 'succeeded'
+                ? 'Your practice set was saved. Opening the overview now.'
+                : GENERATION_STAGES[stageIndex]}
             </p>
-          )}
+
+            {generationPhase === 'running' ? (
+              <div className="mt-5 w-full max-w-xl">
+                <div className="generation-progress-track" aria-hidden="true">
+                  <div
+                    className="generation-progress-fill"
+                    style={{
+                      width: `${((stageIndex + 1) / GENERATION_STAGES.length) * 100}%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">
+                  Step {stageIndex + 1} of {GENERATION_STAGES.length}
+                </p>
+              </div>
+            ) : null}
+          </div>
+
           {generationPhase === 'succeeded' && activePracticeSetId && (
             <p className="mt-4 text-sm leading-6 text-[var(--text-muted)]">
               If you are not redirected automatically,{' '}
@@ -445,7 +453,7 @@ export default function GeneratePracticeFlow({
           )}
 
           {generationPhase === 'running' && (
-            <ol className="mt-6 space-y-3">
+            <ol className="mt-8 space-y-2.5">
               {GENERATION_STAGES.map((stage, index) => {
                 const isDone = index < stageIndex;
                 const isCurrent = index === stageIndex;
@@ -453,26 +461,34 @@ export default function GeneratePracticeFlow({
                 return (
                   <li
                     key={stage}
-                    className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3"
+                    className={`generation-stage flex items-start gap-3 rounded-xl border px-4 py-3 transition ${
+                      isCurrent
+                        ? 'border-brand-500/30 bg-[var(--brand-soft)] generation-stage--active'
+                        : 'border-[var(--border)] bg-[var(--surface-muted)]'
+                    }`}
                   >
                     <span
                       className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                        isDone || isCurrent
+                        isDone
                           ? 'bg-[var(--brand)] text-white'
-                          : 'bg-[var(--surface-strong)] text-[var(--text-muted)]'
+                          : isCurrent
+                            ? 'generation-stage-pulse bg-[var(--brand)] text-white'
+                            : 'bg-[var(--surface-strong)] text-[var(--text-muted)]'
                       }`}
                       aria-hidden="true"
                     >
                       {isDone ? '✓' : index + 1}
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-[var(--text)]">{stage}</p>
+                      <p
+                        className={`text-sm font-semibold ${
+                          isCurrent || isDone ? 'text-[var(--text)]' : 'text-[var(--text-muted)]'
+                        }`}
+                      >
+                        {stage}
+                      </p>
                       <p className="mt-1 text-sm text-[var(--text-muted)]">
-                        {isCurrent
-                          ? 'Current step'
-                          : isDone
-                            ? 'Completed'
-                            : 'Waiting'}
+                        {isCurrent ? 'Working…' : isDone ? 'Done' : 'Queued'}
                       </p>
                     </div>
                   </li>
